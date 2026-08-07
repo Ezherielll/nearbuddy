@@ -67,57 +67,72 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final theme = ShadTheme.of(context);
+
     return Scaffold(
       appBar: AppBar(title: Text(l10n.createGroup)),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: ShadForm(
-            key: _formKey,
-            autovalidateMode: ShadAutovalidateMode.always,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                ShadInputFormField(
-                  id: 'name',
-                  label: Text(l10n.groupName),
-                  validator: (v) =>
-                      v.trim().isEmpty ? l10n.groupName : null,
-                ),
-                const SizedBox(height: 16),
-                Row(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: ShadCard(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: ShadForm(
+                key: _formKey,
+                autovalidateMode: ShadAutovalidateMode.always,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Expanded(
-                      child: Text(l10n.groupPin,
-                          style: ShadTheme.of(context).textTheme.p),
+                    Text(l10n.createGroupDesc, style: theme.textTheme.muted),
+                    const SizedBox(height: 20),
+                    ShadInputFormField(
+                      id: 'name',
+                      label: Text(l10n.groupName),
+                      placeholder: Text(l10n.groupName),
+                      validator: (v) => v.trim().isEmpty ? l10n.groupName : null,
                     ),
-                    ShadSwitch(
-                      value: _usePin,
-                      onChanged: (v) => setState(() => _usePin = v),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(l10n.groupPin,
+                              style: theme.textTheme.p
+                                  .copyWith(fontWeight: FontWeight.w500)),
+                        ),
+                        ShadSwitch(
+                          value: _usePin,
+                          onChanged: (v) => setState(() => _usePin = v),
+                        ),
+                      ],
                     ),
+                    if (_usePin) ...[
+                      const SizedBox(height: 16),
+                      ShadInputFormField(
+                        id: 'pin',
+                        label: Text(l10n.groupPin),
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          LengthLimitingTextInputFormatter(
+                              AppConstants.pinLengthMax),
+                        ],
+                        validator: (v) => v.length < AppConstants.pinLengthMin
+                            ? l10n.pinError
+                            : null,
+                      ),
+                    ],
+                    const SizedBox(height: 24),
+                    _loading
+                        ? const ShadProgress()
+                        : ShadButton(
+                            onPressed: _create,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            child: Text(l10n.createGroup,
+                                style: theme.textTheme.p
+                                    .copyWith(fontWeight: FontWeight.w600)),
+                          ),
                   ],
                 ),
-                const SizedBox(height: 16),
-                if (_usePin)
-                  ShadInputFormField(
-                    id: 'pin',
-                    label: Text(l10n.groupPin),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      LengthLimitingTextInputFormatter(AppConstants.pinLengthMax),
-                    ],
-                    validator: (v) => v.length < AppConstants.pinLengthMin
-                        ? l10n.pinError
-                        : null,
-                  ),
-                const SizedBox(height: 24),
-                _loading
-                    ? const ShadProgress()
-                    : ShadButton(
-                        onPressed: _create,
-                        child: Text(l10n.createGroup),
-                      ),
-              ],
+              ),
             ),
           ),
         ),

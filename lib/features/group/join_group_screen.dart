@@ -63,40 +63,50 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final theme = ShadTheme.of(context);
+
     return Scaffold(
       appBar: AppBar(title: Text(l10n.joinGroup)),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: ShadForm(
-            key: _formKey,
-            autovalidateMode: ShadAutovalidateMode.always,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                ShadInputFormField(
-                  id: 'code',
-                  label: Text(l10n.groupCode),
-                  placeholder: Text(l10n.groupCodeHint),
-                  validator: (v) => v.trim().isEmpty ? l10n.groupCode : null,
-                ),
-                const SizedBox(height: 16),
-                ShadInputFormField(
-                  id: 'pin',
-                  label: Text(l10n.groupPin),
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [
-                    LengthLimitingTextInputFormatter(6),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: ShadCard(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: ShadForm(
+                key: _formKey,
+                autovalidateMode: ShadAutovalidateMode.always,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(l10n.joinGroupDesc, style: theme.textTheme.muted),
+                    const SizedBox(height: 20),
+                    ShadInputFormField(
+                      id: 'code',
+                      label: Text(l10n.groupCode),
+                      placeholder: Text(l10n.groupCodeHint),
+                      validator: (v) => v.trim().isEmpty ? l10n.groupCode : null,
+                    ),
+                    const SizedBox(height: 16),
+                    ShadInputFormField(
+                      id: 'pin',
+                      label: Text(l10n.groupPin),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [LengthLimitingTextInputFormatter(6)],
+                    ),
+                    const SizedBox(height: 24),
+                    _loading
+                        ? const ShadProgress()
+                        : ShadButton(
+                            onPressed: _join,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            child: Text(l10n.joinGroup,
+                                style: theme.textTheme.p
+                                    .copyWith(fontWeight: FontWeight.w600)),
+                          ),
                   ],
                 ),
-                const SizedBox(height: 24),
-                _loading
-                    ? const ShadProgress()
-                    : ShadButton(
-                        onPressed: _join,
-                        child: Text(l10n.joinGroup),
-                      ),
-              ],
+              ),
             ),
           ),
         ),

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'core/router.dart';
 import 'main.dart';
+import 'theme/nearbuddy_color_scheme.dart';
 
 class NearBuddyApp extends ConsumerWidget {
   const NearBuddyApp({super.key});
@@ -14,11 +15,11 @@ class NearBuddyApp extends ConsumerWidget {
     return ShadApp.custom(
       theme: ShadThemeData(
         brightness: Brightness.light,
-        colorScheme: const ShadGreenColorScheme.light(),
+        colorScheme: const NearBuddyColorScheme.light(),
       ),
       darkTheme: ShadThemeData(
         brightness: Brightness.dark,
-        colorScheme: const ShadGreenColorScheme.dark(),
+        colorScheme: const NearBuddyColorScheme.dark(),
       ),
       themeMode: ThemeMode.system,
       appBuilder: (context) {

@@ -397,6 +397,144 @@ abstract class AppLocalizations {
   /// In id, this message translates to:
   /// **'Nickname diperbarui'**
   String get nicknameSaved;
+
+  /// No description provided for @tagline.
+  ///
+  /// In id, this message translates to:
+  /// **'Chat tanpa internet, tanpa server.'**
+  String get tagline;
+
+  /// No description provided for @readyStatus.
+  ///
+  /// In id, this message translates to:
+  /// **'Siap terhubung langsung'**
+  String get readyStatus;
+
+  /// No description provided for @readyStatusDesc.
+  ///
+  /// In id, this message translates to:
+  /// **'Semua pesan terenkripsi dan tetap di perangkat ini.'**
+  String get readyStatusDesc;
+
+  /// No description provided for @createGroupDesc.
+  ///
+  /// In id, this message translates to:
+  /// **'Buat ruang baru, dengan PIN opsional'**
+  String get createGroupDesc;
+
+  /// No description provided for @joinGroupDesc.
+  ///
+  /// In id, this message translates to:
+  /// **'Masuk ke grup dengan kode'**
+  String get joinGroupDesc;
+
+  /// No description provided for @dmSessionsDesc.
+  ///
+  /// In id, this message translates to:
+  /// **'Percakapan 1:1 terenkripsi end-to-end'**
+  String get dmSessionsDesc;
+
+  /// No description provided for @homeEmptyTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Mulai percakapan pertama'**
+  String get homeEmptyTitle;
+
+  /// No description provided for @homeEmptyDesc.
+  ///
+  /// In id, this message translates to:
+  /// **'Buat grup atau gabung dengan kode — tidak ada data yang keluar dari perangkat.'**
+  String get homeEmptyDesc;
+
+  /// No description provided for @disclaimerBullet1.
+  ///
+  /// In id, this message translates to:
+  /// **'Berfungsi tanpa internet atau sinyal seluler'**
+  String get disclaimerBullet1;
+
+  /// No description provided for @disclaimerBullet2.
+  ///
+  /// In id, this message translates to:
+  /// **'Semua pesan terenkripsi end-to-end'**
+  String get disclaimerBullet2;
+
+  /// No description provided for @disclaimerBullet3.
+  ///
+  /// In id, this message translates to:
+  /// **'Bukan pengganti layanan darurat resmi'**
+  String get disclaimerBullet3;
+
+  /// No description provided for @encryptedLabel.
+  ///
+  /// In id, this message translates to:
+  /// **'Terenskripsi'**
+  String get encryptedLabel;
+
+  /// No description provided for @todayLabel.
+  ///
+  /// In id, this message translates to:
+  /// **'Hari ini'**
+  String get todayLabel;
+
+  /// No description provided for @yesterdayLabel.
+  ///
+  /// In id, this message translates to:
+  /// **'Kemarin'**
+  String get yesterdayLabel;
+
+  /// No description provided for @copyCode.
+  ///
+  /// In id, this message translates to:
+  /// **'Salin'**
+  String get copyCode;
+
+  /// No description provided for @codeCopied.
+  ///
+  /// In id, this message translates to:
+  /// **'Kode disalin'**
+  String get codeCopied;
+
+  /// No description provided for @sendMessageTooltip.
+  ///
+  /// In id, this message translates to:
+  /// **'Kirim pesan'**
+  String get sendMessageTooltip;
+
+  /// No description provided for @sendLocationTooltip.
+  ///
+  /// In id, this message translates to:
+  /// **'Kirim lokasi'**
+  String get sendLocationTooltip;
+
+  /// No description provided for @groupSection.
+  ///
+  /// In id, this message translates to:
+  /// **'Umum'**
+  String get groupSection;
+
+  /// No description provided for @identitySection.
+  ///
+  /// In id, this message translates to:
+  /// **'Identitas'**
+  String get identitySection;
+
+  /// No description provided for @securitySection.
+  ///
+  /// In id, this message translates to:
+  /// **'Keamanan'**
+  String get securitySection;
+
+  /// No description provided for @verifiedDevice.
+  ///
+  /// In id, this message translates to:
+  /// **'Perangkat terverifikasi'**
+  String get verifiedDevice;
+
+  /// No description provided for @verifyCopyHint.
+  ///
+  /// In id, this message translates to:
+  /// **'Kedua perangkat harus menampilkan angka yang sama. Cocokkan sebelum melanjutkan.'**
+  String get verifyCopyHint;
 }
 
 class _AppLocalizationsDelegate

@@ -28,42 +28,77 @@ class _NicknameScreenState extends ConsumerState<NicknameScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = ShadTheme.of(context);
+    final cs = ShadTheme.of(context).colorScheme;
+
     return Scaffold(
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: ShadForm(
-            key: _formKey,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(l10n.nicknameTitle,
-                    style: theme.textTheme.h2, textAlign: TextAlign.center),
-                const SizedBox(height: 24),
-                ShadInputFormField(
-                  id: 'nickname',
-                  placeholder: Text(l10n.nicknameHint),
-                  autovalidateMode: AutovalidateMode.always,
-                  inputFormatters: [
-                    LengthLimitingTextInputFormatter(AppConstants.nicknameLengthMax),
-                  ],
-                  validator: (v) {
-                    final val = v.trim();
-                    if (val.length < AppConstants.nicknameLengthMin ||
-                        val.length > AppConstants.nicknameLengthMax) {
-                      return l10n.nicknameError;
-                    }
-                    return null;
-                  },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Spacer(),
+              Center(
+                child: Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: cs.primary,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Icon(LucideIcons.shield, size: 36, color: cs.primaryForeground),
                 ),
-                const SizedBox(height: 16),
-                ShadButton(
-                  onPressed: _submit,
-                  child: Text(l10n.continueLabel),
+              ),
+              const SizedBox(height: 16),
+              Text(l10n.appName,
+                  style: theme.textTheme.h1, textAlign: TextAlign.center),
+              const SizedBox(height: 4),
+              Text(l10n.tagline,
+                  style: theme.textTheme.muted, textAlign: TextAlign.center),
+              const SizedBox(height: 32),
+              ShadCard(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: ShadForm(
+                    key: _formKey,
+                    autovalidateMode: ShadAutovalidateMode.always,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(l10n.nicknameTitle, style: theme.textTheme.h4),
+                        const SizedBox(height: 16),
+                        ShadInputFormField(
+                          id: 'nickname',
+                          placeholder: Text(l10n.nicknameHint),
+                          autovalidateMode: AutovalidateMode.always,
+                          inputFormatters: [
+                            LengthLimitingTextInputFormatter(
+                                AppConstants.nicknameLengthMax),
+                          ],
+                          validator: (v) {
+                            final val = v.trim();
+                            if (val.length < AppConstants.nicknameLengthMin ||
+                                val.length > AppConstants.nicknameLengthMax) {
+                              return l10n.nicknameError;
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 20),
+                        ShadButton(
+                          onPressed: _submit,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          child: Text(l10n.continueLabel,
+                              style: theme.textTheme.p
+                                  .copyWith(fontWeight: FontWeight.w600)),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ],
-            ),
+              ),
+              const Spacer(),
+            ],
           ),
         ),
       ),

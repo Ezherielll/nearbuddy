@@ -167,4 +167,77 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get nicknameSaved => 'Nickname diperbarui';
+
+  @override
+  String get tagline => 'Chat tanpa internet, tanpa server.';
+
+  @override
+  String get readyStatus => 'Siap terhubung langsung';
+
+  @override
+  String get readyStatusDesc =>
+      'Semua pesan terenkripsi dan tetap di perangkat ini.';
+
+  @override
+  String get createGroupDesc => 'Buat ruang baru, dengan PIN opsional';
+
+  @override
+  String get joinGroupDesc => 'Masuk ke grup dengan kode';
+
+  @override
+  String get dmSessionsDesc => 'Percakapan 1:1 terenkripsi end-to-end';
+
+  @override
+  String get homeEmptyTitle => 'Mulai percakapan pertama';
+
+  @override
+  String get homeEmptyDesc =>
+      'Buat grup atau gabung dengan kode — tidak ada data yang keluar dari perangkat.';
+
+  @override
+  String get disclaimerBullet1 =>
+      'Berfungsi tanpa internet atau sinyal seluler';
+
+  @override
+  String get disclaimerBullet2 => 'Semua pesan terenkripsi end-to-end';
+
+  @override
+  String get disclaimerBullet3 => 'Bukan pengganti layanan darurat resmi';
+
+  @override
+  String get encryptedLabel => 'Terenskripsi';
+
+  @override
+  String get todayLabel => 'Hari ini';
+
+  @override
+  String get yesterdayLabel => 'Kemarin';
+
+  @override
+  String get copyCode => 'Salin';
+
+  @override
+  String get codeCopied => 'Kode disalin';
+
+  @override
+  String get sendMessageTooltip => 'Kirim pesan';
+
+  @override
+  String get sendLocationTooltip => 'Kirim lokasi';
+
+  @override
+  String get groupSection => 'Umum';
+
+  @override
+  String get identitySection => 'Identitas';
+
+  @override
+  String get securitySection => 'Keamanan';
+
+  @override
+  String get verifiedDevice => 'Perangkat terverifikasi';
+
+  @override
+  String get verifyCopyHint =>
+      'Kedua perangkat harus menampilkan angka yang sama. Cocokkan sebelum melanjutkan.';
 }

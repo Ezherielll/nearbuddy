@@ -165,4 +165,77 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nicknameSaved => 'Nickname updated';
+
+  @override
+  String get tagline => 'Chat without internet, without servers.';
+
+  @override
+  String get readyStatus => 'Ready for direct connection';
+
+  @override
+  String get readyStatusDesc =>
+      'All messages are encrypted and stay on this device.';
+
+  @override
+  String get createGroupDesc => 'Create a new room, with optional PIN';
+
+  @override
+  String get joinGroupDesc => 'Join a group with a code';
+
+  @override
+  String get dmSessionsDesc => 'End-to-end encrypted 1:1 conversations';
+
+  @override
+  String get homeEmptyTitle => 'Start your first conversation';
+
+  @override
+  String get homeEmptyDesc =>
+      'Create a group or join with a code — no data leaves your device.';
+
+  @override
+  String get disclaimerBullet1 => 'Works without internet or cellular signal';
+
+  @override
+  String get disclaimerBullet2 => 'All messages are end-to-end encrypted';
+
+  @override
+  String get disclaimerBullet3 =>
+      'Not a substitute for official emergency services';
+
+  @override
+  String get encryptedLabel => 'Encrypted';
+
+  @override
+  String get todayLabel => 'Today';
+
+  @override
+  String get yesterdayLabel => 'Yesterday';
+
+  @override
+  String get copyCode => 'Copy';
+
+  @override
+  String get codeCopied => 'Code copied';
+
+  @override
+  String get sendMessageTooltip => 'Send message';
+
+  @override
+  String get sendLocationTooltip => 'Send location';
+
+  @override
+  String get groupSection => 'General';
+
+  @override
+  String get identitySection => 'Identity';
+
+  @override
+  String get securitySection => 'Security';
+
+  @override
+  String get verifiedDevice => 'Verified device';
+
+  @override
+  String get verifyCopyHint =>
+      'Both devices must show the same number. Compare before continuing.';
 }
