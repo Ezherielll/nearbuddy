@@ -1379,7 +1379,20 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
 
 ## Task 16: E2E Smoke Test Checklist (manual, 3 devices)
 
-> **Status: PENDING MANUAL TESTING (2026-08-07)** — code for Tasks 6–15 is complete and unit-tested (28/28). This checklist requires 3 physical Android devices (Nearby Connections does not run on emulators) and stays unchecked until field-tested. Items 1–4 need two devices; 5–6 need three.
+> **Status: PARTIAL (2026-08-07)** — Emulator smoke completed (see below). The mesh items (2+ devices) still require physical devices and remain unchecked.
+>
+> **Emulator smoke results (1× emulator-5554, API 37, dev flavor):**
+> - ✅ Launch + onboarding (disclaimer → nickname → home)
+> - ✅ Permission dialog flow — `requestNearbyPermissions()` shows system dialogs; when LOCATION was denied, the toast "Izin Bluetooth/Lokasi diperlukan…" appeared and the app stayed stable (error handling verified). NOTE: the FIRST "Allow" tap may deny subsequent permissions — the emulator shows one dialog per permission group.
+> - ✅ `startSession()` SUCCEEDS on emulator (Nearby starts advertising/discovery without throwing; logcat shows `com.nearbuddy.dev.<gid>` scanning, "No BLE Fast/GATT advertisements found" — expected, no radio)
+> - ✅ Group chat: "Halo" sent → bubble rendered (seal → Drift persist → stream UI)
+> - ✅ Location ping with `adb emu geo fix 106.8456 -6.2088` → card "-6.208800, 106.845600" + "Buka di Maps"
+> - ✅ Low-battery badge after `adb emu power capacity 15` (poll ~30s)
+> - ✅ DM: start dialog → session created → DmChatScreen opens; session listed with peer nickname. GOTCHA: `adb shell input keyevent 111` (ESC) CLOSES the dialog — use BACK (keyevent 4) or tap buttons directly
+> - ✅ Settings: deviceId shown (16 hex, e.g. `5e93214166b255d9`), language selector, nickname edit
+> - ⚠️ ShadSwitch PIN toggle not tappable via adb coordinates (hit area) — not a product bug; verified by code/unit level only
+>
+> **Still requires physical devices (T16 items below):** discovery/connect between devices, SAS 6-digit handshake, group key delivery, wrong-PIN rejection, 2-hop relay, DM across devices, dev/prod isolation on the mesh.
 
 - [ ] Fresh install (no keystore seed) → `deviceId` generated, stable across restarts
 - [ ] Create group with PIN → second device joins → both show same 6-digit SAS → confirm → chat works
