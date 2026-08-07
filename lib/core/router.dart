@@ -5,6 +5,7 @@ import '../features/onboarding/nickname_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/group/create_group_screen.dart';
 import '../features/group/join_group_screen.dart';
+import '../features/chat/chat_screen.dart';
 
 late final GoRouter appRouter;
 
@@ -16,8 +17,8 @@ GoRouter buildRouter(dynamic prefs) => GoRouter(
     GoRoute(path: '/home',         builder: (_, __) => const HomeScreen()),
     GoRoute(path: '/create-group', builder: (_, __) => const CreateGroupScreen()),
     GoRoute(path: '/join-group',   builder: (_, __) => const JoinGroupScreen()),
-    // Stub routes — replaced with real widgets in Tasks 12-13:
-    GoRoute(path: '/chat/:groupId', builder: (_, s) => Scaffold(body: Center(child: Text('Chat: ${s.pathParameters["groupId"]}')))),
+    // Stub routes — replaced with real widgets in Tasks 13:
+    GoRoute(path: '/chat/:groupId', builder: (_, s) => ChatScreen(groupId: s.pathParameters['groupId']!)),
     GoRoute(path: '/dms',          builder: (_, __) => const Scaffold(body: Center(child: Text('DMs')))),
     GoRoute(path: '/settings',     builder: (_, __) => const Scaffold(body: Center(child: Text('Settings')))),
   ],
