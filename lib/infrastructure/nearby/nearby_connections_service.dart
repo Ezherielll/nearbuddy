@@ -42,15 +42,13 @@ class NearbyConnectionsService implements PeerDiscoveryService {
   @override
   Future<void> startSession({required String groupId, required String nickname, String? pin}) async {
     final svcId = AppConfig.nearbyServiceId(groupId);
-    final adName = (pin != null && pin.isNotEmpty) ? '$nickname|$pin' : nickname;
+    // PIN no longer rides in the advertisement name (D-15) — it is validated
+    // in the E2EE hello handshake (KeyExchangeService, Task 11).
+    final adName = nickname;
 
     await _nearby.startAdvertising(adName, Strategy.P2P_CLUSTER,
       onConnectionInitiated: (eid, info) async {
-        if (pin != null && pin.isNotEmpty && !info.endpointName.endsWith('|$pin')) {
-          await _nearby.rejectConnection(eid); return;
-        }
-        _names[eid] = info.endpointName.contains('|')
-            ? info.endpointName.split('|').first : info.endpointName;
+        _names[eid] = info.endpointName;
         await _nearby.acceptConnection(eid,
             onPayLoadRecieved: _onPayload, onPayloadTransferUpdate: (_, __) {});
       },
@@ -61,8 +59,7 @@ class NearbyConnectionsService implements PeerDiscoveryService {
 
     await _nearby.startDiscovery(adName, Strategy.P2P_CLUSTER,
       onEndpointFound: (eid, endpointName, _) {
-        final peerName = endpointName.contains('|') ? endpointName.split('|').first : endpointName;
-        _names[eid] = peerName;
+        _names[eid] = endpointName;
         _nearby.requestConnection(adName, eid,
           onConnectionInitiated: (eid2, _) async =>
               _nearby.acceptConnection(eid2,
