@@ -1,11 +1,11 @@
 # NearBuddy — AGENTS.md
 
-Offline-first P2P group chat app (Flutter, Android-only MVP) using Google Nearby Connections. **The repo currently contains NO code** — only docs. Do not `flutter run` until the plan is executed.
+Offline-first P2P group chat app (Flutter, Android-only MVP) using Google Nearby Connections. Tasks 1 done (scaffold + deps + constants + Android config); Tasks 2–10 pending in the plan. Do not `flutter run` without `--flavor` (see Commands).
 
 ## Canonical documents (read before coding)
 
 - `NearBuddy_PRD.md` — product spec, in Indonesian. **Section 14 (Decisions Log) supersedes earlier sections** (e.g. no offline map in MVP, SOS deferred to v1.1, Android-only, Drift over Hive, feature flags).
-- `docs/superpowers/plans/2026-08-07-nearbuddy-mvp.md` — the authoritative implementation plan: 9 checkbox-tracked tasks (scaffold → DB → i18n → onboarding → discovery → home → chat/relay → location → settings). Follow it task-by-task; the plan mandates the superpowers `subagent-driven-development` or `executing-plans` workflow. Plan file structure and wire format are the contract — deviate only if forced.
+- `docs/superpowers/plans/2026-08-07-nearbuddy-mvp.md` — the authoritative implementation plan: checkbox-tracked tasks (scaffold → DB → i18n → onboarding → discovery → home → chat/relay → location → settings → flavors). Follow it task-by-task; the plan mandates the superpowers `subagent-driven-development` or `executing-plans` workflow. Plan file structure and wire format are the contract — deviate only if forced.
 
 ## Hard constraints (from plan's Global Constraints)
 
@@ -25,8 +25,9 @@ Offline-first P2P group chat app (Flutter, Android-only MVP) using Google Nearby
 - Generate l10n: `flutter gen-l10n` — **required after editing ARB files** in `lib/l10n/`. Flutter 3.44 removed `synthetic-package`; generated files land in `lib/l10n/` and are imported as `import 'l10n/app_localizations.dart';` (never `package:flutter_gen/...`).
 - `intl` is pinned to `^0.20.2` by Flutter 3.44 (via `flutter_localizations`) — do not downgrade to ^0.19.
 - Single test: `flutter test test/<path>.dart -v` (e.g. `flutter test test/domain/services/relay_dedup_test.dart -v`). Full suite: `flutter test -v`.
-- Build check: `flutter build apk --debug` (only after `flutter create` scaffold exists).
-- Task 1 Step 13 initializes the git repo (`git init`) — repo is not yet a git repo.
+- Run/build MUST use flavors: `.\scripts\flavor.ps1 -Flavor dev -Action run|build` (wraps `--flavor dev --dart-define=FLAVOR=dev`; `prod` also available). Plain `flutter run`/`flutter build` **without `--flavor` fails** — productFlavors were added in Task 10. `flutter test` needs no flavor (AppConfig defaults to `prod`).
+- Flavor differences (from `lib/core/app_config.dart`): dev = applicationId `.dev` suffix, label "NearBuddy Dev", DB `nearbuddy_db_dev`, Nearby service ID `com.nearbuddy.dev.<gid>`; prod = clean values. Never hardcode `com.nearbuddy.<gid>` or `nearbuddy_db` — use `AppConfig.nearbyServiceId(groupId)` / `AppConfig.databaseName`.
+- Task 1 (incl. Step 13 `git init`) is DONE — repo is a git repo on `master`; Task 1 commits exist.
 
 ## Gotchas
 

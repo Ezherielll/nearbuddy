@@ -32,6 +32,7 @@
 - `PeerDiscoveryService` is an abstract interface; `NearbyConnectionsService` is the concrete Android impl
 - **DO NOT add**: flutter_map, SOS feature, voice messaging, cloud integration — all out of scope v1
 - **UI must use `shadcn_ui`** (`ShadApp` wrapper, `ShadButton`, `ShadInput`, `ShadDialog`, etc.). Material widgets stay only as the host widget tree (`Scaffold`/`AppBar`) via `ShadApp.custom` + `MaterialApp.router`. All `FilledButton`/`TextField`/`AlertDialog` seen in task snippets are Material placeholders — convert them per the [UI Policy (shadcn_ui)](#ui-policy-shadcn_ui) below.
+- **Build flavors `dev` + `prod`** (Task 10): `productFlavors` in Gradle (applicationId `.dev` suffix, app label "NearBuddy Dev") + `--dart-define=FLAVOR` consumed by `AppConfig` (DB name `nearbuddy_db_dev`, Nearby service ID `com.nearbuddy.dev.<gid>` for dev). **After Task 10, every `flutter run`/`build` MUST pass `--flavor <name> --dart-define=FLAVOR=<name>`** — plain commands fail once `productFlavors` exists. Use `scripts/flavor.ps1`.
 
 ---
 
@@ -71,6 +72,7 @@ lib/
 ├── core/
 │   ├── constants.dart                          # AppConstants (maxHops, TTL, limits)
 │   ├── feature_flags.dart                      # FeatureFlags (all false in v1)
+│   ├── app_config.dart                         # AppConfig — flavor-driven (FLAVOR dart-define): db name, service ID prefix
 │   ├── router.dart                             # GoRouter with redirect logic
 │   └── utils/
 │       ├── uuid_generator.dart                 # Thin wrapper around uuid package
@@ -506,6 +508,7 @@ test/
   import 'package:drift/drift.dart';
   import 'package:drift_flutter/drift_flutter.dart';
   import 'package:flutter_riverpod/flutter_riverpod.dart';
+  import '../../core/app_config.dart';
   import 'tables/messages_table.dart';
   import 'tables/groups_table.dart';
   import 'tables/members_table.dart';
@@ -522,7 +525,7 @@ test/
     int get schemaVersion => 1;
 
     static QueryExecutor _openConnection() =>
-        driftDatabase(name: 'nearbuddy_db');
+        driftDatabase(name: AppConfig.databaseName);
   }
 
   final appDatabaseProvider = Provider<AppDatabase>((ref) {
@@ -1074,6 +1077,7 @@ test/
   import 'dart:convert';
   import 'package:nearby_connections/nearby_connections.dart';
   import 'package:flutter_riverpod/flutter_riverpod.dart';
+  import '../../core/app_config.dart';
   import '../../domain/services/peer_discovery_service.dart';
 
   class NearbyConnectionsService implements PeerDiscoveryService {
@@ -1111,7 +1115,7 @@ test/
 
     @override
     Future<void> startSession({required String groupId, required String nickname, String? pin}) async {
-      final svcId = 'com.nearbuddy.$groupId';
+      final svcId = AppConfig.nearbyServiceId(groupId);
       final adName = (pin != null && pin.isNotEmpty) ? '$nickname|$pin' : nickname;
 
       await _nearby.startAdvertising(adName, Strategy.P2P_CLUSTER,
@@ -2186,6 +2190,86 @@ test/
 
 ---
 
+## Task 10: Build Flavors (dev + prod)
+
+**Files:**
+- Modify: `android/app/build.gradle.kts` (flavorDimensions + productFlavors)
+- Modify: `android/app/src/main/AndroidManifest.xml` (label → `@string/app_name`)
+- Create: `lib/core/app_config.dart` (AppConfig — reads `FLAVOR` dart-define)
+- Create: `scripts/flavor.ps1` (wrapper script)
+
+**Context:** Added after Task 9 per product decision. Tasks 2/5 snippets already reference `AppConfig` (db name, service ID) — this task creates the class they use. **Once `productFlavors` exists, plain `flutter run` / `flutter build` without `--flavor` FAILS** — always use `scripts/flavor.ps1`.
+
+**Interfaces:**
+- Produces: `AppConfig.{flavor, isDev, databaseName, nearbyServiceId(groupId)}` — compile-time constants from `String.fromEnvironment('FLAVOR', defaultValue: 'prod')`
+- dev: applicationId `com.nearbuddy.nearbuddy.dev`, label "NearBuddy Dev", DB `nearbuddy_db_dev`, service ID `com.nearbuddy.dev.<gid>`
+- prod: applicationId `com.nearbuddy.nearbuddy`, label "NearBuddy", DB `nearbuddy_db`, service ID `com.nearbuddy.<gid>`
+
+- [ ] **Step 1: Add productFlavors to android/app/build.gradle.kts**
+
+  Inside `android { ... }` block (after `buildTypes`):
+  ```kotlin
+  flavorDimensions += "env"
+  productFlavors {
+      create("dev") {
+          dimension = "env"
+          applicationIdSuffix = ".dev"
+          resValue("string", "app_name", "NearBuddy Dev")
+      }
+      create("prod") {
+          dimension = "env"
+          resValue("string", "app_name", "NearBuddy")
+      }
+  }
+  ```
+
+- [ ] **Step 2: Use the flavor resource for the app label in AndroidManifest.xml**
+
+  Replace `android:label="nearbuddy"` with `android:label="@string/app_name"` (the `resValue` from Step 1 resolves per flavor).
+
+- [ ] **Step 3: Create lib/core/app_config.dart**
+  ```dart
+  /// Compile-time build flavor config. Set via --dart-define=FLAVOR=dev|prod.
+  abstract final class AppConfig {
+    static const String flavor =
+        String.fromEnvironment('FLAVOR', defaultValue: 'prod');
+    static const bool isDev = flavor == 'dev';
+    static const String databaseName = isDev ? 'nearbuddy_db_dev' : 'nearbuddy_db';
+
+    /// Nearby service ID — dev and prod builds must not discover each other.
+    static String nearbyServiceId(String groupId) =>
+        isDev ? 'com.nearbuddy.dev.$groupId' : 'com.nearbuddy.$groupId';
+  }
+  ```
+
+- [ ] **Step 4: Create scripts/flavor.ps1**
+  ```powershell
+  param(
+    [ValidateSet('dev','prod')][string]$Flavor = 'dev',
+    [ValidateSet('run','build')][string]$Action = 'run'
+  )
+  $ErrorActionPreference = 'Stop'
+  switch ($Action) {
+    'run'   { flutter run --flavor $Flavor --dart-define=FLAVOR=$Flavor }
+    'build' { flutter build apk --debug --flavor $Flavor --dart-define=FLAVOR=$Flavor }
+  }
+  ```
+  Usage: `.\scripts\flavor.ps1 -Flavor dev -Action build` (default: dev + run).
+
+- [ ] **Step 5: Verify both flavors build**
+  ```bash
+  .\scripts\flavor.ps1 -Flavor dev -Action build
+  .\scripts\flavor.ps1 -Flavor prod -Action build
+  ```
+  Expected: both BUILD SUCCESSFUL; dev APK has applicationId suffix `.dev` and label "NearBuddy Dev". Also confirm `flutter build apk --debug` WITHOUT `--flavor` now errors (expected — this is the new baseline).
+
+- [ ] **Step 6: Commit**
+  ```bash
+  git add . && git commit -m "feat: build flavors dev/prod — productFlavors, AppConfig (db name, service ID), flavor script"
+  ```
+
+---
+
 ## Spec Coverage Matrix
 
 | PRD Requirement | Task | Status |
@@ -2208,5 +2292,6 @@ test/
 | Drift SQLite persistence | T2 | ✅ Messages/Groups/Members + DAOs |
 | UUID relay dedup (30s cache) | T5 + T7 | ✅ _dedup() in ChatController |
 | Low-battery badge (< 20%) | T5 + T6 | ✅ lowBatteryProvider + HomeScreen badge |
+| Build flavors dev/prod | T10 | ✅ productFlavors + AppConfig (DB, service ID) + scripts/flavor.ps1 |
 
 > ⚠️ **Note:** Actual discovery interval slowdown (3× slower advertising) when `isLowBattery()` is true has the badge in place but the interval change in `NearbyConnectionsService.startSession()` is deferred to M4 polish phase — it requires passing the battery state into the service and hot-restarting advertising. The badge correctly signals the mode to users in MVP.
