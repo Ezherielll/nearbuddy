@@ -314,7 +314,9 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
   - `SessionsDao.deleteSession(String id)` → `Future<void>`
   - `sessionsDaoProvider` (Riverpod)
 
-- [ ] **Step 1: Add columns to existing tables**
+**Status: DONE (2026-08-07)** — 8/8 DB tests PASS, analyze clean, full suite 16/16, commit `030d88f`. Deviations vs snippet: (1) `GroupsDao.setMemberPublicKey(deviceId, groupId, pubB64)` + `memberPublicKey(deviceId)` were added HERE (schema-adjacent, not Task 9) — `memberPublicKey` is single-arg device-scoped because the X25519 keypair is per-device (same key across groups); Task 9's `pairwiseKeyFor` calls it with one argument; (2) `Value`/`isNull`/`isNotNull` in tests conflict with drift's query-builder exports — messages_dao_test uses `hide isNull`, sessions_dao_test needs no drift import (companion `.insert` with plain values); (3) `AppDatabase.forTesting(super.e)` kept from v1 Task 2.
+
+- [x] **Step 1: Add columns to existing tables**
 
   `messages_table.dart` — add before the `@override primaryKey` line:
   ```dart
@@ -325,7 +327,7 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
   TextColumn get publicKey => text().nullable()();  // base64 X25519 public key
   ```
 
-- [ ] **Step 2: Create `lib/data/database/tables/sessions_table.dart`**
+- [x] **Step 2: Create `lib/data/database/tables/sessions_table.dart`**
   ```dart
   import 'package:drift/drift.dart';
   @DataClassName('SessionRow')  // drift 2.31 defaults to 'Session'
@@ -339,7 +341,7 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
   }
   ```
 
-- [ ] **Step 3: Create `lib/data/database/daos/sessions_dao.dart`**
+- [x] **Step 3: Create `lib/data/database/daos/sessions_dao.dart`**
   ```dart
   import 'package:drift/drift.dart';
   import '../app_database.dart';
@@ -369,7 +371,7 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
   }
   ```
 
-- [ ] **Step 4: Update `app_database.dart` — register table, bump version, add migration**
+- [x] **Step 4: Update `app_database.dart` — register table, bump version, add migration**
 
   Changes: import + register `Sessions` and `SessionsDao` in `@DriftDatabase`, `schemaVersion => 2`, and add:
   ```dart
@@ -390,11 +392,11 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
       (ref) => ref.watch(appDatabaseProvider).sessionsDao);
   ```
 
-- [ ] **Step 5: Regenerate drift code**
+- [x] **Step 5: Regenerate drift code**
 
   Run: `flutter pub run build_runner build` — expect `app_database.g.dart`, `sessions_dao.g.dart` (and `sessions_table.g.dart` if generated) updated/created.
 
-- [ ] **Step 6: Update `test/data/database/messages_dao_test.dart`**
+- [x] **Step 6: Update `test/data/database/messages_dao_test.dart`**
 
   Keep existing 3 tests. Add a 4th:
   ```dart
@@ -409,7 +411,7 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
   });
   ```
 
-- [ ] **Step 7: Create `test/data/database/sessions_dao_test.dart`**
+- [x] **Step 7: Create `test/data/database/sessions_dao_test.dart`**
   ```dart
   import 'package:drift/native.dart';
   import 'package:flutter_test/flutter_test.dart';
@@ -442,13 +444,13 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
   ```
   Note: the migration test above is a smoke test only — the real upgrade path is verified implicitly by `forTesting` (fresh schema). If time permits, extend with `Migrator` steps from drift docs.
 
-- [ ] **Step 8: Run database tests — expect PASS**
+- [x] **Step 8: Run database tests — expect PASS**
 
   Run: `flutter test test/data/database -v` — Expected: all PASS.
 
-- [ ] **Step 9: flutter analyze** — Expected: no issues.
+- [x] **Step 9: flutter analyze** — Expected: no issues.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
   ```bash
   git add lib/data/database test/data/database
   git commit -m "feat: schema v2 — DM sessions table, messages.to, members.publicKey, migration 1->2"
