@@ -628,7 +628,9 @@ test/
   - `PermissionHandlerService.requestLocationPermission()` → `Future<bool>`
   - `AppLocalizations` generated from ARB files — all string keys available in Tasks 4–9
 
-- [ ] **Step 1: Create lib/data/preferences/app_preferences.dart**
+**Status: DONE (2026-08-07)** — build passes, analyze clean, commit `35f3be5`. Steps 1/3/4/5 were completed early in Task 1 (pulled forward because `main.dart`/`app.dart` need `AppPreferences` + `AppLocalizations`); Step 2 (`permission_handler_service.dart`) created here with imports fixed to the top of the file (plan snippet placed them mid-file). Generated l10n lives in `lib/l10n/` (see Task 3 Step 5 note).
+
+- [x] **Step 1: Create lib/data/preferences/app_preferences.dart**
   ```dart
   import 'package:shared_preferences/shared_preferences.dart';
 
@@ -654,7 +656,7 @@ test/
   }
   ```
 
-- [ ] **Step 2: Create lib/core/utils/permission_handler_service.dart**
+- [x] **Step 2: Create lib/core/utils/permission_handler_service.dart**
   ```dart
   import 'package:permission_handler/permission_handler.dart';
 
@@ -682,7 +684,7 @@ test/
       Provider<PermissionHandlerService>((_) => PermissionHandlerService());
   ```
 
-- [ ] **Step 3: Create lib/l10n/app_id.arb**
+- [x] **Step 3: Create lib/l10n/app_id.arb**
   ```json
   {
     "@@locale": "id",
@@ -722,7 +724,7 @@ test/
   }
   ```
 
-- [ ] **Step 4: Create lib/l10n/app_en.arb**
+- [x] **Step 4: Create lib/l10n/app_en.arb**
   ```json
   {
     "@@locale": "en",
@@ -762,19 +764,19 @@ test/
   }
   ```
 
-- [ ] **Step 5: Run flutter gen-l10n**
+- [x] **Step 5: Run flutter gen-l10n**
   ```bash
   flutter gen-l10n
   ```
   Expected: `lib/l10n/app_localizations.dart` (+ `_id.dart`, `_en.dart`) generated. NOTE: Flutter 3.44 removed `synthetic-package` — generated files land in `arb-dir` and are imported via `import 'l10n/app_localizations.dart';` (NOT `package:flutter_gen/...`).
 
-- [ ] **Step 6: Build verify**
+- [x] **Step 6: Build verify**
   ```bash
   flutter build apk --debug
   ```
   Expected: BUILD SUCCESSFUL
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
   ```bash
   git add . && git commit -m "feat: i18n (ID/EN ARBs), AppPreferences, PermissionHandlerService"
   ```
