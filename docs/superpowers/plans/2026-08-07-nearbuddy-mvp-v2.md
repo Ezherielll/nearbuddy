@@ -993,7 +993,9 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
   - `sendToAll(String payload)` / `sendTo(String endpointId, String payload)` — unchanged (envelope and control strings both pass through)
   - **Behavioral change:** adName = `nickname` only; the old `nickname|pin` leak is gone
 
-- [ ] **Step 1: Remove PIN from the advertisement name**
+**Status: DONE (2026-08-07)** — analyze clean, commit `97c4510`. Deviation vs snippet: the v1 PIN-reject block in `onConnectionInitiated` (`info.endpointName.endsWith('|$pin')`) was REMOVED along with the adName change — keeping it would reject every connection in PIN groups once the adName no longer carries the PIN. The `|`-parsing of peer names is also gone (dead code).
+
+- [x] **Step 1: Remove PIN from the advertisement name**
 
   In `startSession`, replace:
   ```dart
@@ -1005,15 +1007,15 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
   ```
   Keep the `pin` parameter (still accepted for signature stability) — it is now used only for the PIN check performed by `GroupController`/`KeyExchangeService` during the hello handshake (Task 11).
 
-- [ ] **Step 2: Confirm control payloads pass through unchanged**
+- [x] **Step 2: Confirm control payloads pass through unchanged**
 
   `sendTo` and `onPayloadReceived` already carry raw strings — no change needed. Relays distinguish envelopes (`v == 2`) from control messages by shape: `ChatController` (Task 12) ignores anything without `v: 2`.
 
-- [ ] **Step 3: Verify compile + analyze**
+- [x] **Step 3: Verify compile + analyze**
 
   Run: `flutter analyze` — Expected: no issues (note: `pin` param now unused inside this class is fine — it's part of the public interface used by GroupController).
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
   ```bash
   git add lib/infrastructure/nearby/nearby_connections_service.dart
   git commit -m "fix: remove PIN from advertisement name (E2EE handshake replaces it)"
