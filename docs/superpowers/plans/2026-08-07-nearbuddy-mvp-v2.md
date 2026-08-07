@@ -1043,7 +1043,7 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
   - `verificationDialog` — `showVerificationDialog(BuildContext, String sas)` → `Future<bool>` (match)
   - `nearbyGroupsProvider` (v1, unchanged)
 
-- [ ] **Step 1: Adapt v1 Task 6 code with E2EE wiring**
+- [x] **Step 1: Adapt v1 Task 6 code with E2EE wiring**
 
   Base all screens on the v1 plan Task 6 snippets (shadcn UI policy conversions apply: `ShadButton`, `ShadInput`, `ShadDialog`). Key differences in `group_controller.dart`:
   ```dart
@@ -1073,7 +1073,7 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
   ```
   Add `KeyExchangeService` to `groupControllerProvider` dependencies (constructor injection via `Ref`).
 
-- [ ] **Step 2: Create `verification_dialog.dart`**
+- [x] **Step 2: Create `verification_dialog.dart`**
   ```dart
   import 'package:flutter/material.dart';
   import 'package:shadcn_ui/shadcn_ui.dart';
@@ -1109,17 +1109,17 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
   - `verifyMatch`: "Angka Cocok" / "Numbers Match"
   - `verifyMismatch`: "Tidak Cocok" / "Mismatch"
 
-- [ ] **Step 3: Wire SAS challenge + group key delivery**
+- [x] **Step 3: Wire SAS challenge + group key delivery**
 
   In `HomeScreen`/`JoinGroupScreen`'s subscription (or `GroupController` constructor): listen to `keyExchange.onSasChallenge`, and for each value show `showVerificationDialog(context, sas)`; on `false` → `leaveGroup()` (sends `verify_fail` via `KeyExchangeService.confirmSas(false)`). On `true` → `confirmSas(true)` (sends `verify_ok`).
 
   Group key delivery (the sender side pinned in Task 9): subscribe to `keyExchange.onPeerVerified`; on each endpointId, if the join PIN was validated (matches the group's stored `Groups.pin` — validate before the SAS dialog proceeds; mismatch rejects the join) and this device holds the group key, call `keyExchange.sendGroupKeyTo(endpointId, groupId)`. Any key-holding member may deliver (trusted-member relay — keeps joins working when the owner is offline). Persist the peer's public key + nickname from the `hello` payload via `GroupsDao.setMemberPublicKey(deviceId, groupId, pubB64)` and `upsertMember(...)` — this is what enables DMs later (Task 13).
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
   Run: `flutter analyze` + `flutter build apk --debug` (no flavors yet until Task 15) — Expected: BUILD SUCCESSFUL.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
   ```bash
   git add lib/features lib/core/router.dart lib/l10n
   git commit -m "feat: home + group create/join with SAS device verification"
@@ -1145,7 +1145,7 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
   - `ChatController.watchMessages(sessionId)` (same Drift stream)
   - Relay rule (STABLE): forward when `hop < AppConstants.maxHops && age < AppConstants.relayTtlSeconds`; `copyWith(hop: hop+1)`; encrypted bytes untouched.
 
-- [ ] **Step 1: Write the failing test** — `test/features/chat/chat_controller_test.dart`
+- [x] **Step 1: Write the failing test** — `test/features/chat/chat_controller_test.dart`
   ```dart
   import 'dart:convert';
   import 'package:cryptography/cryptography.dart';
@@ -1185,9 +1185,9 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
   }
   ```
 
-- [ ] **Step 2: Run test — expect FAIL**
+- [x] **Step 2: Run test — expect FAIL**
 
-- [ ] **Step 3: Implement `chat_controller.dart` (v2)**
+- [x] **Step 3: Implement `chat_controller.dart` (v2)**
 
   Base on the v1 Task 7 snippet with these changes:
   ```dart
@@ -1217,17 +1217,17 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
 
   `sendTextMessage`: build `Message`, seal with group key, wrap envelope (id via `UuidGenerator`), `_peer.sendToAll(jsonEncode(env.toWireJson()))`.
 
-- [ ] **Step 4: Implement chat screen + bubble (v1 Task 7 snippets, shadcn-converted)**
+- [x] **Step 4: Implement chat screen + bubble (v1 Task 7 snippets, shadcn-converted)**
 
   `ShadTextarea` for composer (`maxLength: AppConstants.maxMessageLength`), `ShadIconButton` send, `ShadToaster` for errors. MessageBubble unchanged from v1 (renders `MessageRow`).
 
-- [ ] **Step 5: Run tests — expect PASS**
+- [x] **Step 5: Run tests — expect PASS**
 
   Run: `flutter test test/features/chat/chat_controller_test.dart -v` and `flutter test -v` (full suite)
 
-- [ ] **Step 6: flutter analyze** — Expected: no issues.
+- [x] **Step 6: flutter analyze** — Expected: no issues.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
   ```bash
   git add lib/features/chat test/features/chat
   git commit -m "feat: group chat with E2EE — seal/open envelopes, relay-without-decrypt, dedup on header id"
@@ -1251,7 +1251,7 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
   - `dmSessionsProvider` — `StreamProvider<List<SessionRow>>` over `sessionsDao.watchAllSessions()`
   - Routes: `/dms` (list), `/dm/:sessionId` (chat)
 
-- [ ] **Step 1: Extend ChatController with DM send**
+- [x] **Step 1: Extend ChatController with DM send**
 
   ```dart
   Future<void> sendDm(String sessionId, String peerDeviceId, String content) async {
@@ -1273,7 +1273,7 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
   }
   ```
 
-- [ ] **Step 2: Implement `dm_controller.dart`**
+- [x] **Step 2: Implement `dm_controller.dart`**
   ```dart
   final dmSessionsProvider = StreamProvider<List<SessionRow>>(
       (ref) => ref.watch(sessionsDaoProvider).watchAllSessions());
@@ -1299,12 +1299,12 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
   ```
   NOTE: `pairwiseKeyFor` already exists on `KeyExchangeService` (Task 9) and reads the member public key stored during the group handshake (Task 11's `GroupsDao.setMemberPublicKey`). If a DM is started with a peer whose pubkey is unknown (group handshake incomplete), it throws `StateError` — catch it and show `ShadToaster` error "Belum ada kunci perangkat — coba lagi setelah verifikasi grup" / l10n key `dmKeyMissing`.
 
-- [ ] **Step 3: DM screens**
+- [x] **Step 3: DM screens**
 
   `dm_sessions_screen.dart`: `Scaffold` + `AppBar("1:1")` + `StreamBuilder<List<SessionRow>>` → `ShadCard`/`ListTile` rows (peerNickname) → tap → `/dm/:id`.
   `dm_chat_screen.dart`: same layout as ChatScreen, reads `SessionRow` by id, calls `chatController.sendDm(...)`; incoming handling is shared (Task 12 already routes by `env.to == myDeviceId`).
 
-- [ ] **Step 4: Router additions**
+- [x] **Step 4: Router additions**
 
   ```dart
   GoRoute(path: '/dms', builder: (_, __) => const DmSessionsScreen()),
@@ -1312,11 +1312,11 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
   ```
   Home screen: add entry point (icon button / `ShadButton` outline) → `/dms`.
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
   Run: `flutter analyze` + `flutter test -v` — Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
   ```bash
   git add lib/features/chat lib/features/home lib/core/router.dart lib/features/group
   git commit -m "feat: DM 1:1 — sessions list, pairwise-key chat, to-addressed envelopes"
