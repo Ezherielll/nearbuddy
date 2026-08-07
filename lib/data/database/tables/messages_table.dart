@@ -12,6 +12,7 @@ class Messages extends Table {
   RealColumn get latitude => real().nullable()();
   RealColumn get longitude => real().nullable()();
   RealColumn get locationAccuracy => real().nullable()();
+  TextColumn get to => text().nullable()();       // DM recipient deviceId; null = group
   @override
   Set<Column> get primaryKey => {id};
 }

@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nearbuddy/data/database/app_database.dart';
@@ -39,5 +40,25 @@ void main() {
     ));
     expect(await db.groupsDao.isNicknameTaken('Bimo', 'g1', 'me'), isTrue);
     expect(await db.groupsDao.isNicknameTaken('Bimo', 'g1', 'other'), isFalse);
+  });
+
+  test('DM message persists `to` and filters by session id', () async {
+    await db.messagesDao.insertMessage(MessagesCompanion.insert(
+      id: 'dm-1', groupId: 's1', senderId: 'Bimo',
+      content: 'pribadi', type: 'text', timestamp: DateTime.utc(2026, 8, 8),
+      to: const Value('device-peer-1'),
+    ));
+    final rows = await db.messagesDao.watchMessages('s1').first;
+    expect(rows.single.to, 'device-peer-1');
+  });
+
+  test('memberPublicKey is device-scoped across groups', () async {
+    await db.groupsDao.upsertMember(MembersCompanion.insert(
+      deviceId: 'dev-x', groupId: 'g1',
+      nickname: 'Nadia', lastSeen: DateTime.now(),
+    ));
+    await db.groupsDao.setMemberPublicKey('dev-x', 'g1', 'pub-b64-1');
+    expect(await db.groupsDao.memberPublicKey('dev-x'), 'pub-b64-1');
+    expect(await db.groupsDao.memberPublicKey('dev-unknown'), isNull);
   });
 }

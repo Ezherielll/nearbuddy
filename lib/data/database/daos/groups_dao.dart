@@ -41,4 +41,21 @@ class GroupsDao extends DatabaseAccessor<AppDatabase> with _$GroupsDaoMixin {
         .get();
     return rows.isNotEmpty;
   }
+
+  Future<void> setMemberPublicKey(
+          String deviceId, String groupId, String pubKeyB64) =>
+      (update(members)
+            ..where((m) =>
+                m.deviceId.equals(deviceId) & m.groupId.equals(groupId)))
+          .write(MembersCompanion(publicKey: Value(pubKeyB64)));
+
+  /// Public key is device-scoped (one X25519 keypair per device), so the
+  /// groupId does not matter — return the latest known value for the device.
+  Future<String?> memberPublicKey(String deviceId) async {
+    final row = await (select(members)
+          ..where((m) => m.deviceId.equals(deviceId))
+          ..limit(1))
+        .getSingleOrNull();
+    return row?.publicKey;
+  }
 }

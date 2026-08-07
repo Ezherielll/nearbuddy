@@ -77,6 +77,11 @@ class $MessagesTable extends Messages
   late final GeneratedColumn<double> locationAccuracy = GeneratedColumn<double>(
       'location_accuracy', aliasedName, true,
       type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _toMeta = const VerificationMeta('to');
+  @override
+  late final GeneratedColumn<String> to = GeneratedColumn<String>(
+      'to', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -89,7 +94,8 @@ class $MessagesTable extends Messages
         deliveredTo,
         latitude,
         longitude,
-        locationAccuracy
+        locationAccuracy,
+        to
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -160,6 +166,9 @@ class $MessagesTable extends Messages
           locationAccuracy.isAcceptableOrUnknown(
               data['location_accuracy']!, _locationAccuracyMeta));
     }
+    if (data.containsKey('to')) {
+      context.handle(_toMeta, to.isAcceptableOrUnknown(data['to']!, _toMeta));
+    }
     return context;
   }
 
@@ -191,6 +200,8 @@ class $MessagesTable extends Messages
           .read(DriftSqlType.double, data['${effectivePrefix}longitude']),
       locationAccuracy: attachedDatabase.typeMapping.read(
           DriftSqlType.double, data['${effectivePrefix}location_accuracy']),
+      to: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}to']),
     );
   }
 
@@ -212,6 +223,7 @@ class MessageRow extends DataClass implements Insertable<MessageRow> {
   final double? latitude;
   final double? longitude;
   final double? locationAccuracy;
+  final String? to;
   const MessageRow(
       {required this.id,
       required this.groupId,
@@ -223,7 +235,8 @@ class MessageRow extends DataClass implements Insertable<MessageRow> {
       required this.deliveredTo,
       this.latitude,
       this.longitude,
-      this.locationAccuracy});
+      this.locationAccuracy,
+      this.to});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -243,6 +256,9 @@ class MessageRow extends DataClass implements Insertable<MessageRow> {
     }
     if (!nullToAbsent || locationAccuracy != null) {
       map['location_accuracy'] = Variable<double>(locationAccuracy);
+    }
+    if (!nullToAbsent || to != null) {
+      map['to'] = Variable<String>(to);
     }
     return map;
   }
@@ -266,6 +282,7 @@ class MessageRow extends DataClass implements Insertable<MessageRow> {
       locationAccuracy: locationAccuracy == null && nullToAbsent
           ? const Value.absent()
           : Value(locationAccuracy),
+      to: to == null && nullToAbsent ? const Value.absent() : Value(to),
     );
   }
 
@@ -284,6 +301,7 @@ class MessageRow extends DataClass implements Insertable<MessageRow> {
       latitude: serializer.fromJson<double?>(json['latitude']),
       longitude: serializer.fromJson<double?>(json['longitude']),
       locationAccuracy: serializer.fromJson<double?>(json['locationAccuracy']),
+      to: serializer.fromJson<String?>(json['to']),
     );
   }
   @override
@@ -301,6 +319,7 @@ class MessageRow extends DataClass implements Insertable<MessageRow> {
       'latitude': serializer.toJson<double?>(latitude),
       'longitude': serializer.toJson<double?>(longitude),
       'locationAccuracy': serializer.toJson<double?>(locationAccuracy),
+      'to': serializer.toJson<String?>(to),
     };
   }
 
@@ -315,7 +334,8 @@ class MessageRow extends DataClass implements Insertable<MessageRow> {
           String? deliveredTo,
           Value<double?> latitude = const Value.absent(),
           Value<double?> longitude = const Value.absent(),
-          Value<double?> locationAccuracy = const Value.absent()}) =>
+          Value<double?> locationAccuracy = const Value.absent(),
+          Value<String?> to = const Value.absent()}) =>
       MessageRow(
         id: id ?? this.id,
         groupId: groupId ?? this.groupId,
@@ -330,6 +350,7 @@ class MessageRow extends DataClass implements Insertable<MessageRow> {
         locationAccuracy: locationAccuracy.present
             ? locationAccuracy.value
             : this.locationAccuracy,
+        to: to.present ? to.value : this.to,
       );
   MessageRow copyWithCompanion(MessagesCompanion data) {
     return MessageRow(
@@ -347,6 +368,7 @@ class MessageRow extends DataClass implements Insertable<MessageRow> {
       locationAccuracy: data.locationAccuracy.present
           ? data.locationAccuracy.value
           : this.locationAccuracy,
+      to: data.to.present ? data.to.value : this.to,
     );
   }
 
@@ -363,14 +385,26 @@ class MessageRow extends DataClass implements Insertable<MessageRow> {
           ..write('deliveredTo: $deliveredTo, ')
           ..write('latitude: $latitude, ')
           ..write('longitude: $longitude, ')
-          ..write('locationAccuracy: $locationAccuracy')
+          ..write('locationAccuracy: $locationAccuracy, ')
+          ..write('to: $to')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, groupId, senderId, content, type,
-      timestamp, hopCount, deliveredTo, latitude, longitude, locationAccuracy);
+  int get hashCode => Object.hash(
+      id,
+      groupId,
+      senderId,
+      content,
+      type,
+      timestamp,
+      hopCount,
+      deliveredTo,
+      latitude,
+      longitude,
+      locationAccuracy,
+      to);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -385,7 +419,8 @@ class MessageRow extends DataClass implements Insertable<MessageRow> {
           other.deliveredTo == this.deliveredTo &&
           other.latitude == this.latitude &&
           other.longitude == this.longitude &&
-          other.locationAccuracy == this.locationAccuracy);
+          other.locationAccuracy == this.locationAccuracy &&
+          other.to == this.to);
 }
 
 class MessagesCompanion extends UpdateCompanion<MessageRow> {
@@ -400,6 +435,7 @@ class MessagesCompanion extends UpdateCompanion<MessageRow> {
   final Value<double?> latitude;
   final Value<double?> longitude;
   final Value<double?> locationAccuracy;
+  final Value<String?> to;
   final Value<int> rowid;
   const MessagesCompanion({
     this.id = const Value.absent(),
@@ -413,6 +449,7 @@ class MessagesCompanion extends UpdateCompanion<MessageRow> {
     this.latitude = const Value.absent(),
     this.longitude = const Value.absent(),
     this.locationAccuracy = const Value.absent(),
+    this.to = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   MessagesCompanion.insert({
@@ -427,6 +464,7 @@ class MessagesCompanion extends UpdateCompanion<MessageRow> {
     this.latitude = const Value.absent(),
     this.longitude = const Value.absent(),
     this.locationAccuracy = const Value.absent(),
+    this.to = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
         groupId = Value(groupId),
@@ -446,6 +484,7 @@ class MessagesCompanion extends UpdateCompanion<MessageRow> {
     Expression<double>? latitude,
     Expression<double>? longitude,
     Expression<double>? locationAccuracy,
+    Expression<String>? to,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -460,6 +499,7 @@ class MessagesCompanion extends UpdateCompanion<MessageRow> {
       if (latitude != null) 'latitude': latitude,
       if (longitude != null) 'longitude': longitude,
       if (locationAccuracy != null) 'location_accuracy': locationAccuracy,
+      if (to != null) 'to': to,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -476,6 +516,7 @@ class MessagesCompanion extends UpdateCompanion<MessageRow> {
       Value<double?>? latitude,
       Value<double?>? longitude,
       Value<double?>? locationAccuracy,
+      Value<String?>? to,
       Value<int>? rowid}) {
     return MessagesCompanion(
       id: id ?? this.id,
@@ -489,6 +530,7 @@ class MessagesCompanion extends UpdateCompanion<MessageRow> {
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       locationAccuracy: locationAccuracy ?? this.locationAccuracy,
+      to: to ?? this.to,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -529,6 +571,9 @@ class MessagesCompanion extends UpdateCompanion<MessageRow> {
     if (locationAccuracy.present) {
       map['location_accuracy'] = Variable<double>(locationAccuracy.value);
     }
+    if (to.present) {
+      map['to'] = Variable<String>(to.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -549,6 +594,7 @@ class MessagesCompanion extends UpdateCompanion<MessageRow> {
           ..write('latitude: $latitude, ')
           ..write('longitude: $longitude, ')
           ..write('locationAccuracy: $locationAccuracy, ')
+          ..write('to: $to, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -899,9 +945,15 @@ class $MembersTable extends Members with TableInfo<$MembersTable, MemberRow> {
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('CHECK ("is_active" IN (0, 1))'),
       defaultValue: const Constant(true));
+  static const VerificationMeta _publicKeyMeta =
+      const VerificationMeta('publicKey');
+  @override
+  late final GeneratedColumn<String> publicKey = GeneratedColumn<String>(
+      'public_key', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns =>
-      [deviceId, groupId, nickname, lastSeen, isActive];
+      [deviceId, groupId, nickname, lastSeen, isActive, publicKey];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -940,6 +992,10 @@ class $MembersTable extends Members with TableInfo<$MembersTable, MemberRow> {
       context.handle(_isActiveMeta,
           isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta));
     }
+    if (data.containsKey('public_key')) {
+      context.handle(_publicKeyMeta,
+          publicKey.isAcceptableOrUnknown(data['public_key']!, _publicKeyMeta));
+    }
     return context;
   }
 
@@ -959,6 +1015,8 @@ class $MembersTable extends Members with TableInfo<$MembersTable, MemberRow> {
           .read(DriftSqlType.dateTime, data['${effectivePrefix}last_seen'])!,
       isActive: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}is_active'])!,
+      publicKey: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}public_key']),
     );
   }
 
@@ -974,12 +1032,14 @@ class MemberRow extends DataClass implements Insertable<MemberRow> {
   final String nickname;
   final DateTime lastSeen;
   final bool isActive;
+  final String? publicKey;
   const MemberRow(
       {required this.deviceId,
       required this.groupId,
       required this.nickname,
       required this.lastSeen,
-      required this.isActive});
+      required this.isActive,
+      this.publicKey});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -988,6 +1048,9 @@ class MemberRow extends DataClass implements Insertable<MemberRow> {
     map['nickname'] = Variable<String>(nickname);
     map['last_seen'] = Variable<DateTime>(lastSeen);
     map['is_active'] = Variable<bool>(isActive);
+    if (!nullToAbsent || publicKey != null) {
+      map['public_key'] = Variable<String>(publicKey);
+    }
     return map;
   }
 
@@ -998,6 +1061,9 @@ class MemberRow extends DataClass implements Insertable<MemberRow> {
       nickname: Value(nickname),
       lastSeen: Value(lastSeen),
       isActive: Value(isActive),
+      publicKey: publicKey == null && nullToAbsent
+          ? const Value.absent()
+          : Value(publicKey),
     );
   }
 
@@ -1010,6 +1076,7 @@ class MemberRow extends DataClass implements Insertable<MemberRow> {
       nickname: serializer.fromJson<String>(json['nickname']),
       lastSeen: serializer.fromJson<DateTime>(json['lastSeen']),
       isActive: serializer.fromJson<bool>(json['isActive']),
+      publicKey: serializer.fromJson<String?>(json['publicKey']),
     );
   }
   @override
@@ -1021,6 +1088,7 @@ class MemberRow extends DataClass implements Insertable<MemberRow> {
       'nickname': serializer.toJson<String>(nickname),
       'lastSeen': serializer.toJson<DateTime>(lastSeen),
       'isActive': serializer.toJson<bool>(isActive),
+      'publicKey': serializer.toJson<String?>(publicKey),
     };
   }
 
@@ -1029,13 +1097,15 @@ class MemberRow extends DataClass implements Insertable<MemberRow> {
           String? groupId,
           String? nickname,
           DateTime? lastSeen,
-          bool? isActive}) =>
+          bool? isActive,
+          Value<String?> publicKey = const Value.absent()}) =>
       MemberRow(
         deviceId: deviceId ?? this.deviceId,
         groupId: groupId ?? this.groupId,
         nickname: nickname ?? this.nickname,
         lastSeen: lastSeen ?? this.lastSeen,
         isActive: isActive ?? this.isActive,
+        publicKey: publicKey.present ? publicKey.value : this.publicKey,
       );
   MemberRow copyWithCompanion(MembersCompanion data) {
     return MemberRow(
@@ -1044,6 +1114,7 @@ class MemberRow extends DataClass implements Insertable<MemberRow> {
       nickname: data.nickname.present ? data.nickname.value : this.nickname,
       lastSeen: data.lastSeen.present ? data.lastSeen.value : this.lastSeen,
       isActive: data.isActive.present ? data.isActive.value : this.isActive,
+      publicKey: data.publicKey.present ? data.publicKey.value : this.publicKey,
     );
   }
 
@@ -1054,14 +1125,15 @@ class MemberRow extends DataClass implements Insertable<MemberRow> {
           ..write('groupId: $groupId, ')
           ..write('nickname: $nickname, ')
           ..write('lastSeen: $lastSeen, ')
-          ..write('isActive: $isActive')
+          ..write('isActive: $isActive, ')
+          ..write('publicKey: $publicKey')
           ..write(')'))
         .toString();
   }
 
   @override
   int get hashCode =>
-      Object.hash(deviceId, groupId, nickname, lastSeen, isActive);
+      Object.hash(deviceId, groupId, nickname, lastSeen, isActive, publicKey);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1070,7 +1142,8 @@ class MemberRow extends DataClass implements Insertable<MemberRow> {
           other.groupId == this.groupId &&
           other.nickname == this.nickname &&
           other.lastSeen == this.lastSeen &&
-          other.isActive == this.isActive);
+          other.isActive == this.isActive &&
+          other.publicKey == this.publicKey);
 }
 
 class MembersCompanion extends UpdateCompanion<MemberRow> {
@@ -1079,6 +1152,7 @@ class MembersCompanion extends UpdateCompanion<MemberRow> {
   final Value<String> nickname;
   final Value<DateTime> lastSeen;
   final Value<bool> isActive;
+  final Value<String?> publicKey;
   final Value<int> rowid;
   const MembersCompanion({
     this.deviceId = const Value.absent(),
@@ -1086,6 +1160,7 @@ class MembersCompanion extends UpdateCompanion<MemberRow> {
     this.nickname = const Value.absent(),
     this.lastSeen = const Value.absent(),
     this.isActive = const Value.absent(),
+    this.publicKey = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   MembersCompanion.insert({
@@ -1094,6 +1169,7 @@ class MembersCompanion extends UpdateCompanion<MemberRow> {
     required String nickname,
     required DateTime lastSeen,
     this.isActive = const Value.absent(),
+    this.publicKey = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : deviceId = Value(deviceId),
         groupId = Value(groupId),
@@ -1105,6 +1181,7 @@ class MembersCompanion extends UpdateCompanion<MemberRow> {
     Expression<String>? nickname,
     Expression<DateTime>? lastSeen,
     Expression<bool>? isActive,
+    Expression<String>? publicKey,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1113,6 +1190,7 @@ class MembersCompanion extends UpdateCompanion<MemberRow> {
       if (nickname != null) 'nickname': nickname,
       if (lastSeen != null) 'last_seen': lastSeen,
       if (isActive != null) 'is_active': isActive,
+      if (publicKey != null) 'public_key': publicKey,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1123,6 +1201,7 @@ class MembersCompanion extends UpdateCompanion<MemberRow> {
       Value<String>? nickname,
       Value<DateTime>? lastSeen,
       Value<bool>? isActive,
+      Value<String?>? publicKey,
       Value<int>? rowid}) {
     return MembersCompanion(
       deviceId: deviceId ?? this.deviceId,
@@ -1130,6 +1209,7 @@ class MembersCompanion extends UpdateCompanion<MemberRow> {
       nickname: nickname ?? this.nickname,
       lastSeen: lastSeen ?? this.lastSeen,
       isActive: isActive ?? this.isActive,
+      publicKey: publicKey ?? this.publicKey,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1152,6 +1232,9 @@ class MembersCompanion extends UpdateCompanion<MemberRow> {
     if (isActive.present) {
       map['is_active'] = Variable<bool>(isActive.value);
     }
+    if (publicKey.present) {
+      map['public_key'] = Variable<String>(publicKey.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1166,6 +1249,287 @@ class MembersCompanion extends UpdateCompanion<MemberRow> {
           ..write('nickname: $nickname, ')
           ..write('lastSeen: $lastSeen, ')
           ..write('isActive: $isActive, ')
+          ..write('publicKey: $publicKey, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SessionsTable extends Sessions
+    with TableInfo<$SessionsTable, SessionRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SessionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _peerDeviceIdMeta =
+      const VerificationMeta('peerDeviceId');
+  @override
+  late final GeneratedColumn<String> peerDeviceId = GeneratedColumn<String>(
+      'peer_device_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _peerNicknameMeta =
+      const VerificationMeta('peerNickname');
+  @override
+  late final GeneratedColumn<String> peerNickname = GeneratedColumn<String>(
+      'peer_nickname', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [id, peerDeviceId, peerNickname, createdAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'sessions';
+  @override
+  VerificationContext validateIntegrity(Insertable<SessionRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('peer_device_id')) {
+      context.handle(
+          _peerDeviceIdMeta,
+          peerDeviceId.isAcceptableOrUnknown(
+              data['peer_device_id']!, _peerDeviceIdMeta));
+    } else if (isInserting) {
+      context.missing(_peerDeviceIdMeta);
+    }
+    if (data.containsKey('peer_nickname')) {
+      context.handle(
+          _peerNicknameMeta,
+          peerNickname.isAcceptableOrUnknown(
+              data['peer_nickname']!, _peerNicknameMeta));
+    } else if (isInserting) {
+      context.missing(_peerNicknameMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SessionRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SessionRow(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      peerDeviceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}peer_device_id'])!,
+      peerNickname: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}peer_nickname'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+    );
+  }
+
+  @override
+  $SessionsTable createAlias(String alias) {
+    return $SessionsTable(attachedDatabase, alias);
+  }
+}
+
+class SessionRow extends DataClass implements Insertable<SessionRow> {
+  final String id;
+  final String peerDeviceId;
+  final String peerNickname;
+  final DateTime createdAt;
+  const SessionRow(
+      {required this.id,
+      required this.peerDeviceId,
+      required this.peerNickname,
+      required this.createdAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['peer_device_id'] = Variable<String>(peerDeviceId);
+    map['peer_nickname'] = Variable<String>(peerNickname);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  SessionsCompanion toCompanion(bool nullToAbsent) {
+    return SessionsCompanion(
+      id: Value(id),
+      peerDeviceId: Value(peerDeviceId),
+      peerNickname: Value(peerNickname),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory SessionRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SessionRow(
+      id: serializer.fromJson<String>(json['id']),
+      peerDeviceId: serializer.fromJson<String>(json['peerDeviceId']),
+      peerNickname: serializer.fromJson<String>(json['peerNickname']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'peerDeviceId': serializer.toJson<String>(peerDeviceId),
+      'peerNickname': serializer.toJson<String>(peerNickname),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  SessionRow copyWith(
+          {String? id,
+          String? peerDeviceId,
+          String? peerNickname,
+          DateTime? createdAt}) =>
+      SessionRow(
+        id: id ?? this.id,
+        peerDeviceId: peerDeviceId ?? this.peerDeviceId,
+        peerNickname: peerNickname ?? this.peerNickname,
+        createdAt: createdAt ?? this.createdAt,
+      );
+  SessionRow copyWithCompanion(SessionsCompanion data) {
+    return SessionRow(
+      id: data.id.present ? data.id.value : this.id,
+      peerDeviceId: data.peerDeviceId.present
+          ? data.peerDeviceId.value
+          : this.peerDeviceId,
+      peerNickname: data.peerNickname.present
+          ? data.peerNickname.value
+          : this.peerNickname,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SessionRow(')
+          ..write('id: $id, ')
+          ..write('peerDeviceId: $peerDeviceId, ')
+          ..write('peerNickname: $peerNickname, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, peerDeviceId, peerNickname, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SessionRow &&
+          other.id == this.id &&
+          other.peerDeviceId == this.peerDeviceId &&
+          other.peerNickname == this.peerNickname &&
+          other.createdAt == this.createdAt);
+}
+
+class SessionsCompanion extends UpdateCompanion<SessionRow> {
+  final Value<String> id;
+  final Value<String> peerDeviceId;
+  final Value<String> peerNickname;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const SessionsCompanion({
+    this.id = const Value.absent(),
+    this.peerDeviceId = const Value.absent(),
+    this.peerNickname = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SessionsCompanion.insert({
+    required String id,
+    required String peerDeviceId,
+    required String peerNickname,
+    required DateTime createdAt,
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        peerDeviceId = Value(peerDeviceId),
+        peerNickname = Value(peerNickname),
+        createdAt = Value(createdAt);
+  static Insertable<SessionRow> custom({
+    Expression<String>? id,
+    Expression<String>? peerDeviceId,
+    Expression<String>? peerNickname,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (peerDeviceId != null) 'peer_device_id': peerDeviceId,
+      if (peerNickname != null) 'peer_nickname': peerNickname,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SessionsCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? peerDeviceId,
+      Value<String>? peerNickname,
+      Value<DateTime>? createdAt,
+      Value<int>? rowid}) {
+    return SessionsCompanion(
+      id: id ?? this.id,
+      peerDeviceId: peerDeviceId ?? this.peerDeviceId,
+      peerNickname: peerNickname ?? this.peerNickname,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (peerDeviceId.present) {
+      map['peer_device_id'] = Variable<String>(peerDeviceId.value);
+    }
+    if (peerNickname.present) {
+      map['peer_nickname'] = Variable<String>(peerNickname.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SessionsCompanion(')
+          ..write('id: $id, ')
+          ..write('peerDeviceId: $peerDeviceId, ')
+          ..write('peerNickname: $peerNickname, ')
+          ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1178,14 +1542,16 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $MessagesTable messages = $MessagesTable(this);
   late final $GroupsTable groups = $GroupsTable(this);
   late final $MembersTable members = $MembersTable(this);
+  late final $SessionsTable sessions = $SessionsTable(this);
   late final MessagesDao messagesDao = MessagesDao(this as AppDatabase);
   late final GroupsDao groupsDao = GroupsDao(this as AppDatabase);
+  late final SessionsDao sessionsDao = SessionsDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities =>
-      [messages, groups, members];
+      [messages, groups, members, sessions];
 }
 
 typedef $$MessagesTableCreateCompanionBuilder = MessagesCompanion Function({
@@ -1200,6 +1566,7 @@ typedef $$MessagesTableCreateCompanionBuilder = MessagesCompanion Function({
   Value<double?> latitude,
   Value<double?> longitude,
   Value<double?> locationAccuracy,
+  Value<String?> to,
   Value<int> rowid,
 });
 typedef $$MessagesTableUpdateCompanionBuilder = MessagesCompanion Function({
@@ -1214,6 +1581,7 @@ typedef $$MessagesTableUpdateCompanionBuilder = MessagesCompanion Function({
   Value<double?> latitude,
   Value<double?> longitude,
   Value<double?> locationAccuracy,
+  Value<String?> to,
   Value<int> rowid,
 });
 
@@ -1259,6 +1627,9 @@ class $$MessagesTableFilterComposer
   ColumnFilters<double> get locationAccuracy => $composableBuilder(
       column: $table.locationAccuracy,
       builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get to => $composableBuilder(
+      column: $table.to, builder: (column) => ColumnFilters(column));
 }
 
 class $$MessagesTableOrderingComposer
@@ -1303,6 +1674,9 @@ class $$MessagesTableOrderingComposer
   ColumnOrderings<double> get locationAccuracy => $composableBuilder(
       column: $table.locationAccuracy,
       builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get to => $composableBuilder(
+      column: $table.to, builder: (column) => ColumnOrderings(column));
 }
 
 class $$MessagesTableAnnotationComposer
@@ -1346,6 +1720,9 @@ class $$MessagesTableAnnotationComposer
 
   GeneratedColumn<double> get locationAccuracy => $composableBuilder(
       column: $table.locationAccuracy, builder: (column) => column);
+
+  GeneratedColumn<String> get to =>
+      $composableBuilder(column: $table.to, builder: (column) => column);
 }
 
 class $$MessagesTableTableManager extends RootTableManager<
@@ -1382,6 +1759,7 @@ class $$MessagesTableTableManager extends RootTableManager<
             Value<double?> latitude = const Value.absent(),
             Value<double?> longitude = const Value.absent(),
             Value<double?> locationAccuracy = const Value.absent(),
+            Value<String?> to = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               MessagesCompanion(
@@ -1396,6 +1774,7 @@ class $$MessagesTableTableManager extends RootTableManager<
             latitude: latitude,
             longitude: longitude,
             locationAccuracy: locationAccuracy,
+            to: to,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -1410,6 +1789,7 @@ class $$MessagesTableTableManager extends RootTableManager<
             Value<double?> latitude = const Value.absent(),
             Value<double?> longitude = const Value.absent(),
             Value<double?> locationAccuracy = const Value.absent(),
+            Value<String?> to = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               MessagesCompanion.insert(
@@ -1424,6 +1804,7 @@ class $$MessagesTableTableManager extends RootTableManager<
             latitude: latitude,
             longitude: longitude,
             locationAccuracy: locationAccuracy,
+            to: to,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
@@ -1616,6 +1997,7 @@ typedef $$MembersTableCreateCompanionBuilder = MembersCompanion Function({
   required String nickname,
   required DateTime lastSeen,
   Value<bool> isActive,
+  Value<String?> publicKey,
   Value<int> rowid,
 });
 typedef $$MembersTableUpdateCompanionBuilder = MembersCompanion Function({
@@ -1624,6 +2006,7 @@ typedef $$MembersTableUpdateCompanionBuilder = MembersCompanion Function({
   Value<String> nickname,
   Value<DateTime> lastSeen,
   Value<bool> isActive,
+  Value<String?> publicKey,
   Value<int> rowid,
 });
 
@@ -1650,6 +2033,9 @@ class $$MembersTableFilterComposer
 
   ColumnFilters<bool> get isActive => $composableBuilder(
       column: $table.isActive, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get publicKey => $composableBuilder(
+      column: $table.publicKey, builder: (column) => ColumnFilters(column));
 }
 
 class $$MembersTableOrderingComposer
@@ -1675,6 +2061,9 @@ class $$MembersTableOrderingComposer
 
   ColumnOrderings<bool> get isActive => $composableBuilder(
       column: $table.isActive, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get publicKey => $composableBuilder(
+      column: $table.publicKey, builder: (column) => ColumnOrderings(column));
 }
 
 class $$MembersTableAnnotationComposer
@@ -1700,6 +2089,9 @@ class $$MembersTableAnnotationComposer
 
   GeneratedColumn<bool> get isActive =>
       $composableBuilder(column: $table.isActive, builder: (column) => column);
+
+  GeneratedColumn<String> get publicKey =>
+      $composableBuilder(column: $table.publicKey, builder: (column) => column);
 }
 
 class $$MembersTableTableManager extends RootTableManager<
@@ -1730,6 +2122,7 @@ class $$MembersTableTableManager extends RootTableManager<
             Value<String> nickname = const Value.absent(),
             Value<DateTime> lastSeen = const Value.absent(),
             Value<bool> isActive = const Value.absent(),
+            Value<String?> publicKey = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               MembersCompanion(
@@ -1738,6 +2131,7 @@ class $$MembersTableTableManager extends RootTableManager<
             nickname: nickname,
             lastSeen: lastSeen,
             isActive: isActive,
+            publicKey: publicKey,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -1746,6 +2140,7 @@ class $$MembersTableTableManager extends RootTableManager<
             required String nickname,
             required DateTime lastSeen,
             Value<bool> isActive = const Value.absent(),
+            Value<String?> publicKey = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               MembersCompanion.insert(
@@ -1754,6 +2149,7 @@ class $$MembersTableTableManager extends RootTableManager<
             nickname: nickname,
             lastSeen: lastSeen,
             isActive: isActive,
+            publicKey: publicKey,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
@@ -1775,6 +2171,158 @@ typedef $$MembersTableProcessedTableManager = ProcessedTableManager<
     (MemberRow, BaseReferences<_$AppDatabase, $MembersTable, MemberRow>),
     MemberRow,
     PrefetchHooks Function()>;
+typedef $$SessionsTableCreateCompanionBuilder = SessionsCompanion Function({
+  required String id,
+  required String peerDeviceId,
+  required String peerNickname,
+  required DateTime createdAt,
+  Value<int> rowid,
+});
+typedef $$SessionsTableUpdateCompanionBuilder = SessionsCompanion Function({
+  Value<String> id,
+  Value<String> peerDeviceId,
+  Value<String> peerNickname,
+  Value<DateTime> createdAt,
+  Value<int> rowid,
+});
+
+class $$SessionsTableFilterComposer
+    extends Composer<_$AppDatabase, $SessionsTable> {
+  $$SessionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get peerDeviceId => $composableBuilder(
+      column: $table.peerDeviceId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get peerNickname => $composableBuilder(
+      column: $table.peerNickname, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$SessionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $SessionsTable> {
+  $$SessionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get peerDeviceId => $composableBuilder(
+      column: $table.peerDeviceId,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get peerNickname => $composableBuilder(
+      column: $table.peerNickname,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$SessionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SessionsTable> {
+  $$SessionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get peerDeviceId => $composableBuilder(
+      column: $table.peerDeviceId, builder: (column) => column);
+
+  GeneratedColumn<String> get peerNickname => $composableBuilder(
+      column: $table.peerNickname, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$SessionsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $SessionsTable,
+    SessionRow,
+    $$SessionsTableFilterComposer,
+    $$SessionsTableOrderingComposer,
+    $$SessionsTableAnnotationComposer,
+    $$SessionsTableCreateCompanionBuilder,
+    $$SessionsTableUpdateCompanionBuilder,
+    (SessionRow, BaseReferences<_$AppDatabase, $SessionsTable, SessionRow>),
+    SessionRow,
+    PrefetchHooks Function()> {
+  $$SessionsTableTableManager(_$AppDatabase db, $SessionsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SessionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SessionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SessionsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> peerDeviceId = const Value.absent(),
+            Value<String> peerNickname = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SessionsCompanion(
+            id: id,
+            peerDeviceId: peerDeviceId,
+            peerNickname: peerNickname,
+            createdAt: createdAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String peerDeviceId,
+            required String peerNickname,
+            required DateTime createdAt,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SessionsCompanion.insert(
+            id: id,
+            peerDeviceId: peerDeviceId,
+            peerNickname: peerNickname,
+            createdAt: createdAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$SessionsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $SessionsTable,
+    SessionRow,
+    $$SessionsTableFilterComposer,
+    $$SessionsTableOrderingComposer,
+    $$SessionsTableAnnotationComposer,
+    $$SessionsTableCreateCompanionBuilder,
+    $$SessionsTableUpdateCompanionBuilder,
+    (SessionRow, BaseReferences<_$AppDatabase, $SessionsTable, SessionRow>),
+    SessionRow,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -1785,4 +2333,6 @@ class $AppDatabaseManager {
       $$GroupsTableTableManager(_db, _db.groups);
   $$MembersTableTableManager get members =>
       $$MembersTableTableManager(_db, _db.members);
+  $$SessionsTableTableManager get sessions =>
+      $$SessionsTableTableManager(_db, _db.sessions);
 }
