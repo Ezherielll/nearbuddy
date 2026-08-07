@@ -1,11 +1,11 @@
 # NearBuddy — AGENTS.md
 
-Offline-first P2P mesh messenger (Flutter, Android-only) using Google Nearby Connections — general-purpose (not outdoor-specific), 1:1 + group chat, full E2EE. Tasks 1–5 of the v1 plan are DONE; the rest of the work follows the v2 plan. Do not `flutter run` without `--flavor` (see Commands).
+Offline-first P2P mesh messenger (Flutter, Android-only) using Google Nearby Connections — general-purpose (not outdoor-specific), 1:1 + group chat, full E2EE. v2 plan Tasks 6–15 are DONE (crypto core, schema v2, wire v2, key exchange, group chat, DM, location, settings, flavors); Task 16 (3-device smoke checklist) pending manual testing. Do not `flutter run` without `--flavor` (see Commands).
 
 ## Canonical documents (read before coding)
 
 - `NearBuddy_PRD.md` — product spec, in Indonesian. **Section 14 (Decisions Log) supersedes earlier sections** — D-11…D-16 (added 2026-08-07) bring 1:1 chat, E2EE at v1, device-key identity, general-purpose positioning, PIN moved out of the advertisement name.
-- `docs/superpowers/plans/2026-08-07-nearbuddy-mvp-v2.md` — the **authoritative implementation plan** (replaces v1 for tasks ≥6): crypto core → schema v2 → wire v2 → key exchange → group chat E2EE → DM → location → settings/flavors → smoke checklist. v1 plan (`2026-08-07-nearbuddy-mvp.md`) is only authoritative for the DONE tasks 1–5 and its Global Constraints/UI Policy (still in force). Follow the plan task-by-task (subagent-driven-development or executing-plans workflow); deviate only if forced.
+- `docs/superpowers/plans/2026-08-07-nearbuddy-mvp-v2.md` — the **authoritative implementation plan** (replaces v1 for tasks ≥6): crypto core → schema v2 → wire v2 → key exchange → group chat E2EE → DM → location → settings/flavors → smoke checklist. Tasks 6–15 DONE, Task 16 manual. v1 plan (`2026-08-07-nearbuddy-mvp.md`) is only authoritative for the DONE tasks 1–5 and its Global Constraints/UI Policy (still in force). Follow the plan task-by-task (subagent-driven-development or executing-plans workflow); deviate only if forced.
 
 ## Hard constraints
 
@@ -27,7 +27,7 @@ Offline-first P2P mesh messenger (Flutter, Android-only) using Google Nearby Con
 - Generate l10n: `flutter gen-l10n` — **required after editing ARB files** in `lib/l10n/`. Flutter 3.44 removed `synthetic-package`; generated files land in `lib/l10n/` and are imported as `import 'l10n/app_localizations.dart';` (never `package:flutter_gen/...`).
 - `intl` is pinned to `^0.20.2` by Flutter 3.44 (via `flutter_localizations`) — do not downgrade to ^0.19.
 - Single test: `flutter test test/<path>.dart -v`. Full suite: `flutter test -v`. Pure-Dart crypto tests need no device/plugin (KeyManager test uses a fake `KeyValueStore`).
-- Run/build MUST use flavors: `.\scripts\flavor.ps1 -Flavor dev -Action run|build` (wraps `--flavor dev --dart-define=FLAVOR=dev`; `prod` also available). Plain `flutter run`/`flutter build` **without `--flavor` fails** once Task 15 lands — until then plain commands still work. `flutter test` needs no flavor (AppConfig defaults to `prod`).
+- Run/build MUST use flavors: `.\scripts\flavor.ps1 -Flavor dev -Action run|build` (wraps `--flavor dev --dart-define=FLAVOR=dev`; `prod` also available). NOTE: on this project's AGP 9, plain `flutter run`/`build` still succeeds (no flavor error) — but it builds WITHOUT the `FLAVOR` dart-define, so always use the script to keep `--flavor` and `--dart-define` paired. `flutter test` needs no flavor (AppConfig defaults to `prod`).
 - Flavor differences (from `lib/core/app_config.dart`): dev = applicationId `.dev` suffix, label "NearBuddy Dev", DB `nearbuddy_db_dev`, Nearby service ID `com.nearbuddy.dev.<gid>`; prod = clean values. Never hardcode — use `AppConfig.nearbyServiceId(groupId)` / `AppConfig.databaseName`.
 
 ## Gotchas

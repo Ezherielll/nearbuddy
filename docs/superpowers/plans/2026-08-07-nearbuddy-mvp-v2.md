@@ -1336,11 +1336,11 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
 - Consumes: `geolocator`, `PermissionHandlerService`, Task 12 ChatController.
 - Produces: `ChatController.sendLocationPing()` → `Future<String?>` (null = ok; non-null = error message) — same as v1, but payload now sealed.
 
-- [ ] **Step 1: Port v1 Task 8 code**
+- [x] **Step 1: Port v1 Task 8 code**
 
   Use the v1 Task 8 snippets verbatim, with one change: the `Message` goes through the same seal+envelope path as `sendTextMessage` (kind from current session: 'g' in group chat, 'dm' in DM chat). LocationPingCard: coordinates + "Buka di Maps" deep link (`https://maps.google.com/maps?q=$lat,$lng` via `url_launcher`) — no map library (per D-05).
 
-- [ ] **Step 2: Verify + Commit**
+- [x] **Step 2: Verify + Commit**
   ```bash
   flutter analyze && flutter build apk --debug
   git add lib/features/chat lib/l10n
@@ -1361,13 +1361,15 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
 **Interfaces:**
 - Produces: `AppConfig.{flavor, isDev, databaseName, nearbyServiceId(groupId)}`; dev = `.dev` applicationId + label "NearBuddy Dev" + `nearbuddy_db_dev` + `com.nearbuddy.dev.<gid>`; prod = clean. **After this task, all run/build MUST use `scripts/flavor.ps1`.**
 
-- [ ] **Step 1: Settings screen additions**
+**Status: DONE (2026-08-07)** — analyze clean, tests 28/28, dev+prod APK build OK, commit `65e85bd`. Deviations vs v1 Task 10: (1) AGP 9 rejects `resValue` in flavors ("custom resource values… feature is disabled"; `androidResources.generateResourceValues` unresolved) → label overridden via flavor manifest `android/app/src/dev/AndroidManifest.xml` with `tools:replace="android:label"` instead; main manifest keeps hardcoded "NearBuddy"; (2) plain `flutter build apk --debug` still succeeds on AGP 9 (builds without flavor/dart-define) — plan's "plain commands fail" expectation does NOT hold here; always use `scripts/flavor.ps1` anyway so `--flavor` and `--dart-define=FLAVOR` stay paired; (3) `ShadToast.success` doesn't exist in 0.56 (only `destructive`/`raw`) → plain `ShadToast` for the nickname-saved toast; (4) `android/build/` artifacts were committed once and removed (`/build/` added to `android/.gitignore`); (5) settings uses `ShadSelect` + `ShadInput` per UI Policy; ARB adds `deviceIdLabel`/`nicknameSaved`.
+
+- [x] **Step 1: Settings screen additions**
 
   Add a read-only tile showing `deviceId` (from `myDeviceIdProvider`) — label l10n `deviceIdLabel` ("ID Perangkat" / "Device ID"). Port v1 Task 9 (language dropdown → `ShadSelect`, nickname edit → `ShadInput` + save button, per UI Policy).
 
-- [ ] **Step 2–6: Port v1 Task 10 steps 1–5 verbatim** (productFlavors, manifest label, AppConfig verify, flavor.ps1, verify both flavors build).
+- [x] **Step 2–6: Port v1 Task 10 steps 1–5 verbatim** (productFlavors, manifest label, AppConfig verify, flavor.ps1, verify both flavors build).
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
   ```bash
   git add lib/features/settings lib/core android scripts lib/l10n
   git commit -m "feat: settings (deviceId, language, nickname) + build flavors dev/prod"
@@ -1376,6 +1378,8 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
 ---
 
 ## Task 16: E2E Smoke Test Checklist (manual, 3 devices)
+
+> **Status: PENDING MANUAL TESTING (2026-08-07)** — code for Tasks 6–15 is complete and unit-tested (28/28). This checklist requires 3 physical Android devices (Nearby Connections does not run on emulators) and stays unchecked until field-tested. Items 1–4 need two devices; 5–6 need three.
 
 - [ ] Fresh install (no keystore seed) → `deviceId` generated, stable across restarts
 - [ ] Create group with PIN → second device joins → both show same 6-digit SAS → confirm → chat works
