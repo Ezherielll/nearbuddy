@@ -89,7 +89,9 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
   - `CryptoService.sas(SimpleKeyPair mine, SimplePublicKey theirs)` → `Future<String>` (6 digits, symmetric)
   - `keyManagerProvider`, `cryptoServiceProvider`, `myDeviceIdProvider` (Riverpod, `FutureProvider`)
 
-- [ ] **Step 1: Add dependencies**
+**Status: DONE (2026-08-07)** — 4/4 tests PASS, analyze clean, full suite 11/11, commit `b2d2324`. Deviations vs snippet: (1) `FakeStorage` in the test must `implements KeyValueStore` (Dart has no structural typing); (2) `SimplePublicKey` exposes `.bytes`, not `export()`; (3) `crypto_service.dart` needs `dart:typed_data`; (4) `hkdf.deriveKey().extractBytes()` returns `Future<List<int>>` — wrap with `Uint8List.fromList`; (5) test drops the unused `dart:convert` import.
+
+- [x] **Step 1: Add dependencies**
 
   In `pubspec.yaml` dependencies block add:
   ```yaml
@@ -98,7 +100,7 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
   ```
   Run `flutter pub get` — expect success.
 
-- [ ] **Step 2: Write the failing test** — `test/domain/services/crypto_test.dart`
+- [x] **Step 2: Write the failing test** — `test/domain/services/crypto_test.dart`
   ```dart
   import 'dart:convert';
   import 'package:cryptography/cryptography.dart';
@@ -155,11 +157,11 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
   }
   ```
 
-- [ ] **Step 3: Run test — expect FAIL** (files missing)
+- [x] **Step 3: Run test — expect FAIL** (files missing)
 
   Run: `flutter test test/domain/services/crypto_test.dart -v` — Expected: compile error, no such files.
 
-- [ ] **Step 4: Implement `lib/core/crypto/crypto_service.dart`**
+- [x] **Step 4: Implement `lib/core/crypto/crypto_service.dart`**
   ```dart
   import 'dart:convert';
   import 'package:cryptography/cryptography.dart';
@@ -206,7 +208,7 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
   }
   ```
 
-- [ ] **Step 5: Implement `lib/core/crypto/key_manager.dart`**
+- [x] **Step 5: Implement `lib/core/crypto/key_manager.dart`**
   ```dart
   import 'dart:convert';
   import 'package:cryptography/cryptography.dart';
@@ -247,7 +249,7 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
   }
   ```
 
-- [ ] **Step 6: Implement `lib/core/crypto/identity_providers.dart`**
+- [x] **Step 6: Implement `lib/core/crypto/identity_providers.dart`**
   ```dart
   import 'package:flutter_riverpod/flutter_riverpod.dart';
   import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -274,14 +276,14 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
   }
   ```
 
-- [ ] **Step 7: Run test — expect PASS**
+- [x] **Step 7: Run test — expect PASS**
 
   Run: `flutter test test/domain/services/crypto_test.dart -v`
   Expected: 4/4 PASS (KeyManager test uses the fake storage — no plugin needed).
 
-- [ ] **Step 8: flutter analyze** — Expected: no issues.
+- [x] **Step 8: flutter analyze** — Expected: no issues.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
   ```bash
   git add pubspec.yaml pubspec.lock lib/core/crypto test/domain/services/crypto_test.dart
   git commit -m "feat: crypto core — X25519 identity keys, AES-GCM seal/open, HKDF pairwise, SAS 6-digit"
