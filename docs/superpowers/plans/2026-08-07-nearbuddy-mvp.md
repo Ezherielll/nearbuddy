@@ -134,17 +134,19 @@ test/
 **Files:**
 - Create: `pubspec.yaml`, `lib/main.dart`, `lib/app.dart`, `l10n.yaml`
 - Create: `lib/core/constants.dart`, `lib/core/feature_flags.dart`, `lib/core/router.dart`
-- Modify: `android/app/build.gradle` (minSdk 23), `android/app/src/main/AndroidManifest.xml`
+- Modify: `android/app/build.gradle.kts` (minSdk 23 — Flutter 3.44 template is Kotlin DSL, not Groovy `build.gradle`), `android/app/src/main/AndroidManifest.xml`
 
 **Interfaces:**
 - Produces: `AppConstants`, `FeatureFlags`, placeholder `appRouter` — all available to downstream tasks
 
-- [ ] **Step 1: flutter create**
+**Status: DONE (2026-08-07)** — all 13 steps complete; build & analyze pass. Forced deviations: `intl` ^0.20.2 (SDK-pinned), `AppPreferences` + ARB files + `gen-l10n` pulled forward from Task 3 (required by `main.dart`/`app.dart`), template `test/widget_test.dart` deleted, `ShadThemeData` is non-const.
+
+- [x] **Step 1: flutter create**
   ```bash
   flutter create --org com.nearbuddy --project-name nearbuddy --platforms android .
   ```
 
-- [ ] **Step 2: Replace pubspec.yaml**
+- [x] **Step 2: Replace pubspec.yaml**
   ```yaml
   name: nearbuddy
   description: Offline group chat using Nearby Connections.
@@ -183,9 +185,9 @@ test/
     generate: true
   ```
 
-- [ ] **Step 3: flutter pub get** — verify no errors
+- [x] **Step 3: flutter pub get** — verify no errors
 
-- [ ] **Step 4: Create lib/core/constants.dart**
+- [x] **Step 4: Create lib/core/constants.dart**
   ```dart
   abstract final class AppConstants {
     static const int maxHops = 3;
@@ -202,7 +204,7 @@ test/
   }
   ```
 
-- [ ] **Step 5: Create lib/core/feature_flags.dart**
+- [x] **Step 5: Create lib/core/feature_flags.dart**
   ```dart
   abstract final class FeatureFlags {
     /// SOS Broadcast — premium v1.1+
@@ -216,7 +218,7 @@ test/
   }
   ```
 
-- [ ] **Step 6: Set minSdk 23 in android/app/build.gradle**
+- [x] **Step 6: Set minSdk 23 in android/app/build.gradle**
 
   In `android { defaultConfig { ... } }` block:
   ```groovy
@@ -224,7 +226,7 @@ test/
   targetSdkVersion 34
   ```
 
-- [ ] **Step 7: Add permissions to android/app/src/main/AndroidManifest.xml**
+- [x] **Step 7: Add permissions to android/app/src/main/AndroidManifest.xml**
 
   Add `xmlns:tools="http://schemas.android.com/tools"` to `<manifest>` tag.
   Inside `<manifest>`, before `<application>`:
@@ -243,7 +245,7 @@ test/
   <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
   ```
 
-- [ ] **Step 8: Create lib/main.dart**
+- [x] **Step 8: Create lib/main.dart**
   ```dart
   import 'package:flutter/material.dart';
   import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -266,7 +268,7 @@ test/
   }
   ```
 
-- [ ] **Step 9: Create lib/app.dart**
+- [x] **Step 9: Create lib/app.dart**
   ```dart
   import 'package:flutter/material.dart';
   import 'package:flutter_localizations/flutter_localizations.dart';
@@ -315,7 +317,7 @@ test/
 
   Notes: `ShadApp.custom` is required because we use GoRouter (`MaterialApp.router` per shadcn interop guide). `GlobalShadLocalizations.delegate` must be added alongside the Material delegates. `ShadAppBuilder` wires shadcn's theme/builder into the Material tree. The green color scheme replaces the old `ColorScheme.fromSeed(seedColor: 0xFF1E6B4A)` theme. `ShadThemeData` is NOT a const constructor in 0.56.x — only the color scheme itself is `const`.
 
-- [ ] **Step 10: Create placeholder lib/core/router.dart**
+- [x] **Step 10: Create placeholder lib/core/router.dart**
   ```dart
   import 'package:go_router/go_router.dart';
   import 'package:flutter/material.dart';
@@ -333,20 +335,20 @@ test/
 
   Update `main()` to initialize `appRouter = buildRouter(prefs);` before `runApp`.
 
-- [ ] **Step 11: Create l10n.yaml at project root**
+- [x] **Step 11: Create l10n.yaml at project root**
   ```yaml
   arb-dir: lib/l10n
   template-arb-file: app_id.arb
   output-localization-file: app_localizations.dart
   ```
 
-- [ ] **Step 12: Verify debug build**
+- [x] **Step 12: Verify debug build**
   ```bash
   flutter build apk --debug
   ```
   Expected: BUILD SUCCESSFUL
 
-- [ ] **Step 13: Commit**
+- [x] **Step 13: Commit**
   ```bash
   git init && git add . && git commit -m "feat: scaffold project — dependencies, constants, feature flags, Android permissions"
   ```
