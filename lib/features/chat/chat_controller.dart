@@ -3,9 +3,11 @@ import 'dart:convert';
 import 'package:cryptography/cryptography.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../core/constants.dart';
 import '../../core/crypto/crypto_service.dart';
 import '../../core/crypto/identity_providers.dart';
+import '../../core/utils/permission_handler_service.dart';
 import '../../core/utils/uuid_generator.dart';
 import '../../data/database/app_database.dart';
 import '../../data/database/daos/messages_dao.dart';
@@ -90,18 +92,47 @@ class ChatController {
   }
 
   Future<void> sendTextMessage(String content) async {
-    final gid = _gid;
-    if (gid == null) return;
-    final keyBytes = _kx.groupKeyFor(gid);
-    if (keyBytes == null) return;
+    if (_gid == null) return;
     final msg = Message(
       senderId: _prefs.nickname ?? 'Unknown', content: content,
       type: MessageType.text, timestamp: DateTime.now(),
     );
-    final box = await _crypto.seal(jsonEncode(msg.toPayloadJson()), SecretKeyData(keyBytes));
+    await _sealAndSend(msg);
+  }
+
+  Future<void> sendDm(String sessionId, String peerDeviceId, String content) async {
+    final msg = Message(
+      senderId: _prefs.nickname ?? 'Unknown', content: content,
+      type: MessageType.text, timestamp: DateTime.now(),
+    );
+    await _sealAndSend(msg, dmSessionId: sessionId, dmPeerDeviceId: peerDeviceId);
+  }
+
+  /// Shared seal+send path: group ('g') by default, DM when peer is given.
+  Future<void> _sealAndSend(Message msg,
+      {String? dmSessionId, String? dmPeerDeviceId}) async {
+    final SecretKey key;
+    final String gid;
+    final String? to;
+    final String kind;
+    if (dmPeerDeviceId != null) {
+      key = SecretKeyData(await _kx.pairwiseKeyFor(dmPeerDeviceId));
+      gid = dmSessionId!;
+      to = dmPeerDeviceId;
+      kind = 'dm';
+    } else {
+      final g = _gid;
+      final keyBytes = g == null ? null : _kx.groupKeyFor(g);
+      if (g == null || keyBytes == null) return;
+      key = SecretKeyData(keyBytes);
+      gid = g;
+      to = null;
+      kind = 'g';
+    }
+    final box = await _crypto.seal(jsonEncode(msg.toPayloadJson()), key);
     final env = MessageEnvelope(
-      id: UuidGenerator.generate(), gid: gid, hop: 0, max: AppConstants.maxHops,
-      ts: DateTime.now(), kind: 'g',
+      id: UuidGenerator.generate(), gid: gid, to: to,
+      hop: 0, max: AppConstants.maxHops, ts: DateTime.now(), kind: kind,
       nonce: Uint8List.fromList(box.nonce),
       ciphertext: Uint8List.fromList([...box.cipherText, ...box.mac.bytes]),
     );
@@ -110,22 +141,33 @@ class ChatController {
     await _peer.sendToAll(jsonEncode(env.toWireJson()));
   }
 
-  Future<void> sendDm(String sessionId, String peerDeviceId, String content) async {
-    final msg = Message(
-      senderId: _prefs.nickname ?? 'Unknown', content: content,
-      type: MessageType.text, timestamp: DateTime.now(),
-    );
-    final key = SecretKeyData(await _kx.pairwiseKeyFor(peerDeviceId));
-    final box = await _crypto.seal(jsonEncode(msg.toPayloadJson()), key);
-    final env = MessageEnvelope(
-      id: UuidGenerator.generate(), gid: sessionId, to: peerDeviceId,
-      hop: 0, max: AppConstants.maxHops, ts: DateTime.now(), kind: 'dm',
-      nonce: Uint8List.fromList(box.nonce),
-      ciphertext: Uint8List.fromList([...box.cipherText, ...box.mac.bytes]),
-    );
-    await _persist(env, msg);
-    _dedup(env.id);
-    await _peer.sendToAll(jsonEncode(env.toWireJson()));
+  /// Returns null on success, an error message otherwise.
+  Future<String?> sendLocationPing(
+      {String? dmSessionId, String? dmPeerDeviceId}) async {
+    if (_gid == null && dmSessionId == null) return 'No active session';
+    final ok = await _ref
+        .read(permissionHandlerServiceProvider)
+        .requestLocationPermission();
+    if (!ok) return 'Location permission denied';
+    try {
+      final pos = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high,
+          timeLimit: const Duration(seconds: 10));
+      final msg = Message(
+        senderId: _prefs.nickname ?? 'Unknown',
+        content: '${pos.latitude},${pos.longitude}',
+        type: MessageType.location,
+        timestamp: DateTime.now(),
+        latitude: pos.latitude,
+        longitude: pos.longitude,
+        locationAccuracy: pos.accuracy,
+      );
+      await _sealAndSend(msg,
+          dmSessionId: dmSessionId, dmPeerDeviceId: dmPeerDeviceId);
+      return null;
+    } catch (e) {
+      return 'GPS error: $e';
+    }
   }
 
   Future<void> _persist(MessageEnvelope env, Message msg) =>

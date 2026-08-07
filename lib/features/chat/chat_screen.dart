@@ -93,6 +93,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             child: Row(children: [
+              ShadIconButton(
+                icon: const Icon(LucideIcons.mapPin),
+                onPressed: () => _sendLocationPing(controller),
+              ),
               Expanded(
                 child: ShadTextarea(
                   controller: _msgCtrl,
@@ -118,5 +122,31 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (text.isEmpty) return;
     _msgCtrl.clear();
     await c.sendTextMessage(text);
+  }
+
+  Future<void> _sendLocationPing(ChatController c) async {
+    final l10n = AppLocalizations.of(context)!;
+    final ok = await showShadDialog<bool>(
+      context: context,
+      builder: (ctx) => ShadDialog(
+        title: Text(l10n.sendLocation),
+        description: Text(l10n.sendLocationConfirm),
+        actions: [
+          ShadButton.outline(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(l10n.verifyMismatch),
+          ),
+          ShadButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(l10n.sendLocation),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    final err = await c.sendLocationPing();
+    if (err != null && mounted) {
+      ShadToaster.of(context).show(ShadToast.destructive(title: Text(err)));
+    }
   }
 }
