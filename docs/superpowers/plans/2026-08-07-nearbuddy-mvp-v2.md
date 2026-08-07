@@ -672,6 +672,8 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
   - `KeyExchangeService.groupKeyFor(groupId)` → `Future<Uint8List?>` (in-memory map)
   - `KeyExchangeService.pairwiseKeyFor(String peerDeviceId)` → `Future<Uint8List>` (derived from stored member pubkey)
   - `KeyExchangeService.generateGroupKey(groupId)` → `Future<Uint8List>`
+  - **`KeyExchangeService.sendGroupKeyTo(String endpointId, String groupId)`** → `Future<void>` — DELIVERY side of the group key. Sends `key` sealed under the pairwise key for that endpoint. **MUST only be called after that endpoint's `verify_ok` was received** (SAS confirmed both ways) and the join PIN was validated (if the group uses one). Any member holding the group key may deliver it (trusted-member relay — a key holder can read the group anyway, so delegation does not change the trust model; this keeps joins working when the owner is offline).
+  - `KeyExchangeService.onPeerVerified` → `Stream<String>` (endpointId) — fires when a peer's `verify_ok` arrives; this is the trigger for `sendGroupKeyTo`
   - Verification UX hooks: `onSasChallenge` stream → `Stream<String>`; `confirmSas(bool match)` — mismatch sends `verify_fail` + disconnects
   - `keyExchangeServiceProvider` (Riverpod):
     ```dart
@@ -688,9 +690,15 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
   ```dart
   import 'dart:convert';
   import 'package:cryptography/cryptography.dart';
+  import 'package:drift/native.dart';
   import 'package:flutter_test/flutter_test.dart';
   import 'package:nearbuddy/core/crypto/crypto_service.dart';
+  import 'package:nearbuddy/core/crypto/key_manager.dart';
+  import 'package:nearbuddy/data/database/app_database.dart';
+  import 'package:nearbuddy/data/database/tables/members_table.dart';
   import 'package:nearbuddy/domain/models/key_payloads.dart';
+  import 'package:nearbuddy/domain/services/key_exchange_service.dart';
+  import 'package:nearbuddy/domain/services/peer_discovery_service.dart';
 
   void main() {
     final crypto = CryptoService();
@@ -731,8 +739,91 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
       expect(await crypto.sas(a, bPub), await crypto.sas(b, aPub));
       expect(await crypto.sas(a, cPub), isNot(await crypto.sas(a, bPub)));
     });
+
+    test('sendGroupKeyTo sends nothing without a key, and a decryptable key with one', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      final owner = await crypto.generateKeyPair();
+      final member = await crypto.generateKeyPair();
+      final memberPub = await member.extractPublicKey();
+      final memberPubB64 = base64Encode(await memberPub.export());
+
+      // peer's public key is stored during the group handshake (Task 11 wiring)
+      await db.groupsDao.upsertMember(MembersCompanion.insert(
+        deviceId: 'dev-peer', groupId: 'g1', nickname: 'Nadia',
+        lastSeen: DateTime.now(),
+      ));
+      await db.groupsDao.setMemberPublicKey('dev-peer', 'g1', memberPubB64);
+
+      final peer = _FakePeer();
+      final ownerSeed = await owner.extractPrivateKeyBytes();
+      final svc = KeyExchangeService(
+        crypto,
+        KeyManager(_MemoryStore({KeyManager._kIdentityPriv: base64Encode(ownerSeed)})),
+        db.groupsDao,
+        peer,
+      );
+
+      // no group key yet → nothing is sent
+      await svc.sendGroupKeyTo('ep-1', 'g1');
+      expect(peer.sentTo('ep-1'), isEmpty);
+
+      // with a group key → payload decrypts to the group key on the member side
+      final groupKey = await svc.generateGroupKey('g1');
+      await svc.sendGroupKeyTo('ep-1', 'g1');
+      final delivery = KeyDelivery.fromJson(jsonDecode(peer.sentTo('ep-1').single));
+      expect(delivery.gid, 'g1');
+      final ownerPub = await owner.extractPublicKey();
+      final pairwise = await crypto.pairwiseKeyBytes(member, ownerPub);
+      final opened = await crypto.open(
+          SecretBox.fromConcatenation(base64Decode(delivery.key), nonceLength: 12),
+          SecretKeyData(pairwise));
+      expect(base64Decode(opened), groupKey);
+    });
+  }
+
+  class _MemoryStore implements KeyValueStore {
+    final Map<String, String> _m;
+    _MemoryStore(this._m);
+    @override
+    Future<String?> read({required String key}) async => _m[key];
+    @override
+    Future<void> write({required String key, required String value}) async =>
+        _m[key] = value;
+  }
+
+  class _FakePeer implements PeerDiscoveryService {
+    final _sent = <String, List<String>>{};
+    List<String> sentTo(String endpointId) => _sent[endpointId] ?? const [];
+
+    @override
+    Future<void> sendTo(String endpointId, String jsonPayload) async {
+      (_sent[endpointId] ??= []).add(jsonPayload);
+    }
+
+    @override
+    Future<void> startSession(
+        {required String groupId, required String nickname, String? pin}) async {}
+
+    @override
+    Future<void> stopSession() async {}
+
+    @override
+    Future<Set<String>> sendToAll(String jsonPayload) async => {};
+
+    @override
+    Stream<({String endpointId, String nickname})> get onPeerConnected =>
+        const Stream.empty();
+    @override
+    Stream<String> get onPeerDisconnected => const Stream.empty();
+    @override
+    Stream<({String fromEndpointId, String payload})> get onPayloadReceived =>
+        const Stream.empty();
+    @override
+    Stream<Set<String>> get connectedPeersStream => const Stream.empty();
   }
   ```
+  NOTE: `KeyManager._kIdentityPriv` is a private constant — expose it as `@visibleForTesting static const identityKeyStorageKey` in Task 6 Step 5 so the test can seed a known identity. If it stays private, the test seeds via the same string literal `'identity_priv_seed_b64'`.
 
 - [ ] **Step 2: Run test — expect FAIL**
 
@@ -795,11 +886,16 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
     final _groupKeys = <String, Uint8List>{};
     final _endpointPubKeys = <String, SimplePublicKey>{};   // endpointId → pubkey
     final _sasChallengeCtrl = StreamController<String>.broadcast();
+    final _peerVerifiedCtrl = StreamController<String>.broadcast();
 
     KeyExchangeService(this._crypto, this._keys, this._groupsDao, this._peer);
 
     /// SAS to display for the active join; UI subscribes and calls [confirmSas].
     Stream<String> get onSasChallenge => _sasChallengeCtrl.stream;
+
+    /// Fires with the endpointId once that peer confirmed the SAS match.
+    /// This is the trigger for delivering the group key (Task 11 wiring).
+    Stream<String> get onPeerVerified => _peerVerifiedCtrl.stream;
 
     Future<Uint8List> generateGroupKey(String groupId) async {
       final k = await _crypto.generateKeyPair();
@@ -809,6 +905,21 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
     }
 
     Uint8List? groupKeyFor(String groupId) => _groupKeys[groupId];
+
+    /// Delivery side of the group key. Call ONLY after the endpoint's
+    /// `verify_ok` was received (SAS confirmed both ways) and, for PIN
+    /// groups, the join PIN was validated (Task 11). No-op without a key.
+    Future<void> sendGroupKeyTo(String endpointId, String groupId) async {
+      final key = _groupKeys[groupId];
+      final pub = _endpointPubKeys[endpointId];
+      if (key == null || pub == null) return;
+      final pairwise =
+          await _crypto.pairwiseKeyBytes(await _keys.ensureIdentityKey(), pub);
+      final box = await _crypto.seal(base64Encode(key), SecretKeyData(pairwise));
+      final packed = base64Encode([...box.nonce, ...box.cipherText, ...box.mac.bytes]);
+      await _peer.sendTo(endpointId,
+          jsonEncode(KeyDelivery(gid: groupId, key: packed).toJson()));
+    }
 
     Future<Uint8List> pairwiseKeyFor(String peerDeviceId) async {
       final b64 = await _groupsDao.memberPublicKey(peerDeviceId);
@@ -828,7 +939,8 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
               await _keys.ensureIdentityKey(), _endpointPubKeys[fromEndpointId]!);
           _sasChallengeCtrl.add(sas);
         case 'verify_ok':
-          // PIN authorization + member pubkey persistence wired in Task 11 (GroupController).
+          // peer confirmed the SAS — fire the trigger for group key delivery
+          _peerVerifiedCtrl.add(fromEndpointId);
         case 'verify_fail':
           await _peer.stopSession();
         case 'key':
@@ -987,9 +1099,11 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
   - `verifyMatch`: "Angka Cocok" / "Numbers Match"
   - `verifyMismatch`: "Tidak Cocok" / "Mismatch"
 
-- [ ] **Step 3: Wire SAS challenge to the dialog**
+- [ ] **Step 3: Wire SAS challenge + group key delivery**
 
-  In `HomeScreen`/`JoinGroupScreen`'s subscription (or `GroupController` constructor): listen to `keyExchange.onSasChallenge`, and for each value show `showVerificationDialog(context, sas)`; on `false` → `leaveGroup()`.
+  In `HomeScreen`/`JoinGroupScreen`'s subscription (or `GroupController` constructor): listen to `keyExchange.onSasChallenge`, and for each value show `showVerificationDialog(context, sas)`; on `false` → `leaveGroup()` (sends `verify_fail` via `KeyExchangeService.confirmSas(false)`). On `true` → `confirmSas(true)` (sends `verify_ok`).
+
+  Group key delivery (the sender side pinned in Task 9): subscribe to `keyExchange.onPeerVerified`; on each endpointId, if the join PIN was validated (matches the group's stored `Groups.pin` — validate before the SAS dialog proceeds; mismatch rejects the join) and this device holds the group key, call `keyExchange.sendGroupKeyTo(endpointId, groupId)`. Any key-holding member may deliver (trusted-member relay — keeps joins working when the owner is offline). Persist the peer's public key + nickname from the `hello` payload via `GroupsDao.setMemberPublicKey(deviceId, groupId, pubB64)` and `upsertMember(...)` — this is what enables DMs later (Task 13).
 
 - [ ] **Step 4: Verify**
 
@@ -1260,7 +1374,7 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
 - [ ] Group chat A→B direct; A→C via B (relay 2-hop) — C decrypts, B's UI shows nothing (verify by checking B's DB has no content: run `flutter test` fixture or inspect via debug)
 - [ ] DM A→B while a third device C is in range — C receives envelope but cannot decrypt (content absent in C's DB)
 - [ ] Message > 500 chars blocked; retention cleanup after 7 days (shorten constant temporarily if needed)
-- [ ] App restart mid-session → group key gone → messages unreadable (documented limitation; UI shows generic "tidak dapat mendekripsi" via l10n `decryptFailed`)
+- [ ] App restart mid-session → group key gone → **NEW incoming** messages show `decryptFailed`; previously stored messages remain readable in the DB; re-join re-keys the session
 - [ ] dev flavor: app label "NearBuddy Dev", DB `nearbuddy_db_dev`, service ID `com.nearbuddy.dev.<gid>`; dev and prod builds do NOT see each other
 - [ ] Location ping: GPS fix, card shows coords, "Buka di Maps" opens
 
@@ -1282,7 +1396,7 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
 ## Risks & Limitations (accepted)
 
 - **No forward secrecy** — static group key for session lifetime; double-ratchet deferred to v1.1.
-- **Group key in memory only** — app restart loses it; messages persisted in that window are undecryptable (UI: `decryptFailed`).
+- **Group key in memory only** — app restart loses the key. Already-stored messages stay readable (they are persisted decrypted in Drift after receipt); only NEW incoming envelopes cannot be decrypted until re-join/re-key (UI: `decryptFailed`).
 - **No rekey on member leave** — leaving members still hold the key; acceptable for trusted-groups model, revisit in v1.1.
 - **DM requires prior group contact** (peer pubkey known) — standalone DM v1.1.
 - **At-rest DB plaintext** — SQLCipher v1.1 (PRD D-16).

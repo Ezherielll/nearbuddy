@@ -2,6 +2,16 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> ⚠️ **SUPERSEDED (2026-08-07):** Tasks 1–5 are DONE and authoritative. **Tasks 6–10 are REPLACED** by `docs/superpowers/plans/2026-08-07-nearbuddy-mvp-v2.md` (v2 Tasks 11–15) — the plaintext wire format, PIN-in-advertisement-name handling, and "no encryption" constraint below are **DEAD**. Do NOT implement Tasks 6–10 from this file.
+
+| v1 Task (DO NOT implement) | v2 replacement |
+|---|---|
+| Task 6: Home Screen + Group Create/Join | v2 Task 11 (Home + Create/Join + SAS verification) |
+| Task 7: Chat + Multi-Hop Relay | v2 Task 12 (Group chat E2EE + relay-without-decrypt) |
+| Task 8: Location Ping | v2 Task 14 |
+| Task 9: Settings Screen | v2 Task 15 (settings part) |
+| Task 10: Build Flavors | v2 Task 15 (flavors part) |
+
 **Goal:** Build the NearBuddy MVP — an offline-first, peer-to-peer Flutter app (Android) for group chat, location sharing, and multi-hop mesh relay using Google Nearby Connections, with no internet or cellular required.
 
 **Architecture:** Clean architecture with feature/domain/data layers. Drift (SQLite) for local persistence. `PeerDiscoveryService` abstraction wrapping `nearby_connections` package. Flood routing with UUID-based deduplication for multi-hop relay (max 3 hops, TTL 10s).
@@ -1237,6 +1247,8 @@ test/
 
 ## Task 6: Home Screen + Group Create/Join
 
+> ⚠️ **Status: SUPERSEDED — do not implement (see v2 Task 11).**
+
 **Files:**
 - Create: `lib/domain/models/group_session.dart`
 - Create: `lib/features/home/home_screen.dart`
@@ -1554,6 +1566,8 @@ test/
 ---
 
 ## Task 7: Chat Screen + Text Messaging + Multi-Hop Relay
+
+> ⚠️ **Status: SUPERSEDED — do not implement (see v2 Task 12). The wire payload below is the DEAD v1 plaintext format.**
 
 **Files:**
 - Create: `lib/domain/models/message.dart`
@@ -1945,6 +1959,8 @@ test/
 
 ## Task 8: Location Ping
 
+> ⚠️ **Status: SUPERSEDED — do not implement (see v2 Task 14).**
+
 **Files:**
 - Replace: `lib/features/chat/widgets/location_ping_card.dart` (full implementation)
 - Modify: `lib/features/chat/chat_controller.dart` (add `sendLocationPing`)
@@ -2085,6 +2101,8 @@ test/
 
 ## Task 9: Settings Screen + Final Wiring
 
+> ⚠️ **Status: SUPERSEDED — do not implement (see v2 Task 15, settings part).**
+
 **Files:**
 - Create: `lib/features/settings/settings_screen.dart`
 - Modify: `lib/core/router.dart` (replace settings stub with SettingsScreen)
@@ -2202,6 +2220,8 @@ test/
 ---
 
 ## Task 10: Build Flavors (dev + prod)
+
+> ⚠️ **Status: SUPERSEDED — do not implement (see v2 Task 15, flavors part).**
 
 **Files:**
 - Modify: `android/app/build.gradle.kts` (flavorDimensions + productFlavors)
