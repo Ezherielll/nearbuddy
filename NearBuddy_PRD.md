@@ -713,6 +713,12 @@ Minggu 14–16:  Public Beta (Google Play Open Testing)
 | D-08 | **Disclaimer hukum** | Wajib di-accept saat onboarding (sekali, disimpan SharedPreferences) | Tambahkan screen disclaimer di Flow 1 (Onboarding); store `hasAcceptedDisclaimer` flag |
 | D-09 | **Flutter plugin** | Pakai `nearby_connections` pub.dev + abstraction layer `PeerDiscoveryService` | Interface abstraction memungkinkan swap ke custom wrapper tanpa ubah business logic |
 | D-10 | **Monetisasi** | Freemium: fitur dasar gratis; SOS + offline map sebagai fitur premium di v1.1+ | Bangun feature flag system (`FeatureFlags` class) dari M1 untuk gate fitur premium |
+| D-11 | **Private chat (1:1)** | Masuk scope v1 — model terpisah: field `to` di wire JSON + kolom `to` di tabel Messages + tabel `sessions` untuk DM | Update wire format & schema (plan v2 Task 7–8, 13); DM v1 dimulai dari member list grup |
+| D-12 | **E2EE di v1** | Full E2EE: X25519 identity key per device + verifikasi SAS 6 digit + enkripsi payload AES-GCM; relay TIDAK bisa membaca isi pesan | Wire format v2 (envelope: header cleartext, payload terenkripsi); tanpa forward secrecy di v1 (didokumentasikan) |
+| D-13 | **Identitas** | Identity = keypair perangkat (X25519, private key di Android Keystore); nickname hanya label tampilan | Menghapus spoofing nickname sebagai dasar identitas; `deviceId` diturunkan dari public key |
+| D-14 | **Positioning** | General-purpose offline mesh messenger (TIDAK spesifik outdoor/festival) | Persona & contoh use case PRD tetap berlaku sebagai ilustrasi; onboarding & onboarding disclaimer tetap |
+| D-15 | **PIN join** | PIN TIDAK lagi dibroadcast di nama advertising (lubang keamanan) — pindah ke handshake hello terenkripsi saat join | Update NearbyConnectionsService (plan v2 Task 10) |
+| D-16 | **Deferral v1.1** | SQLCipher (at-rest), DM standalone (tanpa grup), forward secrecy (double ratchet), rekey saat member keluar → v1.1 | Didokumentasikan di plan v2 Risks & Limitations |
 
 ---
 
@@ -746,3 +752,4 @@ Minggu 14–16:  Public Beta (Google Play Open Testing)
 | 1.0 | 7 Agustus 2026 | Initial draft |
 | 1.1 | 7 Agustus 2026 | Update local storage: Hive → Drift |
 | 1.2 | 7 Agustus 2026 | Semua 10 Open Questions dijawab dan dikonsolidasikan ke Decisions Log; implikasi teknis ditambahkan ke milestones |
+| 1.3 | 7 Agustus 2026 | D-11 s/d D-16: 1:1 chat + E2EE di v1, identitas device key, positioning general-purpose, PIN dipindah dari advertisement name; implementasi mengikuti plan v2 (`docs/superpowers/plans/2026-08-07-nearbuddy-mvp-v2.md`) |
