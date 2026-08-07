@@ -477,7 +477,9 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
     ```
     Canonical open (ALL tasks): `SecretBox.fromConcatenation([...nonce, ...cipherWithMac], nonceLength: 12)` where `cipherWithMac = base64Decode(c)` — the AES-GCM tag is appended to the ciphertext; the MAC is never stripped before transport.
 
-- [ ] **Step 1: Write the failing test** — `test/domain/models/message_envelope_test.dart`
+**Status: DONE (2026-08-07)** — 4/4 tests PASS, analyze clean, full suite 20/20, commit `25c0ab3`. Deviation vs snippet: test constructors must wrap literals in `Uint8List.fromList(...)` / `Uint8List(0)` — `MessageEnvelope` fields are `Uint8List` (Dart has no implicit `List<int>` → `Uint8List` coercion). Note: `message.dart` did not exist before this task (v1 Task 7 that created it was superseded — no conflict).
+
+- [x] **Step 1: Write the failing test** — `test/domain/models/message_envelope_test.dart`
   ```dart
   import 'dart:convert';
   import 'package:cryptography/cryptography.dart';
@@ -537,9 +539,9 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
   }
   ```
 
-- [ ] **Step 2: Run test — expect FAIL** (files missing)
+- [x] **Step 2: Run test — expect FAIL** (files missing)
 
-- [ ] **Step 3: Create `lib/domain/models/message.dart` (payload-only)**
+- [x] **Step 3: Create `lib/domain/models/message.dart` (payload-only)**
   ```dart
   enum MessageType { text, location }
 
@@ -581,7 +583,7 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
   }
   ```
 
-- [ ] **Step 4: Create `lib/domain/models/message_envelope.dart`**
+- [x] **Step 4: Create `lib/domain/models/message_envelope.dart`**
   ```dart
   import 'dart:convert';
   import 'dart:typed_data';
@@ -639,13 +641,13 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
   }
   ```
 
-- [ ] **Step 5: Run test — expect PASS**
+- [x] **Step 5: Run test — expect PASS**
 
   Run: `flutter test test/domain/models/message_envelope_test.dart -v`
 
-- [ ] **Step 6: flutter analyze** — Expected: no issues.
+- [x] **Step 6: flutter analyze** — Expected: no issues.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
   ```bash
   git add lib/domain/models test/domain/models
   git commit -m "feat: wire format v2 — envelope (cleartext header + AES-GCM payload), payload-only Message model"
