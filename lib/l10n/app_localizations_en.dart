@@ -151,4 +151,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get decryptFailed => 'Cannot decrypt this message';
+
+  @override
+  String get deviceIdLabel => 'Device ID';
+
+  @override
+  String get nicknameSaved => 'Nickname updated';
 }

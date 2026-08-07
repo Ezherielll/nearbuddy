@@ -46,5 +46,7 @@
   "dmPeerDeviceId": "ID Perangkat",
   "dmPeerNickname": "Nama Kontak",
   "dmKeyMissing": "Belum ada kunci perangkat — coba lagi setelah verifikasi grup",
-  "decryptFailed": "Tidak dapat mendekripsi pesan ini"
+  "decryptFailed": "Tidak dapat mendekripsi pesan ini",
+  "deviceIdLabel": "ID Perangkat",
+  "nicknameSaved": "Nickname diperbarui"
 }

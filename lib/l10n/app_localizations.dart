@@ -373,6 +373,18 @@ abstract class AppLocalizations {
   /// In id, this message translates to:
   /// **'Tidak dapat mendekripsi pesan ini'**
   String get decryptFailed;
+
+  /// No description provided for @deviceIdLabel.
+  ///
+  /// In id, this message translates to:
+  /// **'ID Perangkat'**
+  String get deviceIdLabel;
+
+  /// No description provided for @nicknameSaved.
+  ///
+  /// In id, this message translates to:
+  /// **'Nickname diperbarui'**
+  String get nicknameSaved;
 }
 
 class _AppLocalizationsDelegate

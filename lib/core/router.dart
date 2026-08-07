@@ -1,5 +1,4 @@
 import 'package:go_router/go_router.dart';
-import 'package:flutter/material.dart';
 import '../features/onboarding/disclaimer_screen.dart';
 import '../features/onboarding/nickname_screen.dart';
 import '../features/home/home_screen.dart';
@@ -8,6 +7,7 @@ import '../features/group/join_group_screen.dart';
 import '../features/chat/chat_screen.dart';
 import '../features/chat/dm_sessions_screen.dart';
 import '../features/chat/dm_chat_screen.dart';
+import '../features/settings/settings_screen.dart';
 
 late final GoRouter appRouter;
 
@@ -23,7 +23,7 @@ GoRouter buildRouter(dynamic prefs) => GoRouter(
     GoRoute(path: '/chat/:groupId', builder: (_, s) => ChatScreen(groupId: s.pathParameters['groupId']!)),
     GoRoute(path: '/dms',          builder: (_, __) => const DmSessionsScreen()),
     GoRoute(path: '/dm/:sessionId', builder: (_, s) => DmChatScreen(sessionId: s.pathParameters['sessionId']!)),
-    GoRoute(path: '/settings',     builder: (_, __) => const Scaffold(body: Center(child: Text('Settings')))),
+    GoRoute(path: '/settings',     builder: (_, __) => const SettingsScreen()),
   ],
 );
 

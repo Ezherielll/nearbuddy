@@ -153,4 +153,10 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get decryptFailed => 'Tidak dapat mendekripsi pesan ini';
+
+  @override
+  String get deviceIdLabel => 'ID Perangkat';
+
+  @override
+  String get nicknameSaved => 'Nickname diperbarui';
 }
