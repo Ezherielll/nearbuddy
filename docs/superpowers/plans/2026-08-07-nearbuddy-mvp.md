@@ -1024,7 +1024,9 @@ test/
   - `NearbyConnectionsService` implements `PeerDiscoveryService`
   - `peerDiscoveryServiceProvider` (Riverpod)
 
-- [ ] **Step 1: Create uuid_generator.dart**
+**Status: DONE (2026-08-07)** — relay dedup 3/3 PASS, analyze clean, full suite 7/7, commit `206903b`. Deviations: (1) `svcId` uses `AppConfig.nearbyServiceId(groupId)` (flavor-aware, per Task 10 update); (2) lint fixes vs snippet: `static const _uuid = Uuid();`, braces on single-statement `if`/`for` in `NearbyConnectionsService` (`curly_braces_in_flow_control_structures`, `prefer_const_declarations`). Verified `nearby_connections` 4.3.0 API matches snippet (typedefs `OnConnectionInitiated`/`OnConnectionResult`/`OnDisconnected`, `Payload.bytes`, `Status.CONNECTED`).
+
+- [x] **Step 1: Create uuid_generator.dart**
   ```dart
   import 'package:uuid/uuid.dart';
   class UuidGenerator {
@@ -1033,7 +1035,7 @@ test/
   }
   ```
 
-- [ ] **Step 2: Create battery_monitor.dart**
+- [x] **Step 2: Create battery_monitor.dart**
   ```dart
   import 'package:battery_plus/battery_plus.dart';
   import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -1060,7 +1062,7 @@ test/
           .map((l) => l <= AppConstants.lowBatteryThresholdPercent));
   ```
 
-- [ ] **Step 3: Create peer_discovery_service.dart**
+- [x] **Step 3: Create peer_discovery_service.dart**
   ```dart
   /// Abstract interface for peer-to-peer discovery and messaging.
   /// Concrete implementation: NearbyConnectionsService.
@@ -1080,7 +1082,7 @@ test/
   }
   ```
 
-- [ ] **Step 4: Create nearby_connections_service.dart**
+- [x] **Step 4: Create nearby_connections_service.dart**
   ```dart
   import 'dart:async';
   import 'dart:convert';
@@ -1190,7 +1192,7 @@ test/
   });
   ```
 
-- [ ] **Step 5: Write relay dedup test**
+- [x] **Step 5: Write relay dedup test**
   Create `test/domain/services/relay_dedup_test.dart`:
   ```dart
   import 'package:flutter_test/flutter_test.dart';
@@ -1221,12 +1223,12 @@ test/
   }
   ```
 
-- [ ] **Step 6: Run relay dedup tests — expect PASS**
+- [x] **Step 6: Run relay dedup tests — expect PASS**
   ```bash
   flutter test test/domain/services/relay_dedup_test.dart -v
   ```
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
   ```bash
   git add . && git commit -m "feat: PeerDiscoveryService abstraction, NearbyConnectionsService, BatteryMonitor, relay dedup tests"
   ```
