@@ -48,5 +48,7 @@
   "dmKeyMissing": "Device key missing — try again after group verification",
   "decryptFailed": "Cannot decrypt this message",
   "deviceIdLabel": "Device ID",
+  "permissionDenied": "Bluetooth/Location permission is required to discover nearby devices.",
+  "sessionStartFailed": "Failed to start session — check Bluetooth/WiFi and try again.",
   "nicknameSaved": "Nickname updated"
 }

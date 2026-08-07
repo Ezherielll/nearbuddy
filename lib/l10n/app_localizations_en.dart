@@ -156,5 +156,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deviceIdLabel => 'Device ID';
 
   @override
+  String get permissionDenied =>
+      'Bluetooth/Location permission is required to discover nearby devices.';
+
+  @override
+  String get sessionStartFailed =>
+      'Failed to start session — check Bluetooth/WiFi and try again.';
+
+  @override
   String get nicknameSaved => 'Nickname updated';
 }

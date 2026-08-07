@@ -380,6 +380,18 @@ abstract class AppLocalizations {
   /// **'ID Perangkat'**
   String get deviceIdLabel;
 
+  /// No description provided for @permissionDenied.
+  ///
+  /// In id, this message translates to:
+  /// **'Izin Bluetooth/Lokasi diperlukan untuk menemukan perangkat di sekitar.'**
+  String get permissionDenied;
+
+  /// No description provided for @sessionStartFailed.
+  ///
+  /// In id, this message translates to:
+  /// **'Gagal memulai sesi — periksa Bluetooth/WiFi dan coba lagi.'**
+  String get sessionStartFailed;
+
   /// No description provided for @nicknameSaved.
   ///
   /// In id, this message translates to:

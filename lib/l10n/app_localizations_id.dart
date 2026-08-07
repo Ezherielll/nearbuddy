@@ -158,5 +158,13 @@ class AppLocalizationsId extends AppLocalizations {
   String get deviceIdLabel => 'ID Perangkat';
 
   @override
+  String get permissionDenied =>
+      'Izin Bluetooth/Lokasi diperlukan untuk menemukan perangkat di sekitar.';
+
+  @override
+  String get sessionStartFailed =>
+      'Gagal memulai sesi — periksa Bluetooth/WiFi dan coba lagi.';
+
+  @override
   String get nicknameSaved => 'Nickname diperbarui';
 }

@@ -47,10 +47,21 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
     final pinRaw = (form.value['pin'] as String? ?? '').trim();
     final pin = _usePin && pinRaw.length >= AppConstants.pinLengthMin ? pinRaw : null;
     setState(() => _loading = true);
-    await ref.read(groupControllerProvider).createGroup(name: name, pin: pin);
-    if (mounted) {
-      context.go('/chat/${ref.read(currentGroupProvider)!.id}');
+    final err = await ref.read(groupControllerProvider).createGroup(name: name, pin: pin);
+    if (!mounted) return;
+    if (err != null) {
+      setState(() => _loading = false);
+      _showError(err);
+      return;
     }
+    context.go('/chat/${ref.read(currentGroupProvider)!.id}');
+  }
+
+  void _showError(String code) {
+    final l10n = AppLocalizations.of(context)!;
+    ShadToaster.of(context).show(ShadToast.destructive(
+      title: Text(code == 'permission' ? l10n.permissionDenied : l10n.sessionStartFailed),
+    ));
   }
 
   @override

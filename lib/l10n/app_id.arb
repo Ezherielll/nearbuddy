@@ -48,5 +48,7 @@
   "dmKeyMissing": "Belum ada kunci perangkat — coba lagi setelah verifikasi grup",
   "decryptFailed": "Tidak dapat mendekripsi pesan ini",
   "deviceIdLabel": "ID Perangkat",
+  "permissionDenied": "Izin Bluetooth/Lokasi diperlukan untuk menemukan perangkat di sekitar.",
+  "sessionStartFailed": "Gagal memulai sesi — periksa Bluetooth/WiFi dan coba lagi.",
   "nicknameSaved": "Nickname diperbarui"
 }

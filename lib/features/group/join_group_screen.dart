@@ -43,12 +43,21 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
     final code = (form.value['code'] as String? ?? '').trim();
     final pin = (form.value['pin'] as String? ?? '').trim();
     setState(() => _loading = true);
-    await ref.read(groupControllerProvider).joinGroup(
+    final err = await ref.read(groupControllerProvider).joinGroup(
       groupId: code,
       groupName: code,   // group name is unknown until join; code doubles as label
       pin: pin.isEmpty ? null : pin,
     );
-    if (mounted) context.go('/chat/$code');
+    if (!mounted) return;
+    if (err != null) {
+      setState(() => _loading = false);
+      final l10n = AppLocalizations.of(context)!;
+      ShadToaster.of(context).show(ShadToast.destructive(
+        title: Text(err == 'permission' ? l10n.permissionDenied : l10n.sessionStartFailed),
+      ));
+      return;
+    }
+    context.go('/chat/$code');
   }
 
   @override

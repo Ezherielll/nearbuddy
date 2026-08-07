@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/crypto/key_manager.dart';
+import '../../core/utils/permission_handler_service.dart';
 import '../../core/utils/uuid_generator.dart';
 import '../../data/database/app_database.dart';
 import '../../data/database/daos/groups_dao.dart';
@@ -34,33 +35,53 @@ class GroupController {
   AppPreferences get _prefs => _ref.read(appPreferencesProvider);
   KeyExchangeService get _kx => _ref.read(keyExchangeServiceProvider);
 
-  Future<void> createGroup({required String name, String? pin}) async {
-    final id = UuidGenerator.generate();
-    await _kx.generateGroupKey(id);   // owner holds the group key
-    await _dao.insertGroup(GroupsCompanion.insert(
-      id: id, name: name, pin: Value(pin),
-      createdAt: DateTime.now(), isOwner: const Value(true),
-    ));
-    await _peer.startSession(
-        groupId: id, nickname: _prefs.nickname ?? 'Unknown', pin: pin);
-    _ref.read(currentGroupProvider.notifier).state =
-        GroupSession(id: id, name: name, pin: pin, createdAt: DateTime.now(), isOwner: true);
-    _listen();
+  /// Returns null on success, or an error code ('permission' | 'session')
+  /// that the screen maps to l10n strings.
+  Future<String?> createGroup({required String name, String? pin}) async {
+    final ok = await _ref
+        .read(permissionHandlerServiceProvider)
+        .requestNearbyPermissions();
+    if (!ok) return 'permission';
+    try {
+      final id = UuidGenerator.generate();
+      await _kx.generateGroupKey(id);   // owner holds the group key
+      await _dao.insertGroup(GroupsCompanion.insert(
+        id: id, name: name, pin: Value(pin),
+        createdAt: DateTime.now(), isOwner: const Value(true),
+      ));
+      await _peer.startSession(
+          groupId: id, nickname: _prefs.nickname ?? 'Unknown', pin: pin);
+      _ref.read(currentGroupProvider.notifier).state =
+          GroupSession(id: id, name: name, pin: pin, createdAt: DateTime.now(), isOwner: true);
+      _listen();
+      return null;
+    } catch (_) {
+      return 'session';
+    }
   }
 
-  Future<void> joinGroup({
+  Future<String?> joinGroup({
     required String groupId,
     required String groupName,
     String? pin,
   }) async {
-    await _peer.startSession(
-        groupId: groupId, nickname: _prefs.nickname ?? 'Unknown', pin: pin);
-    await _dao.insertGroup(GroupsCompanion.insert(
-      id: groupId, name: groupName, pin: Value(pin), createdAt: DateTime.now(),
-    ));
-    _ref.read(currentGroupProvider.notifier).state =
-        GroupSession(id: groupId, name: groupName, pin: pin, createdAt: DateTime.now());
-    _listen();
+    final ok = await _ref
+        .read(permissionHandlerServiceProvider)
+        .requestNearbyPermissions();
+    if (!ok) return 'permission';
+    try {
+      await _peer.startSession(
+          groupId: groupId, nickname: _prefs.nickname ?? 'Unknown', pin: pin);
+      await _dao.insertGroup(GroupsCompanion.insert(
+        id: groupId, name: groupName, pin: Value(pin), createdAt: DateTime.now(),
+      ));
+      _ref.read(currentGroupProvider.notifier).state =
+          GroupSession(id: groupId, name: groupName, pin: pin, createdAt: DateTime.now());
+      _listen();
+      return null;
+    } catch (_) {
+      return 'session';
+    }
   }
 
   Future<void> leaveGroup() async {
