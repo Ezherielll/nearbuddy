@@ -475,7 +475,7 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
     ```json
     {"v":2,"h":{"id":"<uuid>","gid":"<groupId|sessionId>","to":"<deviceId?>","hop":0,"max":3,"ts":1720000000000,"k":"g|dm"},"n":"<b64 nonce 12B>","c":"<b64 ciphertext || MAC>"}
     ```
-    Canonical open (ALL tasks): `SecretBox.fromConcatenation([...nonce, ...cipherWithMac], nonceLength: 12)` where `cipherWithMac = base64Decode(c)` — the AES-GCM tag is appended to the ciphertext; the MAC is never stripped before transport.
+    Canonical open (ALL tasks): `SecretBox.fromConcatenation([...nonce, ...cipherWithMac], nonceLength: 12, macLength: 16)` where `cipherWithMac = base64Decode(c)` — the AES-GCM tag is appended to the ciphertext; the MAC is never stripped before transport. `macLength: 16` is REQUIRED by cryptography 2.7.
 
 **Status: DONE (2026-08-07)** — 4/4 tests PASS, analyze clean, full suite 20/20, commit `25c0ab3`. Deviation vs snippet: test constructors must wrap literals in `Uint8List.fromList(...)` / `Uint8List(0)` — `MessageEnvelope` fields are `Uint8List` (Dart has no implicit `List<int>` → `Uint8List` coercion). Note: `message.dart` did not exist before this task (v1 Task 7 that created it was superseded — no conflict).
 
@@ -690,9 +690,11 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
           ref.watch(groupsDaoProvider),
           ref.watch(peerDiscoveryServiceProvider),
         ));
+
+**Status: DONE (2026-08-07)** — 5/5 tests PASS, analyze clean, full suite 25/25, commit `bd33a8e`. Deviations vs snippet: (1) **canonical open needs `macLength: 16`**: `SecretBox.fromConcatenation(bytes, nonceLength: 12, macLength: 16)` — `macLength` is a REQUIRED named param in cryptography 2.7 (update the wire-contract note above and Task 12's open); (2) `generateGroupKey` wraps `extractPrivateKeyBytes()` in `Uint8List.fromList`; (3) `sendGroupKeyTo` requires the peer's `hello` first (endpoint→pubkey map) — test seeds it via `handleIncomingControl`; (4) broadcast-stream delivery is a microtask later — tests use `pumpEventQueue()` before asserting `onSasChallenge`/`onPeerVerified`; (5) `sendHello` + `confirmSas` added (T11 needs the sender side; the plan snippet only had receivers); (6) `keyExchangeServiceProvider` implemented in-file, importing infrastructure for `peerDiscoveryServiceProvider` (layering note: acceptable for the composition root).
     ```
 
-- [ ] **Step 1: Write the failing test** — `test/domain/services/key_exchange_test.dart`
+- [x] **Step 1: Write the failing test** — `test/domain/services/key_exchange_test.dart`
   ```dart
   import 'dart:convert';
   import 'package:cryptography/cryptography.dart';
@@ -730,7 +732,7 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
       // member unpacks via fromConcatenation
       final pairwise2 = await crypto.pairwiseKeyBytes(member, ownerPub);
       final opened = await crypto.open(
-          SecretBox.fromConcatenation(packed, nonceLength: 12),
+          SecretBox.fromConcatenation(packed, nonceLength: 12, macLength: 16),
           SecretKeyData(pairwise2));
       expect(base64Decode(opened), groupKey);
     });
@@ -782,7 +784,7 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
       final ownerPub = await owner.extractPublicKey();
       final pairwise = await crypto.pairwiseKeyBytes(member, ownerPub);
       final opened = await crypto.open(
-          SecretBox.fromConcatenation(base64Decode(delivery.key), nonceLength: 12),
+          SecretBox.fromConcatenation(base64Decode(delivery.key), nonceLength: 12, macLength: 16),
           SecretKeyData(pairwise));
       expect(base64Decode(opened), groupKey);
     });
@@ -831,9 +833,9 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
   ```
   NOTE: `KeyManager._kIdentityPriv` is a private constant — expose it as `@visibleForTesting static const identityKeyStorageKey` in Task 6 Step 5 so the test can seed a known identity. If it stays private, the test seeds via the same string literal `'identity_priv_seed_b64'`.
 
-- [ ] **Step 2: Run test — expect FAIL**
+- [x] **Step 2: Run test — expect FAIL**
 
-- [ ] **Step 3: Create `lib/domain/models/key_payloads.dart`**
+- [x] **Step 3: Create `lib/domain/models/key_payloads.dart`**
   ```dart
   /// Control messages exchanged between directly-connected peers only.
   /// They are NEVER relayed by intermediate nodes.
@@ -867,7 +869,7 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
   class KeyVerifyFail { const KeyVerifyFail(); }
   ```
 
-- [ ] **Step 4: Create `lib/domain/services/key_exchange_service.dart`**
+- [x] **Step 4: Create `lib/domain/services/key_exchange_service.dart`**
 
   State machine per endpoint: `awaitingHello → verifying → verified`. Uses `CryptoService`, `KeyManager`, `GroupsDao`.
   ```dart
@@ -956,7 +958,7 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
           final pairwise =
               await _crypto.pairwiseKeyBytes(await _keys.ensureIdentityKey(), pub);
           final plain = await _crypto.open(
-              SecretBox.fromConcatenation(base64Decode(delivery.key), nonceLength: 12),
+              SecretBox.fromConcatenation(base64Decode(delivery.key), nonceLength: 12, macLength: 16),
               SecretKeyData(pairwise));
           _groupKeys[delivery.gid] = Uint8List.fromList(base64Decode(plain));
       }
@@ -965,13 +967,13 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
   ```
   NOTE: PIN authorization, nickname uniqueness, and `GroupsDao.setMemberPublicKey` wiring land in Task 11's GroupController; this task pins the crypto + state machine only.
 
-- [ ] **Step 5: Run test — expect PASS**
+- [x] **Step 5: Run test — expect PASS**
 
   Run: `flutter test test/domain/services/key_exchange_test.dart -v`
 
-- [ ] **Step 6: flutter analyze** — Expected: no issues (ignore `unused` on members if wiring is in T11).
+- [x] **Step 6: flutter analyze** — Expected: no issues (ignore `unused` on members if wiring is in T11).
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
   ```bash
   git add lib/domain/services/key_exchange_service.dart lib/domain/models/key_payloads.dart test/domain/services/key_exchange_test.dart
   git commit -m "feat: key exchange handshake — hello/SAS verify/encrypted group key delivery"
@@ -1204,7 +1206,7 @@ Unchanged from v1: `features/onboarding/*`, `features/settings/settings_screen.d
       : SecretKeyData(_keyExchange.groupKeyFor(env.gid)!);
   // canonical open: nonce + ciphertext||MAC via fromConcatenation
   final plain = await _crypto.open(
-      SecretBox.fromConcatenation([...env.nonce, ...base64Decode(env.c)], nonceLength: 12),
+      SecretBox.fromConcatenation([...env.nonce, ...base64Decode(env.c)], nonceLength: 12, macLength: 16),
       key);
   final msg = Message.fromPayloadJson(jsonDecode(plain));
   await _persist(env, msg);
