@@ -795,7 +795,9 @@ test/
 - Consumes: `appPreferencesProvider`, `AppLocalizations`, `go_router`
 - Produces: GoRouter routes `/disclaimer`, `/nickname`, `/home`; redirect: no-disclaimer → `/disclaimer`; no-nickname → `/nickname`; else → `/home`
 
-- [ ] **Step 1: Write failing test**
+**Status: DONE (2026-08-07)** — test passes, analyze clean, full suite 4/4, commit `04548bb`. Deviations per UI Policy: screens use shadcn widgets — `ShadButton`, `ShadInputFormField` (validator + `AutovalidateMode.always`; shadcn 0.56 has NO `onFieldSubmitted` and uses Flutter's `AutovalidateMode`, not `ShadAutovalidateMode`), `LucideIcons.triangleAlert`, `ShadTheme.of(context).textTheme.h2/p` (non-nullable — no `?.`). Nickname screen uses `ShadForm` + `formKey` (saveAndValidate → prefs → `/home`) instead of a manual controller.
+
+- [x] **Step 1: Write failing test**
   Create `test/features/onboarding/disclaimer_screen_test.dart`:
   ```dart
   import 'package:flutter/material.dart';
@@ -840,7 +842,7 @@ test/
   Run: `flutter test test/features/onboarding/disclaimer_screen_test.dart`
   Expected: FAIL (DisclaimerScreen not found)
 
-- [ ] **Step 2: Create lib/features/onboarding/disclaimer_screen.dart**
+- [x] **Step 2: Create lib/features/onboarding/disclaimer_screen.dart**
   ```dart
   import 'package:flutter/material.dart';
   import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -893,7 +895,7 @@ test/
   }
   ```
 
-- [ ] **Step 3: Create lib/features/onboarding/nickname_screen.dart**
+- [x] **Step 3: Create lib/features/onboarding/nickname_screen.dart**
   ```dart
   import 'package:flutter/material.dart';
   import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -963,7 +965,7 @@ test/
   }
   ```
 
-- [ ] **Step 4: Update lib/core/router.dart with all routes + redirect**
+- [x] **Step 4: Update lib/core/router.dart with all routes + redirect**
   ```dart
   import 'package:go_router/go_router.dart';
   import 'package:flutter/material.dart';
@@ -992,12 +994,12 @@ test/
   }
   ```
 
-- [ ] **Step 5: Run disclaimer test — expect PASS**
+- [x] **Step 5: Run disclaimer test — expect PASS**
   ```bash
   flutter test test/features/onboarding/disclaimer_screen_test.dart -v
   ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
   ```bash
   git add . && git commit -m "feat: onboarding — disclaimer and nickname screens with GoRouter redirect"
   ```
