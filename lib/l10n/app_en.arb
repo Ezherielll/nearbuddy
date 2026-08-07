@@ -32,5 +32,19 @@
   "language": "Language",
   "changeNickname": "Change Nickname",
   "leaveGroup": "Leave Group",
-  "members": "Members"
+  "members": "Members",
+  "verifyTitle": "Verify Device",
+  "verifyBody": "Both devices must show the same number:",
+  "verifyMatch": "Numbers Match",
+  "verifyMismatch": "Mismatch",
+  "groupCode": "Group Code",
+  "pinError": "PIN must be at least 4 digits",
+  "groupCodeHint": "Enter the group code to join",
+  "dmSessions": "Private Messages",
+  "dmNew": "New Conversation",
+  "dmEmpty": "No conversations yet. Start from the member list or enter a device ID.",
+  "dmPeerDeviceId": "Device ID",
+  "dmPeerNickname": "Contact Name",
+  "dmKeyMissing": "Device key missing — try again after group verification",
+  "decryptFailed": "Cannot decrypt this message"
 }

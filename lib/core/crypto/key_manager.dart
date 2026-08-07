@@ -25,13 +25,19 @@ class KeyManager {
     return keyPair;
   }
 
-  Future<String> deviceId() async {
-    final keyPair = await ensureIdentityKey();
-    final pub = await keyPair.extractPublicKey();
-    final digest = await Sha256().hash(pub.bytes);
+  /// Stable identifier derived from a public key (first 16 hex of sha256).
+  /// Used to identify REMOTE peers from their hello pubkey.
+  static Future<String> deviceIdFromPubKey(List<int> pubBytes) async {
+    final digest = await Sha256().hash(pubBytes);
     return digest.bytes
         .take(8)
         .map((b) => b.toRadixString(16).padLeft(2, '0'))
         .join();
+  }
+
+  Future<String> deviceId() async {
+    final keyPair = await ensureIdentityKey();
+    final pub = await keyPair.extractPublicKey();
+    return deviceIdFromPubKey(pub.bytes);
   }
 }

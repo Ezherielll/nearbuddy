@@ -33,6 +33,12 @@ class KeyExchangeService {
   final _sasChallengeCtrl = StreamController<String>.broadcast();
   final _peerVerifiedCtrl = StreamController<String>.broadcast();
   String? _pendingEndpoint;
+  bool _sasConfirmed = false;
+
+  /// Optional PIN gate, registered by GroupController (Task 11). Called with
+  /// the peer's hello PIN before the SAS challenge is raised; `false` rejects
+  /// the join (verify_fail) without showing the dialog.
+  Future<bool> Function(String? pin)? pinValidator;
 
   KeyExchangeService(this._crypto, this._keys, this._groupsDao, this._peer);
 
@@ -61,6 +67,7 @@ class KeyExchangeService {
   Future<void> confirmSas(bool match) async {
     final endpoint = _pendingEndpoint;
     if (endpoint == null) return;
+    _sasConfirmed = match;
     await _peer.sendTo(
         endpoint, jsonEncode({'t': match ? 'verify_ok' : 'verify_fail'}));
     if (!match) {
@@ -84,7 +91,7 @@ class KeyExchangeService {
   Future<void> sendGroupKeyTo(String endpointId, String groupId) async {
     final key = _groupKeys[groupId];
     final pub = _endpointPubKeys[endpointId];
-    if (key == null || pub == null) return;
+    if (key == null || pub == null || !_sasConfirmed) return;
     final pairwise =
         await _crypto.pairwiseKeyBytes(await _keys.ensureIdentityKey(), pub);
     final box = await _crypto.seal(base64Encode(key), SecretKeyData(pairwise));
@@ -108,9 +115,16 @@ class KeyExchangeService {
     switch (j['t']) {
       case 'hello':
         final hello = KeyHello.fromJson(j);
+        // PIN gate before any SAS challenge is raised
+        final pinOk = await pinValidator?.call(hello.pin) ?? true;
+        if (!pinOk) {
+          await _peer.sendTo(fromEndpointId, jsonEncode({'t': 'verify_fail'}));
+          return;
+        }
         _endpointPubKeys[fromEndpointId] =
             SimplePublicKey(base64Decode(hello.pubKey), type: KeyPairType.x25519);
         _pendingEndpoint = fromEndpointId;
+        _sasConfirmed = false;
         final sas = await _crypto.sas(
             await _keys.ensureIdentityKey(), _endpointPubKeys[fromEndpointId]!);
         _sasChallengeCtrl.add(sas);
@@ -120,6 +134,7 @@ class KeyExchangeService {
       case 'verify_fail':
         await _peer.stopSession();
       case 'key':
+        if (!_sasConfirmed) return;   // never accept keys from unverified peers
         final delivery = KeyDelivery.fromJson(j);
         final pub = _endpointPubKeys[fromEndpointId];
         if (pub == null) return;

@@ -77,15 +77,17 @@ void main() {
     await svc.handleIncomingControl('ep-1', jsonEncode(KeyHello(
       pubKey: memberPubB64, nickname: 'Nadia', pin: null,
     ).toJson()));
+    await svc.confirmSas(true);   // local user confirms the SAS digits
 
-    // no group key yet → nothing is sent
+    // no group key yet → no KEY payload is sent (verify_ok already went out)
     await svc.sendGroupKeyTo('ep-1', 'g1');
-    expect(peer.sentTo('ep-1'), isEmpty);
+    expect(peer.sentTo('ep-1').where((s) => s.contains('"t":"key"')), isEmpty);
 
     // with a group key → payload decrypts to the group key on the member side
     final groupKey = await svc.generateGroupKey('g1');
     await svc.sendGroupKeyTo('ep-1', 'g1');
-    final delivery = KeyDelivery.fromJson(jsonDecode(peer.sentTo('ep-1').single));
+    final delivery = KeyDelivery.fromJson(jsonDecode(
+        peer.sentTo('ep-1').singleWhere((s) => s.contains('"t":"key"'))));
     expect(delivery.gid, 'g1');
     final ownerPub = await owner.extractPublicKey();
     final pairwise = await crypto.pairwiseKeyBytes(member, ownerPub);
@@ -121,6 +123,11 @@ void main() {
     ).toJson()));
     await pumpEventQueue();
     expect(sasChallenge, matches(RegExp(r'^\d{6}$')));
+
+    // local user confirms — only then is a key accepted
+    await svc.confirmSas(true);
+    await pumpEventQueue();
+    expect(peer.sentTo('ep-owner').single, contains('verify_ok'));
 
     // owner delivers the group key sealed under the pairwise key
     final groupKey = List.generate(32, (i) => i);

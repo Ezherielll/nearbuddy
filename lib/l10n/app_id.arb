@@ -32,5 +32,19 @@
   "language": "Bahasa",
   "changeNickname": "Ganti Nickname",
   "leaveGroup": "Keluar dari Grup",
-  "members": "Anggota"
+  "members": "Anggota",
+  "verifyTitle": "Verifikasi Perangkat",
+  "verifyBody": "Kedua perangkat harus menampilkan angka yang sama:",
+  "verifyMatch": "Angka Cocok",
+  "verifyMismatch": "Tidak Cocok",
+  "groupCode": "Kode Grup",
+  "pinError": "PIN minimal 4 digit",
+  "groupCodeHint": "Masukkan kode grup untuk bergabung",
+  "dmSessions": "Pesan Pribadi",
+  "dmNew": "Percakapan Baru",
+  "dmEmpty": "Belum ada percakapan. Mulai dari daftar anggota atau masukkan ID perangkat.",
+  "dmPeerDeviceId": "ID Perangkat",
+  "dmPeerNickname": "Nama Kontak",
+  "dmKeyMissing": "Belum ada kunci perangkat — coba lagi setelah verifikasi grup",
+  "decryptFailed": "Tidak dapat mendekripsi pesan ini"
 }

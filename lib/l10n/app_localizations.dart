@@ -289,6 +289,90 @@ abstract class AppLocalizations {
   /// In id, this message translates to:
   /// **'Anggota'**
   String get members;
+
+  /// No description provided for @verifyTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Verifikasi Perangkat'**
+  String get verifyTitle;
+
+  /// No description provided for @verifyBody.
+  ///
+  /// In id, this message translates to:
+  /// **'Kedua perangkat harus menampilkan angka yang sama:'**
+  String get verifyBody;
+
+  /// No description provided for @verifyMatch.
+  ///
+  /// In id, this message translates to:
+  /// **'Angka Cocok'**
+  String get verifyMatch;
+
+  /// No description provided for @verifyMismatch.
+  ///
+  /// In id, this message translates to:
+  /// **'Tidak Cocok'**
+  String get verifyMismatch;
+
+  /// No description provided for @groupCode.
+  ///
+  /// In id, this message translates to:
+  /// **'Kode Grup'**
+  String get groupCode;
+
+  /// No description provided for @pinError.
+  ///
+  /// In id, this message translates to:
+  /// **'PIN minimal 4 digit'**
+  String get pinError;
+
+  /// No description provided for @groupCodeHint.
+  ///
+  /// In id, this message translates to:
+  /// **'Masukkan kode grup untuk bergabung'**
+  String get groupCodeHint;
+
+  /// No description provided for @dmSessions.
+  ///
+  /// In id, this message translates to:
+  /// **'Pesan Pribadi'**
+  String get dmSessions;
+
+  /// No description provided for @dmNew.
+  ///
+  /// In id, this message translates to:
+  /// **'Percakapan Baru'**
+  String get dmNew;
+
+  /// No description provided for @dmEmpty.
+  ///
+  /// In id, this message translates to:
+  /// **'Belum ada percakapan. Mulai dari daftar anggota atau masukkan ID perangkat.'**
+  String get dmEmpty;
+
+  /// No description provided for @dmPeerDeviceId.
+  ///
+  /// In id, this message translates to:
+  /// **'ID Perangkat'**
+  String get dmPeerDeviceId;
+
+  /// No description provided for @dmPeerNickname.
+  ///
+  /// In id, this message translates to:
+  /// **'Nama Kontak'**
+  String get dmPeerNickname;
+
+  /// No description provided for @dmKeyMissing.
+  ///
+  /// In id, this message translates to:
+  /// **'Belum ada kunci perangkat — coba lagi setelah verifikasi grup'**
+  String get dmKeyMissing;
+
+  /// No description provided for @decryptFailed.
+  ///
+  /// In id, this message translates to:
+  /// **'Tidak dapat mendekripsi pesan ini'**
+  String get decryptFailed;
 }
 
 class _AppLocalizationsDelegate

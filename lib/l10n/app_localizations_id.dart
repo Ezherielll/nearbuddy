@@ -109,4 +109,48 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get members => 'Anggota';
+
+  @override
+  String get verifyTitle => 'Verifikasi Perangkat';
+
+  @override
+  String get verifyBody => 'Kedua perangkat harus menampilkan angka yang sama:';
+
+  @override
+  String get verifyMatch => 'Angka Cocok';
+
+  @override
+  String get verifyMismatch => 'Tidak Cocok';
+
+  @override
+  String get groupCode => 'Kode Grup';
+
+  @override
+  String get pinError => 'PIN minimal 4 digit';
+
+  @override
+  String get groupCodeHint => 'Masukkan kode grup untuk bergabung';
+
+  @override
+  String get dmSessions => 'Pesan Pribadi';
+
+  @override
+  String get dmNew => 'Percakapan Baru';
+
+  @override
+  String get dmEmpty =>
+      'Belum ada percakapan. Mulai dari daftar anggota atau masukkan ID perangkat.';
+
+  @override
+  String get dmPeerDeviceId => 'ID Perangkat';
+
+  @override
+  String get dmPeerNickname => 'Nama Kontak';
+
+  @override
+  String get dmKeyMissing =>
+      'Belum ada kunci perangkat — coba lagi setelah verifikasi grup';
+
+  @override
+  String get decryptFailed => 'Tidak dapat mendekripsi pesan ini';
 }

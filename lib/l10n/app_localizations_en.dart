@@ -107,4 +107,48 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get members => 'Members';
+
+  @override
+  String get verifyTitle => 'Verify Device';
+
+  @override
+  String get verifyBody => 'Both devices must show the same number:';
+
+  @override
+  String get verifyMatch => 'Numbers Match';
+
+  @override
+  String get verifyMismatch => 'Mismatch';
+
+  @override
+  String get groupCode => 'Group Code';
+
+  @override
+  String get pinError => 'PIN must be at least 4 digits';
+
+  @override
+  String get groupCodeHint => 'Enter the group code to join';
+
+  @override
+  String get dmSessions => 'Private Messages';
+
+  @override
+  String get dmNew => 'New Conversation';
+
+  @override
+  String get dmEmpty =>
+      'No conversations yet. Start from the member list or enter a device ID.';
+
+  @override
+  String get dmPeerDeviceId => 'Device ID';
+
+  @override
+  String get dmPeerNickname => 'Contact Name';
+
+  @override
+  String get dmKeyMissing =>
+      'Device key missing — try again after group verification';
+
+  @override
+  String get decryptFailed => 'Cannot decrypt this message';
 }
