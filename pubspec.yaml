@@ -23,6 +23,8 @@ dependencies:
   riverpod: ^2.5.1
   flutter_riverpod: ^2.5.1
   shadcn_ui: ^0.56.1
+  cryptography: ^2.7.0
+  flutter_secure_storage: ^9.2.4
 dev_dependencies:
   flutter_test:
     sdk: flutter
