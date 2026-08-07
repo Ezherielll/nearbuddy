@@ -380,9 +380,12 @@ test/
   - `GroupsDao.watchMembersInGroup(String groupId)` → `Stream<List<MemberRow>>`
   - `GroupsDao.isNicknameTaken(String nickname, String groupId, String ownDeviceId)` → `Future<bool>`
 
-- [ ] **Step 1: Create tables/messages_table.dart**
+**Status: DONE (2026-08-07)** — all 10 steps complete; tests pass, analyze clean, commit `78f4f8d`. Deviations: (1) each table file needs `@DataClassName('MessageRow'|'GroupRow'|'MemberRow')` — drift 2.31 generates `Message`/`Group`/`Member` by default; (2) `AppConfig` (Task 10 file) pulled forward because the flavor-updated `app_database.dart` snippet references it; (3) `--delete-conflicting-outputs` is removed in build_runner 2.15 (warning, harmless); (4) test imports only `app_database.dart` — companion types are exported by `app_database.g.dart`; (5) `AppDatabase.forTesting(super.e)` satisfies `use_super_parameters` lint.
+
+- [x] **Step 1: Create tables/messages_table.dart**
   ```dart
   import 'package:drift/drift.dart';
+  @DataClassName('MessageRow')  // drift 2.31 defaults to 'Message'
   class Messages extends Table {
     TextColumn get id => text()();                  // UUID — primary key
     TextColumn get groupId => text()();
@@ -400,9 +403,10 @@ test/
   }
   ```
 
-- [ ] **Step 2: Create tables/groups_table.dart**
+- [x] **Step 2: Create tables/groups_table.dart**
   ```dart
   import 'package:drift/drift.dart';
+  @DataClassName('GroupRow')  // drift 2.31 defaults to 'Group'
   class Groups extends Table {
     TextColumn get id => text()();
     TextColumn get name => text()();
@@ -414,9 +418,10 @@ test/
   }
   ```
 
-- [ ] **Step 3: Create tables/members_table.dart**
+- [x] **Step 3: Create tables/members_table.dart**
   ```dart
   import 'package:drift/drift.dart';
+  @DataClassName('MemberRow')  // drift 2.31 defaults to 'Member'
   class Members extends Table {
     TextColumn get deviceId => text()();           // Nearby endpoint ID
     TextColumn get groupId => text()();
@@ -428,7 +433,7 @@ test/
   }
   ```
 
-- [ ] **Step 4: Create daos/messages_dao.dart**
+- [x] **Step 4: Create daos/messages_dao.dart**
   ```dart
   import 'package:drift/drift.dart';
   import '../app_database.dart';
@@ -455,7 +460,7 @@ test/
   }
   ```
 
-- [ ] **Step 5: Create daos/groups_dao.dart**
+- [x] **Step 5: Create daos/groups_dao.dart**
   ```dart
   import 'package:drift/drift.dart';
   import '../app_database.dart';
@@ -503,7 +508,7 @@ test/
   }
   ```
 
-- [ ] **Step 6: Create app_database.dart**
+- [x] **Step 6: Create app_database.dart**
   ```dart
   import 'package:drift/drift.dart';
   import 'package:drift_flutter/drift_flutter.dart';
@@ -541,13 +546,13 @@ test/
       (ref) => ref.watch(appDatabaseProvider).groupsDao);
   ```
 
-- [ ] **Step 7: Run Drift code generation**
+- [x] **Step 7: Run Drift code generation**
   ```bash
   flutter pub run build_runner build --delete-conflicting-outputs
   ```
   Expected: `app_database.g.dart`, `messages_dao.g.dart`, `groups_dao.g.dart` created.
 
-- [ ] **Step 8: Write failing test**
+- [x] **Step 8: Write failing test**
   Create `test/data/database/messages_dao_test.dart`:
   ```dart
   import 'package:drift/native.dart';
@@ -596,12 +601,12 @@ test/
   }
   ```
 
-- [ ] **Step 9: Run tests — expect PASS**
+- [x] **Step 9: Run tests — expect PASS**
   ```bash
   flutter test test/data/database/messages_dao_test.dart -v
   ```
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
   ```bash
   git add . && git commit -m "feat: Drift schema (Messages/Groups/Members), DAOs, and passing database tests"
   ```
