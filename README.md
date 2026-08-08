@@ -1,42 +1,63 @@
+<div align="center">
+
 # NearBuddy
 
-> **Offline-first peer-to-peer mesh messenger for Android.** Group chat, 1:1 chat, and location pings that work **without internet or cellular signal** — powered by Google Nearby Connections (Wi-Fi Direct / BLE).
+**Offline-first P2P mesh messenger · Android · IOS · No internet required**
 
-NearBuddy is built for situations where connectivity fails: festivals, hiking trails, remote areas, or disaster zones. There are **no accounts, no servers, no cloud** — every message stays on the devices that carry it, end-to-end encrypted.
+![Platform](https://img.shields.io/badge/platform-Android-3DDC84?logo=android&logoColor=white)
+![Flutter](https://img.shields.io/badge/Flutter-3.44+-54C5F8?logo=flutter&logoColor=white)
+![minSdk](https://img.shields.io/badge/minSdk-23-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+
+</div>
+
+NearBuddy is a general-purpose peer-to-peer mesh messenger that works **without internet, cellular signal, or accounts**. Group chat and 1:1 DMs are transported over Wi-Fi Direct / BLE via [Google Nearby Connections](https://developers.google.com/nearby/connections/overview) and are **end-to-end encrypted by default**. Messages stay only on the devices that carry them — no servers, no cloud, no telemetry.
 
 ---
 
 ## Screenshots
 
-| | | |
-|---|---|---|
-| ![Home](screenshots/homepage-portrait.png) | ![Chat](screenshots/chat_room-portrait.png) | ![Settings](screenshots/settings-portrait.png) |
-| ![About](screenshots/about-portrait.png) | | |
+<div align="center">
+
+| Home & Radar | Chat Room | Settings | About |
+|:---:|:---:|:---:|:---:|
+| <img src="screenshots/homepage-portrait.png" width="160"> | <img src="screenshots/chat_room-portrait.png" width="160"> | <img src="screenshots/settings-portrait.png" width="160"> | <img src="screenshots/about-portrait.png" width="160"> |
+
+</div>
 
 ---
 
-## Feature Highlights
+## Features
 
-### Messaging
-- **Group chat (up to 30 members)** and **1:1 direct messages** over a peer-to-peer mesh — flood routing, max **3 hops**, relay **TTL 10 s**, UUID-based dedup (30 s cache)
-- **Delivery receipts** per message: `sent ✓` / `delivered ✓✓` / `pending` / `failed` with **manual retry** (no automatic store-and-forward)
+### 💬 Messaging
+
+- **Group chat** (up to 30 members) and **1:1 direct messages** over a flood-routed P2P mesh — max **3 hops**, relay TTL **10 s**, UUID-based dedup (**30 s** cache)
+- **Delivery receipts** per message: `pending` → `sent ✓` → `delivered ✓✓` / `failed` with manual retry
 - **Typing indicator** for 1:1 chats
-- **Location pings** with "Open in Maps" via `url_launcher`
-- **In-app emoji picker** — offline curated catalog (5 categories, ~125 emoji), no third-party package, inserts at the cursor position
+- **Location pings** — tap to open in Maps via `url_launcher`
+- **Emoji picker** — offline curated catalog (5 categories, ~125 emoji), inserts at cursor, no network
 
-### Security
-- **Full end-to-end encryption (E2EE) as the core, not a flag**:
-  - Per-device **X25519** identity keys (private seed in Android Keystore via `flutter_secure_storage`)
-  - **6-digit SAS verification** during key exchange (out-of-band compare)
-  - **AES-GCM** encrypted payloads — relay nodes only forward envelopes, they **can never decrypt content**
-- `deviceId` is derived from the public key (first 16 hex of `sha256(pubkey)`) — stable, unforgeable device identity; nicknames are display labels only
+### 🔐 Security
 
-### UX & Reliability
-- **Ambient device discovery** — see nearby NearBuddy devices before joining anything (scan runs only while relevant screens are visible to save battery)
-- **Real-time connection status** everywhere: connected / connecting / searching / out of range / radio off, with a low-battery power-saver mode
-- **Premium theme picker** — bottom sheet with live phone mockups (light / dark / system) drawn entirely with `CustomPaint`
+| Primitive | Detail |
+| --- | --- |
+| Key type | **X25519** identity key per device |
+| Key storage | Private seed in **Android Keystore** via `flutter_secure_storage` |
+| Cipher | **AES-GCM** — nonce (12 B) + ciphertext + MAC (16 B) |
+| Identity | `deviceId` = first 16 hex of `sha256(pubkey)` — stable, unforgeable |
+| Verification | **6-digit SAS** out-of-band comparison during key exchange |
+| Relay nodes | Forward opaque envelopes — **cryptographically unable to decrypt** |
+
+E2EE is a core invariant, not a feature flag.
+
+### ✨ UX & Reliability
+
+- **Ambient device discovery** — see nearby NearBuddy peers before joining anything; scan lifecycle tied to screen visibility to save battery
+- **Real-time connection status** everywhere — connected / connecting / searching / out of range / radio off
+- **Power-saver mode** — reduced advertising when battery is low
+- **Theme picker** — light / dark / system, live phone mockups drawn with `CustomPaint`
 - **Bilingual** — Indonesian (default) + English, runtime switchable
-- **Light / dark / system themes** with semantic color tokens; one-time legal disclaimer on first launch
+- **One-time legal disclaimer** on first launch
 
 ---
 
@@ -74,7 +95,7 @@ Hop-local **control messages** (`hello`, `key`, `verify_ok`, `verify_fail`) are 
 ### Operational constraints
 
 | Constraint | Value |
-|---|---|
+| --- | --- |
 | Max relay hops | 3 |
 | Relay TTL | 10 s |
 | Dedup cache | 30 s |
@@ -117,7 +138,7 @@ Hop-local **control messages** (`hello`, `key`, `verify_ok`, `verify_fail`) are 
 ### Flavors
 
 | | `dev` | `prod` |
-|---|---|---|
+| --- | --- | --- |
 | applicationId | `…dev` suffix | clean |
 | App label | NearBuddy Dev | NearBuddy |
 | Database | `nearbuddy_db_dev` | `nearbuddy_db` |
@@ -128,17 +149,25 @@ Dev and prod builds **never see each other on the mesh** (isolated service IDs).
 ### Tests
 
 ```bash
-flutter test                          # full suite (36 tests)
-flutter test test/<path>.dart -v      # single test
+flutter test                         # full suite (43 tests)
+flutter test test/<path>.dart -v     # single test
 ```
 
-Pure-Dart crypto tests need no device/plugin; Drift tests use an in-memory database. Widget tests wrap screens in `ShadApp`.
+Pure-Dart crypto tests need no device or plugin. Drift tests use an in-memory database. Widget tests wrap screens in `ShadApp`.
 
-### Codegen (after structural changes)
+### Codegen
+
+Run these after structural changes — never hand-edit the generated files:
 
 ```bash
-flutter pub run build_runner build    # after editing tables/daos/app_database.dart
-flutter gen-l10n                      # after editing lib/l10n/*.arb
+# After editing tables/, daos/, or app_database.dart
+flutter pub run build_runner build
+
+# After editing lib/l10n/*.arb
+flutter gen-l10n
+
+# Regenerate launcher icons (writes Android res PNGs; no device needed)
+flutter test tool/logo_render_test.dart
 ```
 
 ---
@@ -148,7 +177,7 @@ flutter gen-l10n                      # after editing lib/l10n/*.arb
 ### Stack (resolved versions)
 
 | Area | Package |
-|---|---|
+| --- | --- |
 | UI | `shadcn_ui` ^0.56.1 · `chat_bubbles` ^1.10.1 (presentation wrapper) |
 | State | `flutter_riverpod` 2.6.1 · `riverpod` 2.6.1 |
 | Persistence | `drift` 2.31.0 (+ `drift_flutter`) · `shared_preferences` 2.5.5 |
@@ -157,25 +186,44 @@ flutter gen-l10n                      # after editing lib/l10n/*.arb
 | Location / battery | `geolocator` 12.0.0 · `battery_plus` 7.1.1 (pinned — 6.x triggers the KGP warning) |
 | Navigation / misc | `go_router` 14.8.1 · `uuid` 4.6.0 · `url_launcher` 6.3.2 · `intl` 0.20.2 |
 
-### Design principles
+### Design Principles
 
-- **`PeerDiscoveryService` is the only interface** the business logic knows — `nearby_connections` is never imported outside `infrastructure/`
-- **Drift schema v3** — migrations are versioned (v1→v2 adds `to`, `publicKey`, `sessions`; v2→v3 adds message `status` for outgoing delivery states)
-- **Semantic theme tokens** (`NearBuddyColorScheme` light/dark) — screens never hardcode colors; theme mode persists across launches
-- **Riverpod lifecycle discipline** — every async handler re-checks `mounted` after each `await`; timers and stream subscriptions are cancelled in `dispose`
+- **`PeerDiscoveryService` is the only interface** business logic touches — `nearby_connections` is never imported outside `infrastructure/`
+- **Drift schema v3** with versioned migrations (v1→v2 adds `to`, `publicKey`, `sessions`; v2→v3 adds message `status` for delivery states)
+- **Semantic theme tokens** (`NearBuddyColorScheme` light/dark) — screens never hardcode colors; theme persists across launches
+- **Riverpod lifecycle discipline** — every async handler re-checks `mounted` after each `await`; all timers and subscriptions are cancelled in `dispose`
+- **Typography system** centralised in `lib/theme/nearbuddy_typography.dart` — body: `Plus Jakarta Sans`, display: `Hanken Grotesk`, mono: `IBM Plex Mono` (OFL, bundled)
 
 ### Project structure
 
 ```
 lib/
-├── core/            # constants, feature flags, app config (flavors), router, emoji catalog
-├── crypto/          # X25519 keys, AES-GCM, HKDF, SAS
-├── data/            # Drift schema v3 + DAOs, SharedPreferences wrapper
-├── domain/          # models (MessageEnvelope/Message), services (discovery, key exchange)
-├── infrastructure/  # nearby_connections implementation
-├── features/        # onboarding, home (+scan), group, chat (+DM), settings
-├── l10n/            # ARB files (id/en) + generated localizations
-└── theme/           # NearBuddyColorScheme (light/dark semantic tokens)
+├── main.dart                 # Application entry point & ProviderScope initialization
+├── app.dart                  # ShadApp + MaterialApp.router setup & global theme binding
+├── core/                     # Application core configuration & utilities
+│   ├── crypto/               # X25519, AES-GCM, HKDF, & SAS cryptographic primitives
+│   ├── app_config.dart       # Environment configuration & flavor definitions (dev/prod)
+│   ├── constants.dart        # Global app constants (app version, retention, limits)
+│   ├── emoji_catalog.dart    # Offline curated emoji catalog (5 categories, ~125 emojis)
+│   ├── feature_flags.dart   # Feature toggle definitions
+│   └── router.dart           # GoRouter route definitions & navigation guards
+├── data/                     # Persistence & local storage layer
+│   ├── database/             # Drift DB schema v3, migration logic, DAOs, & tables
+│   └── preferences/          # SharedPreferences wrapper for user settings & theme mode
+├── domain/                   # Business domain contracts, models, & service logic
+│   ├── models/               # Message, MessageEnvelope, KeyPayloads, & GroupSession models
+│   └── services/             # PeerDiscoveryService interface & KeyExchangeService
+├── infrastructure/           # Low-level platform & network implementations
+│   └── nearby/               # NearbyConnectionsService (Google Nearby Connections impl)
+├── features/                 # Modular UI screens & feature logic
+│   ├── chat/                 # Group & 1:1 DM chat screens, ChatController, & message bubbles
+│   ├── group/                # Group creation, joining, QR code scanner, & SAS verification
+│   ├── home/                 # Home screen, ambient peer radar, & scan controller
+│   ├── onboarding/           # Welcome flow, nickname selection, & legal disclaimer
+│   ├── settings/             # Settings screen, language picker, & custom theme sheet
+│   └── shared/               # Reusable UI widgets (NearBuddyButton, Avatar, EmptyState)
+├── l10n/                     # ARB localization files (id/en) & generated AppLocalizations
+└── theme/                    # Semantic color tokens, typography system, & brand logo painter
 ```
 
 ---
@@ -188,23 +236,14 @@ lib/
 
 ---
 
-## Known Limitations (v1)
+## Known Limitations
 
-- **No forward secrecy** — static session group key (double-ratchet is explicitly out of scope)
-- **No rekey on member leave**; group key is memory-scoped (app restart = re-key)
-- **Pending/failed messages require manual retry** — there is no automatic store-and-forward
-- **DM requires prior group contact** (peer public key must already be known)
-- **No at-rest encryption** (SQLCipher deferred)
-- Intentionally not planned: `flutter_map` / SOS / voice messaging / cloud sync
+| Limitation | Rationale |
+| --- | --- |
+| No forward secrecy | Double-ratchet is explicitly out of scope |
+| No rekey on member leave | Group key is memory-scoped; app restart triggers re-key |
+| Manual retry for failed messages | No automatic store-and-forward by design |
+| DM requires prior group contact | Peer public key must be known before a DM session |
+| No at-rest encryption | SQLCipher deferred |
 
----
-
-## Roadmap (Milestone M1)
-
-- [ ] **Task 16** — 3-device manual smoke checklist (pending)
-- [ ] **CI** — GitHub Actions: lint, test, build APK
-- [ ] Release distribution (obfuscated split APKs, per-ABI)
-
----
-
-## Docs
+Intentionally out of scope: `flutter_map`, SOS, voice messaging, cloud sync.
