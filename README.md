@@ -37,7 +37,7 @@ Get the latest release APK for your device architecture from [GitHub Releases](.
 
 <div align="center">
 
-| Home & Radar | Chat Room | Settings | About |
+| Homescreen | Chat Room | Settings | About |
 |:---:|:---:|:---:|:---:|
 | <img src="screenshots/homepage-portrait.png" width="160"> | <img src="screenshots/chat_room-portrait.png" width="160"> | <img src="screenshots/settings-portrait.png" width="160"> | <img src="screenshots/about-portrait.png" width="160"> |
 
