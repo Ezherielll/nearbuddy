@@ -11,7 +11,7 @@
 
 </div>
 
-NearBuddy is a general-purpose peer-to-peer mesh messenger that works **without internet, cellular signal, or accounts**. Group chat and 1:1 DMs are transported over Wi-Fi Direct / BLE via [Google Nearby Connections](https://developers.google.com/nearby/connections/overview) and are **end-to-end encrypted by default**. Messages stay only on the devices that carry them — no servers, no cloud, no telemetry.
+NearBuddy is a general-purpose peer-to-peer mesh messenger that works **without internet, cellular signal, or accounts**. On Android, group chats and 1:1 DMs travel over **Wi-Fi Direct / BLE** via [Google Nearby Connections](https://developers.google.com/nearby/connections/overview) and are **end-to-end encrypted by default** — X25519 identity keys, 6-digit SAS verification, and AES-GCM payloads. Messages stay only on the devices that carry them — no servers, no cloud, no telemetry. The iOS platform scaffold is included (target iOS 13); peer-to-peer networking there is planned for v1.1.
 
 ---
 
