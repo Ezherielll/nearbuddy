@@ -5,6 +5,7 @@
 **Offline-first P2P mesh messenger · Android · IOS · No internet required**
 
 ![Platform](https://img.shields.io/badge/platform-Android-3DDC84?logo=android&logoColor=white)
+![iOS](https://img.shields.io/badge/platform-iOS-000000?logo=apple&logoColor=white)
 ![Flutter](https://img.shields.io/badge/Flutter-3.44+-54C5F8?logo=flutter&logoColor=white)
 ![minSdk](https://img.shields.io/badge/minSdk-23-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -12,6 +13,23 @@
 </div>
 
 NearBuddy is a general-purpose peer-to-peer mesh messenger that works **without internet, cellular signal, or accounts**. On Android, group chats and 1:1 DMs travel over **Wi-Fi Direct / BLE** via [Google Nearby Connections](https://developers.google.com/nearby/connections/overview) and are **end-to-end encrypted by default** — X25519 identity keys, 6-digit SAS verification, and AES-GCM payloads. Messages stay only on the devices that carry them — no servers, no cloud, no telemetry. The iOS platform scaffold is included (target iOS 13); peer-to-peer networking there is planned for v1.1.
+
+---
+
+## 📥 Download
+
+### 📱 Pre-built APKs (Android)
+
+Get the latest release APK for your device architecture from [GitHub Releases](../../releases):
+
+| Architecture | Device Type | APK File | Size |
+|---|---|---|---|
+| **ARM64 (`arm64-v8a`)** *(Recommended)* | Modern Android phones & tablets | `app-prod-arm64-v8a-release.apk` | ~18-24 MB |
+| **ARMv7 (`armeabi-v7a`)** | Legacy 32-bit Android devices | `app-prod-armeabi-v7a-release.apk` | ~18-24 MB |
+| **x86_64 (`x86_64`)** | Emulators & Intel/AMD Android devices | `app-prod-x86_64-release.apk` | ~18-24 MB |
+
+> [!TIP]
+> **Most Android devices use `arm64-v8a`**. If you are unsure which one to choose, download the ARM64 version.
 
 ---
 
