@@ -10,6 +10,7 @@ import '../group/group_controller.dart';
 import '../../features/shared/connection_status.dart';
 import 'chat_controller.dart';
 import 'widgets/connection_badge.dart';
+import 'widgets/connection_lost_banner.dart';
 import 'widgets/date_divider.dart';
 import 'widgets/leave_confirm_dialog.dart';
 import 'widgets/message_bubble.dart';
@@ -150,6 +151,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             },
           ),
         ),
+        if (ref.watch(connectionStatusProvider).valueOrNull ==
+            ConnectionStatus.outOfRange)
+          ConnectionLostBanner(
+            title: l10n.connectionLost(group?.name ?? ''),
+            hint: l10n.messageWillWait,
+          ),
         MessageComposer(
           controller: _msgCtrl,
           onSend: (text) => controller.sendTextMessage(text),

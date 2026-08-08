@@ -18,8 +18,9 @@ class ConnectionBadge extends StatelessWidget {
 
     final (color, label) = switch (status) {
       ConnectionStatus.connected => (cs.online, l10n.connConnected),
-      ConnectionStatus.searching => (cs.warning, l10n.connSearching),
-      ConnectionStatus.outOfRange => (cs.destructive, l10n.connOutOfRange),
+      // searching = blue (information); connecting/warning = amber
+      ConnectionStatus.searching => (cs.primary, l10n.connSearching),
+      ConnectionStatus.outOfRange => (cs.mutedForeground, l10n.connDisconnected),
       ConnectionStatus.radioOff => (cs.mutedForeground, l10n.connRadioOff),
     };
 

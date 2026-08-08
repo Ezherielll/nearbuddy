@@ -9,6 +9,7 @@ import '../../theme/nearbuddy_color_scheme.dart';
 import '../../features/shared/connection_status.dart';
 import 'chat_controller.dart';
 import 'widgets/connection_badge.dart';
+import 'widgets/connection_lost_banner.dart';
 import 'widgets/date_divider.dart';
 import 'widgets/leave_confirm_dialog.dart';
 import 'widgets/message_bubble.dart';
@@ -70,6 +71,7 @@ class _DmChatScreenState extends ConsumerState<DmChatScreen> {
       future: sessionsDao.sessionById(widget.sessionId),
       builder: (ctx, snap) {
         final session = snap.data;
+        final l10n = AppLocalizations.of(ctx)!;
         return Scaffold(
           appBar: AppBar(
             title: Column(
@@ -140,6 +142,12 @@ class _DmChatScreenState extends ConsumerState<DmChatScreen> {
                 },
               ),
             ),
+            if (ref.watch(connectionStatusProvider).valueOrNull ==
+                ConnectionStatus.outOfRange)
+              ConnectionLostBanner(
+                title: l10n.connectionLost(session?.peerNickname ?? ''),
+                hint: l10n.messageWillWait,
+              ),
             MessageComposer(
               controller: _msgCtrl,
               onSend: (text) => _send(controller, session, text),

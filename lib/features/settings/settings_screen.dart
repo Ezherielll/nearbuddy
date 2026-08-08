@@ -54,8 +54,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Future<void> _copyDeviceId(String deviceId) async {
     await Clipboard.setData(ClipboardData(text: deviceId));
     if (!mounted) return;
-    ShadToaster.of(context)
-        .show(ShadToast(title: Text(AppLocalizations.of(context)!.codeCopied)));
+    ShadToaster.of(context).show(
+        ShadToast(title: Text(AppLocalizations.of(context)!.deviceIdCopied)));
+  }
+
+  Future<void> _showSecurityInfo() async {
+    final l10n = AppLocalizations.of(context)!;
+    await showShadDialog<void>(
+      context: context,
+      builder: (ctx) => ShadDialog(
+        title: Text(l10n.securityDialogTitle),
+        description: Text(l10n.securityDialogBody),
+        actions: [
+          ShadButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(l10n.cancelLabel),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _sectionHeader(String label) {
@@ -184,11 +201,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(l10n.encryptedLabel,
+                        Text(l10n.securityTitle,
                             style: theme.textTheme.p
                                 .copyWith(fontWeight: FontWeight.w600)),
                         const SizedBox(height: 2),
-                        Text(l10n.securityDesc, style: theme.textTheme.small),
+                        Text(l10n.securityBody, style: theme.textTheme.small),
+                        const SizedBox(height: 4),
+                        ShadButton.link(
+                          onPressed: _showSecurityInfo,
+                          padding: EdgeInsets.zero,
+                          child: Text(l10n.learnSecurity,
+                              style: TextStyle(
+                                  fontSize: 12, color: cs.primary)),
+                        ),
                       ],
                     ),
                   ),

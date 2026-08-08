@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import '../../domain/services/key_exchange_service.dart';
 import '../../l10n/app_localizations.dart';
@@ -20,6 +19,9 @@ class JoinGroupScreen extends ConsumerStatefulWidget {
 class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
   final _formKey = GlobalKey<ShadFormState>();
   bool _loading = false;
+  bool _connecting = false;
+  String _lastCode = '';
+  Timer? _connectTimer;
   StreamSubscription? _rejectedSub;
 
   @override
@@ -36,10 +38,12 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
   void dispose() {
     ref.read(groupControllerProvider).sasRequestHandler = null;
     _rejectedSub?.cancel();
+    _connectTimer?.cancel();
     super.dispose();
   }
 
   Future<void> _onSas(String sas) async {
+    _connectTimer?.cancel();
     if (!mounted) return;
     final ok = await showVerificationDialog(context, sas);
     await ref.read(keyExchangeServiceProvider).confirmSas(ok);
@@ -47,8 +51,12 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
   }
 
   void _onJoinRejected() {
+    _connectTimer?.cancel();
     if (!mounted) return;
-    setState(() => _loading = false);
+    setState(() {
+      _loading = false;
+      _connecting = false;
+    });
     final l10n = AppLocalizations.of(context)!;
     ShadToaster.of(context)
         .show(ShadToast.destructive(title: Text(l10n.pinWrong)));
@@ -80,7 +88,38 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
       ));
       return;
     }
-    context.go('/chat/$code');
+    // Session started — wait for a peer/SAS, with an honest timeout.
+    setState(() {
+      _loading = false;
+      _connecting = true;
+      _lastCode = code;
+    });
+    _connectTimer?.cancel();
+    _connectTimer = Timer(const Duration(seconds: 15), _onConnectTimeout);
+  }
+
+  void _onConnectTimeout() {
+    if (!mounted) return;
+    setState(() => _connecting = false);
+    ref.read(groupControllerProvider).leaveGroup();
+    final l10n = AppLocalizations.of(context)!;
+    showShadDialog<void>(
+      context: context,
+      builder: (ctx) => ShadDialog(
+        title: Text(l10n.groupNotFound),
+        description: Text(l10n.groupNotFoundHint),
+        actions: [
+          ShadButton.outline(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(l10n.cancelLabel),
+          ),
+          ShadButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(l10n.retryLabel),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -185,16 +224,33 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                           inputFormatters: [LengthLimitingTextInputFormatter(6)],
                         ),
                         const SizedBox(height: 24),
-                        _loading
-                            ? const ShadProgress()
-                            : ShadButton(
-                                onPressed: _join,
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 16),
-                                child: Text(l10n.joinGroup,
-                                    style: theme.textTheme.p
-                                        .copyWith(fontWeight: FontWeight.w600)),
+                        if (_connecting)
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
                               ),
+                              const SizedBox(width: 10),
+                              Text(
+                                l10n.connectingTo(_lastCode),
+                                style: theme.textTheme.small,
+                              ),
+                            ],
+                          )
+                        else if (_loading)
+                          const ShadProgress()
+                        else
+                          ShadButton(
+                            onPressed: _join,
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 16),
+                            child: Text(l10n.joinGroup,
+                                style: theme.textTheme.p
+                                    .copyWith(fontWeight: FontWeight.w600)),
+                          ),
                       ],
                     ),
                   ),

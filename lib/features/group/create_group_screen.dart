@@ -121,15 +121,27 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                       ),
                     ],
                     const SizedBox(height: 24),
-                    _loading
-                        ? const ShadProgress()
-                        : ShadButton(
-                            onPressed: _create,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            child: Text(l10n.createGroup,
-                                style: theme.textTheme.p
-                                    .copyWith(fontWeight: FontWeight.w600)),
+                    if (_loading)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
                           ),
+                          const SizedBox(width: 10),
+                          Text(l10n.creatingGroup, style: theme.textTheme.small),
+                        ],
+                      )
+                    else
+                      ShadButton(
+                        onPressed: _create,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        child: Text(l10n.createGroup,
+                            style: theme.textTheme.p
+                                .copyWith(fontWeight: FontWeight.w600)),
+                      ),
                   ],
                 ),
               ),
