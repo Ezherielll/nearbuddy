@@ -17,12 +17,18 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   late final TextEditingController _nickCtrl;
+  bool _nickDirty = false;
 
   @override
   void initState() {
     super.initState();
     _nickCtrl = TextEditingController(
         text: ref.read(appPreferencesProvider).nickname);
+    _nickCtrl.addListener(() {
+      final dirty = _nickCtrl.text.trim() !=
+          (ref.read(appPreferencesProvider).nickname ?? '');
+      if (dirty != _nickDirty) setState(() => _nickDirty = dirty);
+    });
   }
 
   @override
@@ -121,7 +127,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ),
                       const SizedBox(width: 12),
                       ShadButton(
-                        onPressed: _saveNickname,
+                        onPressed: _nickDirty ? _saveNickname : null,
                         child: Text(l10n.continueLabel),
                       ),
                     ],
@@ -151,6 +157,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                 fontFamily: 'monospace',
                                 fontSize: 13,
                                 color: cs.mutedForeground)),
+                        const SizedBox(height: 6),
+                        Text(l10n.deviceIdHelp, style: theme.textTheme.small),
                       ],
                     ),
                   ),
@@ -180,8 +188,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             style: theme.textTheme.p
                                 .copyWith(fontWeight: FontWeight.w600)),
                         const SizedBox(height: 2),
-                        Text(l10n.readyStatusDesc,
-                            style: theme.textTheme.small),
+                        Text(l10n.securityDesc, style: theme.textTheme.small),
                       ],
                     ),
                   ),

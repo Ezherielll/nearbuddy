@@ -10,6 +10,7 @@ import '../../features/shared/connection_status.dart';
 import 'chat_controller.dart';
 import 'widgets/connection_badge.dart';
 import 'widgets/date_divider.dart';
+import 'widgets/leave_confirm_dialog.dart';
 import 'widgets/message_bubble.dart';
 import 'widgets/message_composer.dart';
 
@@ -114,6 +115,8 @@ class _DmChatScreenState extends ConsumerState<DmChatScreen> {
               ShadIconButton(
                 icon: const Icon(LucideIcons.trash2),
                 onPressed: () async {
+                  final ok = await showLeaveConfirmDialog(context);
+                  if (!ok || !context.mounted) return;
                   await sessionsDao.deleteSession(widget.sessionId);
                   if (!context.mounted) return;
                   context.go('/home');

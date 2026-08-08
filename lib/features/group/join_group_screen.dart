@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +7,8 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 import '../../domain/services/key_exchange_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../chat/widgets/verification_dialog.dart';
+import '../home/scan_controller.dart';
+import '../shared/widgets/avatar_initial.dart';
 import 'group_controller.dart';
 
 class JoinGroupScreen extends ConsumerStatefulWidget {
@@ -17,16 +20,22 @@ class JoinGroupScreen extends ConsumerStatefulWidget {
 class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
   final _formKey = GlobalKey<ShadFormState>();
   bool _loading = false;
+  StreamSubscription? _rejectedSub;
 
   @override
   void initState() {
     super.initState();
     ref.read(groupControllerProvider).sasRequestHandler = _onSas;
+    _rejectedSub = ref
+        .read(keyExchangeServiceProvider)
+        .onJoinRejected
+        .listen((_) => _onJoinRejected());
   }
 
   @override
   void dispose() {
     ref.read(groupControllerProvider).sasRequestHandler = null;
+    _rejectedSub?.cancel();
     super.dispose();
   }
 
@@ -35,6 +44,20 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
     final ok = await showVerificationDialog(context, sas);
     await ref.read(keyExchangeServiceProvider).confirmSas(ok);
     if (!ok && mounted) await ref.read(groupControllerProvider).leaveGroup();
+  }
+
+  void _onJoinRejected() {
+    if (!mounted) return;
+    setState(() => _loading = false);
+    final l10n = AppLocalizations.of(context)!;
+    ShadToaster.of(context)
+        .show(ShadToast.destructive(title: Text(l10n.pinWrong)));
+  }
+
+  Future<void> _retryScan() async {
+    final ctrl = ref.read(scanControllerProvider);
+    await ctrl.stop();
+    await ctrl.start();
   }
 
   Future<void> _join() async {
@@ -64,50 +87,120 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = ShadTheme.of(context);
+    final cs = ShadTheme.of(context).colorScheme;
+    final devices = ref.watch(nearbyDevicesProvider);
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.joinGroup)),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
-          child: ShadCard(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: ShadForm(
-                key: _formKey,
-                autovalidateMode: ShadAutovalidateMode.always,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(l10n.joinGroupDesc, style: theme.textTheme.muted),
-                    const SizedBox(height: 20),
-                    ShadInputFormField(
-                      id: 'code',
-                      label: Text(l10n.groupCode),
-                      placeholder: Text(l10n.groupCodeHint),
-                      validator: (v) => v.trim().isEmpty ? l10n.groupCode : null,
-                    ),
-                    const SizedBox(height: 16),
-                    ShadInputFormField(
-                      id: 'pin',
-                      label: Text(l10n.groupPin),
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [LengthLimitingTextInputFormatter(6)],
-                    ),
-                    const SizedBox(height: 24),
-                    _loading
-                        ? const ShadProgress()
-                        : ShadButton(
-                            onPressed: _join,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            child: Text(l10n.joinGroup,
-                                style: theme.textTheme.p
-                                    .copyWith(fontWeight: FontWeight.w600)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(l10n.joinGroupDesc, style: theme.textTheme.muted),
+              const SizedBox(height: 16),
+              // Nearby devices from the ambient scan — honest list: name +
+              // "detected" only (the plugin exposes no signal strength).
+              Text(l10n.devicesNearbySection,
+                  style: theme.textTheme.small.copyWith(
+                      fontWeight: FontWeight.w600, letterSpacing: 0.4)),
+              const SizedBox(height: 8),
+              if (devices.isEmpty)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: cs.card,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: cs.border),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(LucideIcons.radar, size: 18, color: cs.mutedForeground),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(l10n.noDevicesFound,
+                            style: theme.textTheme.small),
+                      ),
+                      ShadButton.ghost(
+                        onPressed: _retryScan,
+                        child: Text(l10n.retryLabel),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                Container(
+                  decoration: BoxDecoration(
+                    color: cs.card,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: cs.border),
+                  ),
+                  child: Column(
+                    children: [
+                      for (final d in devices)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 8),
+                          child: Row(
+                            children: [
+                              AvatarInitial(name: d.nickname, size: 32),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(d.nickname,
+                                    style: theme.textTheme.p
+                                        .copyWith(fontWeight: FontWeight.w500)),
+                              ),
+                              Text(l10n.deviceDetected,
+                                  style: theme.textTheme.small),
+                            ],
                           ),
-                  ],
+                        ),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: 20),
+              ShadCard(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: ShadForm(
+                    key: _formKey,
+                    autovalidateMode: ShadAutovalidateMode.always,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        ShadInputFormField(
+                          id: 'code',
+                          label: Text(l10n.groupCode),
+                          placeholder: Text(l10n.groupCodeHint),
+                          validator: (v) =>
+                              v.trim().isEmpty ? l10n.groupCode : null,
+                        ),
+                        const SizedBox(height: 16),
+                        ShadInputFormField(
+                          id: 'pin',
+                          label: Text(l10n.groupPin),
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [LengthLimitingTextInputFormatter(6)],
+                        ),
+                        const SizedBox(height: 24),
+                        _loading
+                            ? const ShadProgress()
+                            : ShadButton(
+                                onPressed: _join,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                child: Text(l10n.joinGroup,
+                                    style: theme.textTheme.p
+                                        .copyWith(fontWeight: FontWeight.w600)),
+                              ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
         ),
       ),

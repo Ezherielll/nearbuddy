@@ -32,6 +32,7 @@ class KeyExchangeService {
   final _endpointPubKeys = <String, SimplePublicKey>{};   // endpointId → pubkey
   final _sasChallengeCtrl = StreamController<String>.broadcast();
   final _peerVerifiedCtrl = StreamController<String>.broadcast();
+  final _joinRejectedCtrl = StreamController<String>.broadcast();
   String? _pendingEndpoint;
   bool _sasConfirmed = false;
 
@@ -45,9 +46,13 @@ class KeyExchangeService {
   /// SAS to display for the active join; UI subscribes and calls [confirmSas].
   Stream<String> get onSasChallenge => _sasChallengeCtrl.stream;
 
-  /// Fires with the endpointId once that peer confirmed the SAS match.
-  /// This is the trigger for delivering the group key (Task 11 wiring).
-  Stream<String> get onPeerVerified => _peerVerifiedCtrl.stream;
+    /// Fires with the endpointId once that peer confirmed the SAS match.
+    /// This is the trigger for delivering the group key (Task 11 wiring).
+    Stream<String> get onPeerVerified => _peerVerifiedCtrl.stream;
+
+    /// Fires when the peer rejected the join (wrong PIN / SAS mismatch).
+    /// UI shows a "wrong PIN" style error and lets the user retry.
+    Stream<String> get onJoinRejected => _joinRejectedCtrl.stream;
 
   /// Sends our identity to a freshly-connected peer (Task 11 calls this on
   /// onPeerConnected). PIN rides in the hello only if the group uses one.
@@ -132,6 +137,7 @@ class KeyExchangeService {
         // peer confirmed the SAS — fire the trigger for group key delivery
         _peerVerifiedCtrl.add(fromEndpointId);
       case 'verify_fail':
+        _joinRejectedCtrl.add(fromEndpointId);
         await _peer.stopSession();
       case 'key':
         if (!_sasConfirmed) return;   // never accept keys from unverified peers
