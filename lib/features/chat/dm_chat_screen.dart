@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import '../../data/database/app_database.dart';
+import '../../data/database/daos/sessions_dao.dart';
 import '../../l10n/app_localizations.dart';
 import '../../main.dart';
 import '../../theme/nearbuddy_color_scheme.dart';
+import '../shared/widgets/avatar_initial.dart';
 import '../../features/shared/connection_status.dart';
 import 'chat_controller.dart';
 import 'widgets/connection_badge.dart';
@@ -84,55 +86,86 @@ class _DmChatScreenState extends ConsumerState<DmChatScreen> {
         final l10n = AppLocalizations.of(ctx)!;
         return Scaffold(
           appBar: AppBar(
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
+            titleSpacing: 0,
+            title: Row(
               children: [
-                Text(session?.peerNickname ?? '',
-                    style: theme.textTheme.p.copyWith(fontWeight: FontWeight.w600)),
-                if (peerTyping)
-                  Text(
-                    AppLocalizations.of(context)!.typingIndicator,
-                    style: TextStyle(
-                        fontSize: 11,
-                        fontStyle: FontStyle.italic,
-                        color: cs.online),
-                  )
-                else
-                  Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ConnectionBadge(
-                        status:
-                            ref.watch(connectionStatusProvider).valueOrNull ??
+                AvatarInitial(name: session?.peerNickname ?? '', size: 34),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(session?.peerNickname ?? '',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.p.copyWith(
+                              fontWeight: FontWeight.w600, fontSize: 16)),
+                      if (peerTyping)
+                        Text(
+                          l10n.typingIndicator,
+                          style: TextStyle(
+                              fontSize: 12,
+                              fontStyle: FontStyle.italic,
+                              color: cs.online),
+                        )
+                      else
+                        ConnectionBadge.chat(
+                            status: ref
+                                    .watch(connectionStatusProvider)
+                                    .valueOrNull ??
                                 ConnectionStatus.searching),
-                    const SizedBox(width: 8),
-                    const EncryptedMarker(),
-                    const SizedBox(width: 6),
-                    Flexible(
-                      child: Text(
-                        session?.peerDeviceId ?? '',
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                            fontFamily: 'monospace',
-                            fontSize: 10,
-                            color: cs.mutedForeground),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
             actions: [
-              ShadIconButton(
-                icon: const Icon(LucideIcons.trash2),
-                onPressed: () async {
-                  final ok = await showLeaveConfirmDialog(context);
-                  if (!ok || !context.mounted) return;
-                  await sessionsDao.deleteSession(widget.sessionId);
-                  if (!context.mounted) return;
-                  context.go('/home');
+              PopupMenuButton<String>(
+                icon: const Icon(LucideIcons.moreVertical, size: 20),
+                tooltip: '',
+                onSelected: (v) {
+                  if (v == 'disconnect') _confirmDelete(sessionsDao);
                 },
+                itemBuilder: (_) => [
+                  PopupMenuItem<String>(
+                    value: 'info',
+                    enabled: false,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(LucideIcons.lock, size: 14, color: cs.online),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(l10n.menuEncryptedInfo,
+                                  style: const TextStyle(fontSize: 13)),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(session?.peerDeviceId ?? '',
+                            style: TextStyle(
+                                fontFamily: 'monospace',
+                                fontSize: 11,
+                                color: cs.mutedForeground)),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuDivider(),
+                  PopupMenuItem<String>(
+                    value: 'disconnect',
+                    child: Row(
+                      children: [
+                        Icon(LucideIcons.trash2, size: 16, color: cs.destructive),
+                        const SizedBox(width: 8),
+                        Text(l10n.menuDisconnect),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -170,6 +203,14 @@ class _DmChatScreenState extends ConsumerState<DmChatScreen> {
         );
       },
     );
+  }
+
+  Future<void> _confirmDelete(SessionsDao sessionsDao) async {
+    final ok = await showLeaveConfirmDialog(context);
+    if (!ok || !mounted) return;
+    await sessionsDao.deleteSession(widget.sessionId);
+    if (!mounted) return;
+    context.go('/home');
   }
 
   Future<void> _send(ChatController c, SessionRow? session, String text) async {

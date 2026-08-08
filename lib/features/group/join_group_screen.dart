@@ -8,6 +8,7 @@ import '../../l10n/app_localizations.dart';
 import '../chat/widgets/verification_dialog.dart';
 import '../home/scan_controller.dart';
 import '../shared/widgets/avatar_initial.dart';
+import '../shared/widgets/nearbuddy_button.dart';
 import 'group_controller.dart';
 
 class JoinGroupScreen extends ConsumerStatefulWidget {
@@ -230,30 +231,15 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                         ),
                         const SizedBox(height: 24),
                         if (_connecting)
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              ),
-                              const SizedBox(width: 10),
-                              Text(
-                                l10n.connectingTo(_lastCode),
-                                style: theme.textTheme.small,
-                              ),
-                            ],
+                          NearBuddyButton(
+                            loading: true,
+                            label: l10n.connectingTo(_lastCode),
                           )
-                        else if (_loading)
-                          const ShadProgress()
                         else
-                          ShadButton(
+                          NearBuddyButton(
+                            label: l10n.joinGroup,
+                            loading: _loading,
                             onPressed: _join,
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 16),
-                            child: Text(l10n.joinGroup,
-                                style: const TextStyle(fontWeight: FontWeight.w600)),
                           ),
                       ],
                     ),

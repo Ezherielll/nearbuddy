@@ -22,6 +22,8 @@ class NearBuddyMessageBubble extends StatelessWidget {
   final bool isLocation;
   final double? latitude;
   final double? longitude;
+  /// Show the bubble tail; grouped messages omit it.
+  final bool tail;
 
   const NearBuddyMessageBubble({
     super.key,
@@ -34,6 +36,7 @@ class NearBuddyMessageBubble extends StatelessWidget {
     this.isLocation = false,
     this.latitude,
     this.longitude,
+    this.tail = true,
   });
 
   String _time(BuildContext context) {
@@ -115,7 +118,7 @@ class NearBuddyMessageBubble extends StatelessWidget {
           height: 1.3,
           color: isMe ? cs.primaryForeground : cs.foreground,
         ),
-        tail: true,
+        tail: tail,
         sent: isMe && status == MessageStatus.sent,
         delivered: isMe && status == MessageStatus.delivered,
         timestamp: _time(context),

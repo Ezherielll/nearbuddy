@@ -133,5 +133,13 @@
   "@appVersion": { "placeholders": { "version": { "type": "String" } } },
   "aboutNearBuddy": "About NearBuddy",
   "encryptionRow": "Encryption",
-  "encryptionRowSubtitle": "Messages are encrypted and stored locally"
+  "encryptionRowSubtitle": "Messages are encrypted and stored locally",
+  "appearanceSection": "Appearance",
+  "themeLabel": "Theme",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+  "themeSystem": "System default",
+  "menuDisconnect": "Disconnect",
+  "menuEncryptedInfo": "End-to-end encrypted · direct connection",
+  "connError": "Connection failed"
 }

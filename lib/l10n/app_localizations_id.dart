@@ -426,4 +426,28 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get encryptionRowSubtitle =>
       'Pesan terenkripsi dan disimpan secara lokal';
+
+  @override
+  String get appearanceSection => 'Tampilan';
+
+  @override
+  String get themeLabel => 'Tema';
+
+  @override
+  String get themeLight => 'Terang';
+
+  @override
+  String get themeDark => 'Gelap';
+
+  @override
+  String get themeSystem => 'Mengikuti sistem';
+
+  @override
+  String get menuDisconnect => 'Putuskan';
+
+  @override
+  String get menuEncryptedInfo => 'Terenkripsi end-to-end · koneksi langsung';
+
+  @override
+  String get connError => 'Koneksi gagal';
 }

@@ -8,6 +8,7 @@ import '../../core/constants.dart';
 import '../../domain/services/key_exchange_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../chat/widgets/verification_dialog.dart';
+import '../shared/widgets/nearbuddy_button.dart';
 import 'group_controller.dart';
 
 class CreateGroupScreen extends ConsumerStatefulWidget {
@@ -127,26 +128,11 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                       ),
                     ],
                     const SizedBox(height: 24),
-                    if (_loading)
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                          const SizedBox(width: 10),
-                          Text(l10n.creatingGroup, style: theme.textTheme.small),
-                        ],
-                      )
-                    else
-                      ShadButton(
-                        onPressed: _create,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        child: Text(l10n.createGroup,
-                            style: const TextStyle(fontWeight: FontWeight.w600)),
-                      ),
+                    NearBuddyButton(
+                      label: l10n.createGroup,
+                      loading: _loading,
+                      onPressed: _create,
+                    ),
                   ],
                 ),
               ),

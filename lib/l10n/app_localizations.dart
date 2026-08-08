@@ -865,6 +865,54 @@ abstract class AppLocalizations {
   /// In id, this message translates to:
   /// **'Pesan terenkripsi dan disimpan secara lokal'**
   String get encryptionRowSubtitle;
+
+  /// No description provided for @appearanceSection.
+  ///
+  /// In id, this message translates to:
+  /// **'Tampilan'**
+  String get appearanceSection;
+
+  /// No description provided for @themeLabel.
+  ///
+  /// In id, this message translates to:
+  /// **'Tema'**
+  String get themeLabel;
+
+  /// No description provided for @themeLight.
+  ///
+  /// In id, this message translates to:
+  /// **'Terang'**
+  String get themeLight;
+
+  /// No description provided for @themeDark.
+  ///
+  /// In id, this message translates to:
+  /// **'Gelap'**
+  String get themeDark;
+
+  /// No description provided for @themeSystem.
+  ///
+  /// In id, this message translates to:
+  /// **'Mengikuti sistem'**
+  String get themeSystem;
+
+  /// No description provided for @menuDisconnect.
+  ///
+  /// In id, this message translates to:
+  /// **'Putuskan'**
+  String get menuDisconnect;
+
+  /// No description provided for @menuEncryptedInfo.
+  ///
+  /// In id, this message translates to:
+  /// **'Terenkripsi end-to-end · koneksi langsung'**
+  String get menuEncryptedInfo;
+
+  /// No description provided for @connError.
+  ///
+  /// In id, this message translates to:
+  /// **'Koneksi gagal'**
+  String get connError;
 }
 
 class _AppLocalizationsDelegate

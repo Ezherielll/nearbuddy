@@ -9,20 +9,37 @@ import '../../shared/connection_status.dart';
 /// the same everywhere.
 class ConnectionBadge extends StatelessWidget {
   final ConnectionStatus status;
-  const ConnectionBadge({super.key, required this.status});
+  final bool chatContext;
+  const ConnectionBadge({super.key, required this.status})
+      : chatContext = false;
+
+  /// Chat-header variant: discovery ("searching") is network-level noise
+  /// inside a conversation, so it renders as "Connecting…" (amber); a lost
+  /// peer renders as "Not connected" (gray).
+  const ConnectionBadge.chat({super.key, required this.status})
+      : chatContext = true;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final cs = ShadTheme.of(context).colorScheme;
 
-    final (color, label) = switch (status) {
-      ConnectionStatus.connected => (cs.online, l10n.connConnected),
-      // searching = blue (information); connecting/warning = amber
-      ConnectionStatus.searching => (cs.primary, l10n.connSearching),
-      ConnectionStatus.outOfRange => (cs.mutedForeground, l10n.connDisconnected),
-      ConnectionStatus.radioOff => (cs.mutedForeground, l10n.connRadioOff),
-    };
+    final (color, label) = chatContext
+        ? switch (status) {
+            ConnectionStatus.connected => (cs.online, l10n.connConnected),
+            ConnectionStatus.searching => (cs.warning, l10n.connConnecting),
+            ConnectionStatus.outOfRange =>
+              (cs.mutedForeground, l10n.connDisconnected),
+            ConnectionStatus.radioOff => (cs.mutedForeground, l10n.connRadioOff),
+          }
+        : switch (status) {
+            ConnectionStatus.connected => (cs.online, l10n.connConnected),
+            // searching = blue (information); connecting/warning = amber
+            ConnectionStatus.searching => (cs.primary, l10n.connSearching),
+            ConnectionStatus.outOfRange =>
+              (cs.mutedForeground, l10n.connDisconnected),
+            ConnectionStatus.radioOff => (cs.mutedForeground, l10n.connRadioOff),
+          };
 
     return Row(
       mainAxisSize: MainAxisSize.min,

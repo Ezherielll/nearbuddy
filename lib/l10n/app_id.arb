@@ -133,5 +133,13 @@
   "@appVersion": { "placeholders": { "version": { "type": "String" } } },
   "aboutNearBuddy": "Tentang NearBuddy",
   "encryptionRow": "Enkripsi",
-  "encryptionRowSubtitle": "Pesan terenkripsi dan disimpan secara lokal"
+  "encryptionRowSubtitle": "Pesan terenkripsi dan disimpan secara lokal",
+  "appearanceSection": "Tampilan",
+  "themeLabel": "Tema",
+  "themeLight": "Terang",
+  "themeDark": "Gelap",
+  "themeSystem": "Mengikuti sistem",
+  "menuDisconnect": "Putuskan",
+  "menuEncryptedInfo": "Terenkripsi end-to-end · koneksi langsung",
+  "connError": "Koneksi gagal"
 }

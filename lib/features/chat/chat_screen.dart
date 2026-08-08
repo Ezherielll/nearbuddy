@@ -10,6 +10,7 @@ import '../../main.dart';
 import '../group/group_controller.dart';
 import '../shared/widgets/avatar_initial.dart';
 import '../../features/shared/connection_status.dart';
+import '../../theme/nearbuddy_color_scheme.dart';
 import 'chat_controller.dart';
 import 'widgets/connection_badge.dart';
 import 'widgets/connection_lost_banner.dart';
@@ -60,6 +61,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (!ok && mounted) {
       await ref.read(groupControllerProvider).leaveGroup();
     }
+  }
+
+  Future<void> _confirmLeave() async {
+    final ok = await showLeaveConfirmDialog(context);
+    if (!ok || !mounted) return;
+    await ref.read(groupControllerProvider).leaveGroup();
+    if (!mounted) return;
+    context.go('/home');
   }
 
   void _scrollToBottom() {
@@ -122,33 +131,50 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.p
-                          .copyWith(fontWeight: FontWeight.w600)),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ConnectionBadge(
-                          status:
-                              ref.watch(connectionStatusProvider).valueOrNull ??
-                                  ConnectionStatus.searching),
-                      const SizedBox(width: 8),
-                      const EncryptedMarker(),
-                    ],
-                  ),
+                          .copyWith(fontWeight: FontWeight.w600, fontSize: 16)),
+                  ConnectionBadge.chat(
+                      status:
+                          ref.watch(connectionStatusProvider).valueOrNull ??
+                              ConnectionStatus.searching),
                 ],
               ),
             ),
           ],
         ),
         actions: [
-          ShadIconButton(
-            icon: const Icon(LucideIcons.logOut),
-            onPressed: () async {
-              final ok = await showLeaveConfirmDialog(context);
-              if (!ok || !context.mounted) return;
-              await ref.read(groupControllerProvider).leaveGroup();
-              if (!context.mounted) return;
-              context.go('/home');
+          PopupMenuButton<String>(
+            icon: const Icon(LucideIcons.moreVertical, size: 20),
+            tooltip: '',
+            onSelected: (v) {
+              if (v == 'disconnect') _confirmLeave();
             },
+            itemBuilder: (_) => [
+              PopupMenuItem<String>(
+                value: 'info',
+                enabled: false,
+                child: Row(
+                  children: [
+                    Icon(LucideIcons.lock, size: 14, color: cs.online),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(l10n.menuEncryptedInfo,
+                          style: const TextStyle(fontSize: 13)),
+                    ),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              PopupMenuItem<String>(
+                value: 'disconnect',
+                child: Row(
+                  children: [
+                    Icon(LucideIcons.logOut, size: 16, color: cs.destructive),
+                    const SizedBox(width: 8),
+                    Text(l10n.menuDisconnect),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),

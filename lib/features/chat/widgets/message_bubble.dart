@@ -38,6 +38,7 @@ class MessageBubble extends StatelessWidget {
       isLocation: isLocation,
       latitude: row.latitude,
       longitude: row.longitude,
+      tail: !grouped,
       onRetry: onRetry == null ? null : () => onRetry!(row.id),
     );
 

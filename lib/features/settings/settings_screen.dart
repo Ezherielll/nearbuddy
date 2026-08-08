@@ -78,6 +78,53 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     ShadToaster.of(context).show(ShadToast(title: Text(l10n.nicknameSaved)));
   }
 
+  Future<void> _showThemeDialog() async {
+    final l10n = AppLocalizations.of(context)!;
+    final prefs = ref.read(appPreferencesProvider);
+    final current = ref.read(themeModeProvider);
+    final chosen = await showShadDialog<ThemeMode>(
+      context: context,
+      builder: (ctx) => ShadDialog(
+        title: Text(l10n.themeLabel),
+        description: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _ThemeOption(
+              label: l10n.themeLight,
+              selected: current == ThemeMode.light,
+              onTap: () => Navigator.of(ctx).pop(ThemeMode.light),
+            ),
+            _ThemeOption(
+              label: l10n.themeDark,
+              selected: current == ThemeMode.dark,
+              onTap: () => Navigator.of(ctx).pop(ThemeMode.dark),
+            ),
+            _ThemeOption(
+              label: l10n.themeSystem,
+              selected: current == ThemeMode.system,
+              onTap: () => Navigator.of(ctx).pop(ThemeMode.system),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (chosen == null || chosen == current) return;
+    await prefs.setThemeMode(switch (chosen) {
+      ThemeMode.light => 'light',
+      ThemeMode.dark => 'dark',
+      ThemeMode.system => 'system',
+    });
+    if (!mounted) return;
+    ref.read(themeModeProvider.notifier).state = chosen;
+  }
+
+  String _themeLabel(ThemeMode mode, AppLocalizations l10n) =>
+      switch (mode) {
+        ThemeMode.light => l10n.themeLight,
+        ThemeMode.dark => l10n.themeDark,
+        ThemeMode.system => l10n.themeSystem,
+      };
+
   Future<void> _showSecurityInfo() async {
     final l10n = AppLocalizations.of(context)!;
     await showShadDialog<void>(
@@ -161,6 +208,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             trailing: Icon(LucideIcons.chevronRight,
                 size: 18, color: cs.mutedForeground),
             onTap: _showLanguageDialog,
+          ),
+          // TAMPILAN
+          _SectionLabel(l10n.appearanceSection),
+          _SettingTile(
+            icon: LucideIcons.sunMoon,
+            title: l10n.themeLabel,
+            subtitle: _themeLabel(ref.watch(themeModeProvider), l10n),
+            trailing: Icon(LucideIcons.chevronRight,
+                size: 18, color: cs.mutedForeground),
+            onTap: _showThemeDialog,
           ),
           // IDENTITAS
           _SectionLabel(l10n.identitySection),
@@ -279,6 +336,35 @@ class _SettingTile extends StatelessWidget {
               const SizedBox(width: 12),
               trailing!,
             ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ThemeOption extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  const _ThemeOption({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = ShadTheme.of(context).colorScheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        child: Row(
+          children: [
+            Expanded(child: Text(label)),
+            if (selected) Icon(LucideIcons.check, size: 18, color: cs.primary),
           ],
         ),
       ),

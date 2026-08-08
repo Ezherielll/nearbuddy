@@ -8,6 +8,16 @@ final appPreferencesProvider = Provider<AppPreferences>((_) => throw Unimplement
 final localeProvider = StateProvider<Locale>((ref) =>
     Locale(ref.watch(appPreferencesProvider).languageCode));
 
+/// Persisted theme preference — 'light' | 'dark' | 'system'.
+final themeModeProvider = StateProvider<ThemeMode>((ref) {
+  final v = ref.watch(appPreferencesProvider).themeMode;
+  return switch (v) {
+    'light' => ThemeMode.light,
+    'dark' => ThemeMode.dark,
+    _ => ThemeMode.system,
+  };
+});
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await AppPreferences.create();

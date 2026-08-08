@@ -6,6 +6,7 @@ import '../../l10n/app_localizations.dart';
 import '../home/scan_controller.dart';
 import '../shared/widgets/avatar_initial.dart';
 import '../shared/widgets/empty_state.dart';
+import '../shared/widgets/nearbuddy_button.dart';
 
 /// Post-create step: pick devices nearby to invite. Selected devices connect
 /// automatically once they join — invitation is a local, honest step, not a
@@ -103,11 +104,9 @@ class _InviteDevicesScreenState extends ConsumerState<InviteDevicesScreen> {
             top: false,
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: ShadButton(
+              child: NearBuddyButton(
+                label: l10n.startChat,
                 onPressed: () => context.go('/chat/${widget.groupId}'),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                child: Text(l10n.startChat,
-                    style: const TextStyle(fontWeight: FontWeight.w600)),
               ),
             ),
           ),

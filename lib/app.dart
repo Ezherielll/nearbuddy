@@ -12,6 +12,7 @@ class NearBuddyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final locale = ref.watch(localeProvider);
+    final themeMode = ref.watch(themeModeProvider);
     return ShadApp.custom(
       theme: ShadThemeData(
         brightness: Brightness.light,
@@ -21,7 +22,7 @@ class NearBuddyApp extends ConsumerWidget {
         brightness: Brightness.dark,
         colorScheme: const NearBuddyColorScheme.dark(),
       ),
-      themeMode: ThemeMode.system,
+      themeMode: themeMode,
       appBuilder: (context) {
         return MaterialApp.router(
           title: 'NearBuddy',
