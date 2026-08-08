@@ -70,8 +70,11 @@ class NearbyDevicesNotifier extends StateNotifier<List<NearbyDevice>> {
 final radioAvailableProvider = StateProvider<bool>((_) => true);
 
 /// Async check used at Home startup — updates [radioAvailableProvider].
+/// `restricted` counts as available (neverForLocation flag on Bluetooth/
+/// Nearby Wi-Fi still allows scanning).
 Future<bool> checkRadioAvailability() async {
   final s = await Permission.bluetoothScan.status;
   final wifi = await Permission.nearbyWifiDevices.status;
-  return s.isGranted || s.isLimited || wifi.isGranted || wifi.isLimited;
+  bool ok(PermissionStatus st) => st.isGranted || st.isLimited || st.isRestricted;
+  return ok(s) || ok(wifi);
 }

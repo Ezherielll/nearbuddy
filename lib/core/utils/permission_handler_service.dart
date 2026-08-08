@@ -10,12 +10,16 @@ class PermissionHandlerService {
       Permission.nearbyWifiDevices,
       Permission.locationWhenInUse,
     ].request();
-    return statuses.values.every((s) => s.isGranted || s.isLimited);
+    // `restricted` is returned on some devices for neverForLocation-flagged
+    // permissions (BLUETOOTH_SCAN / NEARBY_WIFI_DEVICES) — Nearby still
+    // works in that state, so treat it as granted.
+    return statuses.values
+        .every((s) => s.isGranted || s.isLimited || s.isRestricted);
   }
 
   Future<bool> requestLocationPermission() async {
     final s = await Permission.locationWhenInUse.request();
-    return s.isGranted || s.isLimited;
+    return s.isGranted || s.isLimited || s.isRestricted;
   }
 }
 
