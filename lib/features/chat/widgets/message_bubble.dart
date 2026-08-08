@@ -1,20 +1,47 @@
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import '../../../data/database/app_database.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../shared/widgets/avatar_initial.dart';
 import 'location_ping_card.dart';
 
 class MessageBubble extends StatelessWidget {
   final MessageRow row;
   final bool isMe;
-  const MessageBubble({super.key, required this.row, required this.isMe});
+  final void Function(String messageId)? onRetry;
+  const MessageBubble({
+    super.key,
+    required this.row,
+    required this.isMe,
+    this.onRetry,
+  });
 
   bool get _isLocation =>
       row.type == 'location' && row.latitude != null && row.longitude != null;
 
+  Widget? _statusIcon(ShadColorScheme cs, AppLocalizations l10n) {
+    if (!isMe) return null;
+    final status = row.status;
+    final (icon, color, tooltip) = switch (status) {
+      'delivered' => (LucideIcons.checkCheck, cs.primary, l10n.messageDelivered),
+      'pending' => (LucideIcons.clock, cs.mutedForeground, l10n.messagePending),
+      'failed' => (LucideIcons.alertCircle, cs.destructive, l10n.messageFailed),
+      _ => (LucideIcons.check, cs.mutedForeground, l10n.messageSent),
+    };
+    final retryable = status == 'pending' || status == 'failed';
+    return Tooltip(
+      message: tooltip,
+      child: GestureDetector(
+        onTap: retryable && onRetry != null ? () => onRetry!(row.id) : null,
+        child: Icon(icon, size: 13, color: color),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = ShadTheme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
 
     final bubble = Container(
       constraints: BoxConstraints(
@@ -59,17 +86,23 @@ class MessageBubble extends StatelessWidget {
               ),
             ),
           const SizedBox(height: 4),
-          Align(
-            alignment: Alignment.centerRight,
-            child: Text(
-              _fmt(row.timestamp),
-              style: TextStyle(
-                fontSize: 11,
-                color: isMe
-                    ? cs.primaryForeground.withValues(alpha: 0.75)
-                    : cs.mutedForeground,
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (_statusIcon(cs, l10n) != null) ...[
+                _statusIcon(cs, l10n)!,
+                const SizedBox(width: 4),
+              ],
+              Text(
+                _fmt(row.timestamp),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: isMe
+                      ? cs.primaryForeground.withValues(alpha: 0.75)
+                      : cs.mutedForeground,
+                ),
               ),
-            ),
+            ],
           ),
         ],
       ),

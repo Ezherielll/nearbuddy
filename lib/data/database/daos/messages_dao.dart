@@ -20,4 +20,15 @@ class MessagesDao extends DatabaseAccessor<AppDatabase> with _$MessagesDaoMixin 
       (delete(messages)
             ..where((m) => m.timestamp.isSmallerThan(Variable(cutoff))))
           .go();
+
+  Future<MessageRow?> messageById(String id) =>
+      (select(messages)..where((m) => m.id.equals(id))).getSingleOrNull();
+
+  Future<void> markDelivered(String id) => (update(messages)
+        ..where((m) => m.id.equals(id)))
+      .write(const MessagesCompanion(status: Value('delivered')));
+
+  Future<void> markFailed(String id) => (update(messages)
+        ..where((m) => m.id.equals(id)))
+      .write(const MessagesCompanion(status: Value('failed')));
 }

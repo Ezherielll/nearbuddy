@@ -24,6 +24,9 @@ import '../group/group_controller.dart';
 final chatControllerProvider =
     Provider<ChatController>((ref) => ChatController(ref));
 
+/// sessionId whose peer is currently typing (DM only).
+final typingSessionProvider = StateProvider<String?>((_) => null);
+
 class ChatController {
   final Ref _ref;
   final _seen = <String, DateTime>{};
@@ -49,7 +52,28 @@ class ChatController {
     _sub = _peer.onPayloadReceived.listen((e) async {
       try {
         final j = jsonDecode(e.payload) as Map<String, dynamic>;
-        if (!j.containsKey('v')) return;   // control — GroupController handles
+        if (j.containsKey('t')) {
+          // control messages — ack is chat-scoped; the rest is group-scoped
+          switch (j['t']) {
+            case 'ack':
+              await _handleAck(j['id'] as String);
+            case 'typing':
+              final myId = await _ref.read(myDeviceIdProvider.future);
+              if (j['to'] == myId) {
+                final on = j['on'] == true;
+                final gid = j['gid'] as String?;
+                if (on && gid != null) {
+                  _ref.read(typingSessionProvider.notifier).state = gid;
+                } else if (!on) {
+                  _ref
+                      .read(typingSessionProvider.notifier)
+                      .state = null;
+                }
+              }
+          }
+          return;
+        }
+        if (!j.containsKey('v')) return;   // unknown control — GroupController handles
         final env = MessageEnvelope.fromWireJson(j);
         if (env.gid != _gid) return;
         if (!_dedup(env.id)) return;
@@ -73,8 +97,32 @@ class ChatController {
             key);
         final msg = Message.fromPayloadJson(jsonDecode(plain));
         await _persist(env, msg);
+        // delivery receipt (DM only): tell the sender we got it
+        if (env.kind == 'dm') {
+          await _peer.sendToAll(jsonEncode({'t': 'ack', 'id': env.id}));
+        }
       } catch (_) {}
     });
+  }
+
+  /// Marks one of OUR outgoing messages as delivered when the peer acks it.
+  Future<void> _handleAck(String id) async {
+    final row = await _dao.messageById(id);
+    if (row == null) return;
+    if (row.senderId != (_prefs.nickname ?? '')) return;   // not ours
+    await _dao.markDelivered(id);
+  }
+
+  /// Notifies the DM peer that we are (not) typing. Flooded with a `to`
+  /// filter so no endpoint mapping is needed.
+  Future<void> sendTyping(
+      String sessionId, String peerDeviceId, bool on) async {
+    await _peer.sendToAll(jsonEncode({
+      't': 'typing',
+      'on': on,
+      'to': peerDeviceId,
+      'gid': sessionId,
+    }));
   }
 
   Future<SecretKey?> _decryptionKey(MessageEnvelope env) async {
@@ -105,11 +153,36 @@ class ChatController {
       senderId: _prefs.nickname ?? 'Unknown', content: content,
       type: MessageType.text, timestamp: DateTime.now(),
     );
-    await _sealAndSend(msg, dmSessionId: sessionId, dmPeerDeviceId: peerDeviceId);
+    await _sealAndSend(msg,
+        dmSessionId: sessionId, dmPeerDeviceId: peerDeviceId);
+  }
+
+  /// Re-sends a pending/failed outgoing message. Works for both DM and group
+  /// rows — the session row decides the kind.
+  Future<void> retryMessage(String id) async {
+    final row = await _dao.messageById(id);
+    if (row == null) return;
+    final msg = Message(
+      senderId: row.senderId,
+      content: row.content,
+      type: row.type == 'location' ? MessageType.location : MessageType.text,
+      timestamp: row.timestamp,
+      latitude: row.latitude,
+      longitude: row.longitude,
+      locationAccuracy: row.locationAccuracy,
+    );
+    final session = await _sessionsDao.sessionById(row.groupId);
+    if (session != null) {
+      await _sealAndSend(msg,
+          dmSessionId: session.id, dmPeerDeviceId: session.peerDeviceId);
+    } else {
+      await _sealAndSend(msg);
+    }
   }
 
   /// Shared seal+send path: group ('g') by default, DM when peer is given.
-  Future<void> _sealAndSend(Message msg,
+  /// Returns the generated envelope id, or null when nothing was sent.
+  Future<String?> _sealAndSend(Message msg,
       {String? dmSessionId, String? dmPeerDeviceId}) async {
     final SecretKey key;
     final String gid;
@@ -123,7 +196,7 @@ class ChatController {
     } else {
       final g = _gid;
       final keyBytes = g == null ? null : _kx.groupKeyFor(g);
-      if (g == null || keyBytes == null) return;
+      if (g == null || keyBytes == null) return null;
       key = SecretKeyData(keyBytes);
       gid = g;
       to = null;
@@ -136,9 +209,19 @@ class ChatController {
       nonce: Uint8List.fromList(box.nonce),
       ciphertext: Uint8List.fromList([...box.cipherText, ...box.mac.bytes]),
     );
-    await _persist(env, msg);
+    // Delivery state: DM without peers in range is 'pending' (honest
+    // "waiting" — the peer will ack when back); everything else is 'sent'.
+    final status = kind == 'dm' && _peer.connectedPeers.isEmpty
+        ? 'pending'
+        : 'sent';
+    await _persist(env, msg, status: status);
     _dedup(env.id);
-    await _peer.sendToAll(jsonEncode(env.toWireJson()));
+    try {
+      await _peer.sendToAll(jsonEncode(env.toWireJson()));
+    } catch (_) {
+      await _dao.markFailed(env.id);
+    }
+    return env.id;
   }
 
   /// Returns null on success, an error message otherwise.
@@ -170,11 +253,12 @@ class ChatController {
     }
   }
 
-  Future<void> _persist(MessageEnvelope env, Message msg) =>
+  Future<void> _persist(MessageEnvelope env, Message msg, {String? status}) =>
       _dao.insertMessage(MessagesCompanion.insert(
         id: env.id, groupId: env.gid, senderId: msg.senderId,
         content: msg.content, type: msg.type.name, timestamp: msg.timestamp,
         hopCount: Value(env.hop), to: Value(env.to),
+        status: Value(status),
         latitude: Value(msg.latitude), longitude: Value(msg.longitude),
         locationAccuracy: Value(msg.locationAccuracy),
       ));

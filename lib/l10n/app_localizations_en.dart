@@ -238,4 +238,70 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get verifyCopyHint =>
       'Both devices must show the same number. Compare before continuing.';
+
+  @override
+  String get connConnected => 'Connected directly';
+
+  @override
+  String get connSearching => 'Searching for devices…';
+
+  @override
+  String get connOutOfRange =>
+      'Out of range — messages send automatically when connected';
+
+  @override
+  String get connRadioOff => 'Bluetooth/Wi-Fi off — enable to connect';
+
+  @override
+  String devicesFound(int count) {
+    return '$count devices nearby';
+  }
+
+  @override
+  String get devicesEmpty =>
+      'No devices detected nearby. Make sure Bluetooth/Wi-Fi is on.';
+
+  @override
+  String get devicesNearbySection => 'Nearby Devices';
+
+  @override
+  String get deviceDetected => 'detected';
+
+  @override
+  String get pinWrong => 'Wrong PIN — try again';
+
+  @override
+  String get noDevicesFound => 'No devices found';
+
+  @override
+  String get retryLabel => 'Retry';
+
+  @override
+  String get typingIndicator => 'is typing…';
+
+  @override
+  String get leaveConfirmTitle => 'Leave group?';
+
+  @override
+  String get leaveConfirmBody => 'Old messages stay on this device.';
+
+  @override
+  String get leaveLabel => 'Leave';
+
+  @override
+  String get cancelLabel => 'Cancel';
+
+  @override
+  String get deviceIdHelp =>
+      'Share this ID to start a 1:1 conversation, or use it for technical support.';
+
+  @override
+  String get securityDesc =>
+      'X25519 + AES-GCM end-to-end — relays cannot read messages.';
+
+  @override
+  String get messagePending => 'Waiting for device';
+
+  @override
+  String get messageFailed => 'Failed — tap to resend';
 }

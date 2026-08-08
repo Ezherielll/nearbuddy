@@ -61,4 +61,18 @@ void main() {
     expect(await db.groupsDao.memberPublicKey('dev-x'), 'pub-b64-1');
     expect(await db.groupsDao.memberPublicKey('dev-unknown'), isNull);
   });
+
+  test('delivery status lifecycle: pending → delivered via ack', () async {
+    await db.messagesDao.insertMessage(MessagesCompanion.insert(
+      id: 'dm-2', groupId: 's1', senderId: 'Bimo',
+      content: 'pribadi', type: 'text', timestamp: DateTime.utc(2026, 8, 8),
+      to: const Value('dev-peer-1'), status: const Value('pending'),
+    ));
+    expect((await db.messagesDao.messageById('dm-2'))!.status, 'pending');
+    await db.messagesDao.markDelivered('dm-2');
+    expect((await db.messagesDao.messageById('dm-2'))!.status, 'delivered');
+    await db.messagesDao.markFailed('dm-2');
+    expect((await db.messagesDao.messageById('dm-2'))!.status, 'failed');
+    expect(await db.messagesDao.messageById('unknown-id'), isNull);
+  });
 }

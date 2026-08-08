@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
@@ -12,12 +13,14 @@ class MessageComposer extends StatefulWidget {
   final Future<void> Function(String text) onSend;
   final Future<void> Function()? onSendLocation;
   final bool locationLoading;
+  final void Function(bool isTyping)? onTypingChange;
   const MessageComposer({
     super.key,
     required this.controller,
     required this.onSend,
     this.onSendLocation,
     this.locationLoading = false,
+    this.onTypingChange,
   });
 
   @override
@@ -27,6 +30,8 @@ class MessageComposer extends StatefulWidget {
 class _MessageComposerState extends State<MessageComposer> {
   int _count = 0;
   bool _hasText = false;
+  bool _typingSent = false;
+  Timer? _typingOffTimer;
 
   @override
   void initState() {
@@ -37,6 +42,7 @@ class _MessageComposerState extends State<MessageComposer> {
 
   @override
   void dispose() {
+    _typingOffTimer?.cancel();
     widget.controller.removeListener(_onChanged);
     super.dispose();
   }
@@ -49,6 +55,19 @@ class _MessageComposerState extends State<MessageComposer> {
       setState(() {
         _count = count;
         _hasText = has;
+      });
+    }
+    if (widget.onTypingChange != null) {
+      if (has && !_typingSent) {
+        _typingSent = true;
+        widget.onTypingChange!(true);
+      }
+      _typingOffTimer?.cancel();
+      _typingOffTimer = Timer(const Duration(seconds: 2), () {
+        if (_typingSent) {
+          _typingSent = false;
+          widget.onTypingChange!(false);
+        }
       });
     }
   }

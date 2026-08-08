@@ -13,4 +13,15 @@ abstract class PeerDiscoveryService {
   Stream<String> get onPeerDisconnected;
   Stream<({String fromEndpointId, String payload})> get onPayloadReceived;
   Stream<Set<String>> get connectedPeersStream;
+
+  /// Current connected endpoint ids — synchronous snapshot, no waiting.
+  Set<String> get connectedPeers;
+
+  /// Ambient discovery used on Home before joining any group. Advertises
+  /// the nickname and passively reports other NearBuddy devices nearby.
+  /// Does NOT establish connections.
+  Future<void> startScan();
+  Future<void> stopScan();
+  Stream<({String endpointId, String nickname})> get onDeviceFound;
+  Stream<String> get onDeviceLost;
 }

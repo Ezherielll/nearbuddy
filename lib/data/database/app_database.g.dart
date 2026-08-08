@@ -82,6 +82,11 @@ class $MessagesTable extends Messages
   late final GeneratedColumn<String> to = GeneratedColumn<String>(
       'to', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+      'status', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -95,7 +100,8 @@ class $MessagesTable extends Messages
         latitude,
         longitude,
         locationAccuracy,
-        to
+        to,
+        status
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -169,6 +175,10 @@ class $MessagesTable extends Messages
     if (data.containsKey('to')) {
       context.handle(_toMeta, to.isAcceptableOrUnknown(data['to']!, _toMeta));
     }
+    if (data.containsKey('status')) {
+      context.handle(_statusMeta,
+          status.isAcceptableOrUnknown(data['status']!, _statusMeta));
+    }
     return context;
   }
 
@@ -202,6 +212,8 @@ class $MessagesTable extends Messages
           DriftSqlType.double, data['${effectivePrefix}location_accuracy']),
       to: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}to']),
+      status: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}status']),
     );
   }
 
@@ -224,6 +236,7 @@ class MessageRow extends DataClass implements Insertable<MessageRow> {
   final double? longitude;
   final double? locationAccuracy;
   final String? to;
+  final String? status;
   const MessageRow(
       {required this.id,
       required this.groupId,
@@ -236,7 +249,8 @@ class MessageRow extends DataClass implements Insertable<MessageRow> {
       this.latitude,
       this.longitude,
       this.locationAccuracy,
-      this.to});
+      this.to,
+      this.status});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -259,6 +273,9 @@ class MessageRow extends DataClass implements Insertable<MessageRow> {
     }
     if (!nullToAbsent || to != null) {
       map['to'] = Variable<String>(to);
+    }
+    if (!nullToAbsent || status != null) {
+      map['status'] = Variable<String>(status);
     }
     return map;
   }
@@ -283,6 +300,8 @@ class MessageRow extends DataClass implements Insertable<MessageRow> {
           ? const Value.absent()
           : Value(locationAccuracy),
       to: to == null && nullToAbsent ? const Value.absent() : Value(to),
+      status:
+          status == null && nullToAbsent ? const Value.absent() : Value(status),
     );
   }
 
@@ -302,6 +321,7 @@ class MessageRow extends DataClass implements Insertable<MessageRow> {
       longitude: serializer.fromJson<double?>(json['longitude']),
       locationAccuracy: serializer.fromJson<double?>(json['locationAccuracy']),
       to: serializer.fromJson<String?>(json['to']),
+      status: serializer.fromJson<String?>(json['status']),
     );
   }
   @override
@@ -320,6 +340,7 @@ class MessageRow extends DataClass implements Insertable<MessageRow> {
       'longitude': serializer.toJson<double?>(longitude),
       'locationAccuracy': serializer.toJson<double?>(locationAccuracy),
       'to': serializer.toJson<String?>(to),
+      'status': serializer.toJson<String?>(status),
     };
   }
 
@@ -335,7 +356,8 @@ class MessageRow extends DataClass implements Insertable<MessageRow> {
           Value<double?> latitude = const Value.absent(),
           Value<double?> longitude = const Value.absent(),
           Value<double?> locationAccuracy = const Value.absent(),
-          Value<String?> to = const Value.absent()}) =>
+          Value<String?> to = const Value.absent(),
+          Value<String?> status = const Value.absent()}) =>
       MessageRow(
         id: id ?? this.id,
         groupId: groupId ?? this.groupId,
@@ -351,6 +373,7 @@ class MessageRow extends DataClass implements Insertable<MessageRow> {
             ? locationAccuracy.value
             : this.locationAccuracy,
         to: to.present ? to.value : this.to,
+        status: status.present ? status.value : this.status,
       );
   MessageRow copyWithCompanion(MessagesCompanion data) {
     return MessageRow(
@@ -369,6 +392,7 @@ class MessageRow extends DataClass implements Insertable<MessageRow> {
           ? data.locationAccuracy.value
           : this.locationAccuracy,
       to: data.to.present ? data.to.value : this.to,
+      status: data.status.present ? data.status.value : this.status,
     );
   }
 
@@ -386,7 +410,8 @@ class MessageRow extends DataClass implements Insertable<MessageRow> {
           ..write('latitude: $latitude, ')
           ..write('longitude: $longitude, ')
           ..write('locationAccuracy: $locationAccuracy, ')
-          ..write('to: $to')
+          ..write('to: $to, ')
+          ..write('status: $status')
           ..write(')'))
         .toString();
   }
@@ -404,7 +429,8 @@ class MessageRow extends DataClass implements Insertable<MessageRow> {
       latitude,
       longitude,
       locationAccuracy,
-      to);
+      to,
+      status);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -420,7 +446,8 @@ class MessageRow extends DataClass implements Insertable<MessageRow> {
           other.latitude == this.latitude &&
           other.longitude == this.longitude &&
           other.locationAccuracy == this.locationAccuracy &&
-          other.to == this.to);
+          other.to == this.to &&
+          other.status == this.status);
 }
 
 class MessagesCompanion extends UpdateCompanion<MessageRow> {
@@ -436,6 +463,7 @@ class MessagesCompanion extends UpdateCompanion<MessageRow> {
   final Value<double?> longitude;
   final Value<double?> locationAccuracy;
   final Value<String?> to;
+  final Value<String?> status;
   final Value<int> rowid;
   const MessagesCompanion({
     this.id = const Value.absent(),
@@ -450,6 +478,7 @@ class MessagesCompanion extends UpdateCompanion<MessageRow> {
     this.longitude = const Value.absent(),
     this.locationAccuracy = const Value.absent(),
     this.to = const Value.absent(),
+    this.status = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   MessagesCompanion.insert({
@@ -465,6 +494,7 @@ class MessagesCompanion extends UpdateCompanion<MessageRow> {
     this.longitude = const Value.absent(),
     this.locationAccuracy = const Value.absent(),
     this.to = const Value.absent(),
+    this.status = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
         groupId = Value(groupId),
@@ -485,6 +515,7 @@ class MessagesCompanion extends UpdateCompanion<MessageRow> {
     Expression<double>? longitude,
     Expression<double>? locationAccuracy,
     Expression<String>? to,
+    Expression<String>? status,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -500,6 +531,7 @@ class MessagesCompanion extends UpdateCompanion<MessageRow> {
       if (longitude != null) 'longitude': longitude,
       if (locationAccuracy != null) 'location_accuracy': locationAccuracy,
       if (to != null) 'to': to,
+      if (status != null) 'status': status,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -517,6 +549,7 @@ class MessagesCompanion extends UpdateCompanion<MessageRow> {
       Value<double?>? longitude,
       Value<double?>? locationAccuracy,
       Value<String?>? to,
+      Value<String?>? status,
       Value<int>? rowid}) {
     return MessagesCompanion(
       id: id ?? this.id,
@@ -531,6 +564,7 @@ class MessagesCompanion extends UpdateCompanion<MessageRow> {
       longitude: longitude ?? this.longitude,
       locationAccuracy: locationAccuracy ?? this.locationAccuracy,
       to: to ?? this.to,
+      status: status ?? this.status,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -574,6 +608,9 @@ class MessagesCompanion extends UpdateCompanion<MessageRow> {
     if (to.present) {
       map['to'] = Variable<String>(to.value);
     }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -595,6 +632,7 @@ class MessagesCompanion extends UpdateCompanion<MessageRow> {
           ..write('longitude: $longitude, ')
           ..write('locationAccuracy: $locationAccuracy, ')
           ..write('to: $to, ')
+          ..write('status: $status, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1567,6 +1605,7 @@ typedef $$MessagesTableCreateCompanionBuilder = MessagesCompanion Function({
   Value<double?> longitude,
   Value<double?> locationAccuracy,
   Value<String?> to,
+  Value<String?> status,
   Value<int> rowid,
 });
 typedef $$MessagesTableUpdateCompanionBuilder = MessagesCompanion Function({
@@ -1582,6 +1621,7 @@ typedef $$MessagesTableUpdateCompanionBuilder = MessagesCompanion Function({
   Value<double?> longitude,
   Value<double?> locationAccuracy,
   Value<String?> to,
+  Value<String?> status,
   Value<int> rowid,
 });
 
@@ -1630,6 +1670,9 @@ class $$MessagesTableFilterComposer
 
   ColumnFilters<String> get to => $composableBuilder(
       column: $table.to, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnFilters(column));
 }
 
 class $$MessagesTableOrderingComposer
@@ -1677,6 +1720,9 @@ class $$MessagesTableOrderingComposer
 
   ColumnOrderings<String> get to => $composableBuilder(
       column: $table.to, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnOrderings(column));
 }
 
 class $$MessagesTableAnnotationComposer
@@ -1723,6 +1769,9 @@ class $$MessagesTableAnnotationComposer
 
   GeneratedColumn<String> get to =>
       $composableBuilder(column: $table.to, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
 }
 
 class $$MessagesTableTableManager extends RootTableManager<
@@ -1760,6 +1809,7 @@ class $$MessagesTableTableManager extends RootTableManager<
             Value<double?> longitude = const Value.absent(),
             Value<double?> locationAccuracy = const Value.absent(),
             Value<String?> to = const Value.absent(),
+            Value<String?> status = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               MessagesCompanion(
@@ -1775,6 +1825,7 @@ class $$MessagesTableTableManager extends RootTableManager<
             longitude: longitude,
             locationAccuracy: locationAccuracy,
             to: to,
+            status: status,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -1790,6 +1841,7 @@ class $$MessagesTableTableManager extends RootTableManager<
             Value<double?> longitude = const Value.absent(),
             Value<double?> locationAccuracy = const Value.absent(),
             Value<String?> to = const Value.absent(),
+            Value<String?> status = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               MessagesCompanion.insert(
@@ -1805,6 +1857,7 @@ class $$MessagesTableTableManager extends RootTableManager<
             longitude: longitude,
             locationAccuracy: locationAccuracy,
             to: to,
+            status: status,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0

@@ -13,6 +13,7 @@ class Messages extends Table {
   RealColumn get longitude => real().nullable()();
   RealColumn get locationAccuracy => real().nullable()();
   TextColumn get to => text().nullable()();       // DM recipient deviceId; null = group
+  TextColumn get status => text().nullable()();   // 'pending'|'sent'|'delivered' (outgoing only)
   @override
   Set<Column> get primaryKey => {id};
 }

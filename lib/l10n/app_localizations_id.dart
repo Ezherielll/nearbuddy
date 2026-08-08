@@ -240,4 +240,70 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get verifyCopyHint =>
       'Kedua perangkat harus menampilkan angka yang sama. Cocokkan sebelum melanjutkan.';
+
+  @override
+  String get connConnected => 'Terhubung langsung';
+
+  @override
+  String get connSearching => 'Mencari perangkat…';
+
+  @override
+  String get connOutOfRange =>
+      'Di luar jangkauan — pesan terkirim otomatis saat terhubung';
+
+  @override
+  String get connRadioOff => 'Bluetooth/Wi-Fi mati — aktifkan untuk terhubung';
+
+  @override
+  String devicesFound(int count) {
+    return '$count perangkat di sekitar';
+  }
+
+  @override
+  String get devicesEmpty =>
+      'Belum ada perangkat terdeteksi di sekitar. Pastikan Bluetooth/Wi-Fi aktif.';
+
+  @override
+  String get devicesNearbySection => 'Perangkat di Sekitar';
+
+  @override
+  String get deviceDetected => 'terdeteksi';
+
+  @override
+  String get pinWrong => 'PIN salah — coba lagi';
+
+  @override
+  String get noDevicesFound => 'Tidak ada perangkat ditemukan';
+
+  @override
+  String get retryLabel => 'Coba lagi';
+
+  @override
+  String get typingIndicator => 'sedang mengetik…';
+
+  @override
+  String get leaveConfirmTitle => 'Keluar dari grup?';
+
+  @override
+  String get leaveConfirmBody => 'Pesan lama tetap tersimpan di perangkat ini.';
+
+  @override
+  String get leaveLabel => 'Keluar';
+
+  @override
+  String get cancelLabel => 'Batal';
+
+  @override
+  String get deviceIdHelp =>
+      'Bagikan ID ini untuk memulai percakapan 1:1, atau gunakan untuk dukungan teknis.';
+
+  @override
+  String get securityDesc =>
+      'X25519 + AES-GCM end-to-end — relay tidak bisa membaca pesan.';
+
+  @override
+  String get messagePending => 'Menunggu perangkat';
+
+  @override
+  String get messageFailed => 'Gagal — tap untuk kirim ulang';
 }

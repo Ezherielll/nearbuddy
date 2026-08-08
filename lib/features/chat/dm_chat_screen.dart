@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
-import '../../theme/nearbuddy_color_scheme.dart';
 import '../../data/database/app_database.dart';
 import '../../l10n/app_localizations.dart';
 import '../../main.dart';
+import '../../theme/nearbuddy_color_scheme.dart';
+import '../../features/shared/connection_status.dart';
 import 'chat_controller.dart';
+import 'widgets/connection_badge.dart';
 import 'widgets/date_divider.dart';
 import 'widgets/message_bubble.dart';
 import 'widgets/message_composer.dart';
@@ -55,12 +57,13 @@ class _DmChatScreenState extends ConsumerState<DmChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
     final cs = ShadTheme.of(context).colorScheme;
     final theme = ShadTheme.of(context);
     final sessionsDao = ref.read(sessionsDaoProvider);
     final controller = ref.read(chatControllerProvider);
     final myNick = ref.read(appPreferencesProvider).nickname ?? '';
+    final peerTyping =
+        ref.watch(typingSessionProvider) == widget.sessionId;
 
     return FutureBuilder<SessionRow?>(
       future: sessionsDao.sessionById(widget.sessionId),
@@ -74,13 +77,24 @@ class _DmChatScreenState extends ConsumerState<DmChatScreen> {
               children: [
                 Text(session?.peerNickname ?? '',
                     style: theme.textTheme.p.copyWith(fontWeight: FontWeight.w600)),
-                Row(
+                if (peerTyping)
+                  Text(
+                    AppLocalizations.of(context)!.typingIndicator,
+                    style: TextStyle(
+                        fontSize: 11,
+                        fontStyle: FontStyle.italic,
+                        color: cs.online),
+                  )
+                else
+                  Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(LucideIcons.lock, size: 11, color: cs.online),
-                    const SizedBox(width: 4),
-                    Text(l10n.encryptedLabel,
-                        style: TextStyle(fontSize: 11, color: cs.mutedForeground)),
+                    ConnectionBadge(
+                        status:
+                            ref.watch(connectionStatusProvider).valueOrNull ??
+                                ConnectionStatus.searching),
+                    const SizedBox(width: 8),
+                    const EncryptedMarker(),
                     const SizedBox(width: 6),
                     Flexible(
                       child: Text(
@@ -126,6 +140,10 @@ class _DmChatScreenState extends ConsumerState<DmChatScreen> {
             MessageComposer(
               controller: _msgCtrl,
               onSend: (text) => _send(controller, session, text),
+              onTypingChange: session == null
+                  ? null
+                  : (on) =>
+                      controller.sendTyping(session.id, session.peerDeviceId, on),
             ),
           ]),
         );

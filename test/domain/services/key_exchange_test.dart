@@ -169,6 +169,19 @@ class _FakePeer implements PeerDiscoveryService {
   }
 
   @override
+  Future<void> startScan() async {}
+
+  @override
+  Future<void> stopScan() async {}
+
+  @override
+  Stream<({String endpointId, String nickname})> get onDeviceFound =>
+      const Stream.empty();
+
+  @override
+  Stream<String> get onDeviceLost => const Stream.empty();
+
+  @override
   Future<void> startSession(
       {required String groupId, required String nickname, String? pin}) async {}
 
@@ -188,4 +201,6 @@ class _FakePeer implements PeerDiscoveryService {
       const Stream.empty();
   @override
   Stream<Set<String>> get connectedPeersStream => const Stream.empty();
+  @override
+  Set<String> get connectedPeers => const {};
 }

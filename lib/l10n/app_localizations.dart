@@ -535,6 +535,126 @@ abstract class AppLocalizations {
   /// In id, this message translates to:
   /// **'Kedua perangkat harus menampilkan angka yang sama. Cocokkan sebelum melanjutkan.'**
   String get verifyCopyHint;
+
+  /// No description provided for @connConnected.
+  ///
+  /// In id, this message translates to:
+  /// **'Terhubung langsung'**
+  String get connConnected;
+
+  /// No description provided for @connSearching.
+  ///
+  /// In id, this message translates to:
+  /// **'Mencari perangkat…'**
+  String get connSearching;
+
+  /// No description provided for @connOutOfRange.
+  ///
+  /// In id, this message translates to:
+  /// **'Di luar jangkauan — pesan terkirim otomatis saat terhubung'**
+  String get connOutOfRange;
+
+  /// No description provided for @connRadioOff.
+  ///
+  /// In id, this message translates to:
+  /// **'Bluetooth/Wi-Fi mati — aktifkan untuk terhubung'**
+  String get connRadioOff;
+
+  /// No description provided for @devicesFound.
+  ///
+  /// In id, this message translates to:
+  /// **'{count} perangkat di sekitar'**
+  String devicesFound(int count);
+
+  /// No description provided for @devicesEmpty.
+  ///
+  /// In id, this message translates to:
+  /// **'Belum ada perangkat terdeteksi di sekitar. Pastikan Bluetooth/Wi-Fi aktif.'**
+  String get devicesEmpty;
+
+  /// No description provided for @devicesNearbySection.
+  ///
+  /// In id, this message translates to:
+  /// **'Perangkat di Sekitar'**
+  String get devicesNearbySection;
+
+  /// No description provided for @deviceDetected.
+  ///
+  /// In id, this message translates to:
+  /// **'terdeteksi'**
+  String get deviceDetected;
+
+  /// No description provided for @pinWrong.
+  ///
+  /// In id, this message translates to:
+  /// **'PIN salah — coba lagi'**
+  String get pinWrong;
+
+  /// No description provided for @noDevicesFound.
+  ///
+  /// In id, this message translates to:
+  /// **'Tidak ada perangkat ditemukan'**
+  String get noDevicesFound;
+
+  /// No description provided for @retryLabel.
+  ///
+  /// In id, this message translates to:
+  /// **'Coba lagi'**
+  String get retryLabel;
+
+  /// No description provided for @typingIndicator.
+  ///
+  /// In id, this message translates to:
+  /// **'sedang mengetik…'**
+  String get typingIndicator;
+
+  /// No description provided for @leaveConfirmTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Keluar dari grup?'**
+  String get leaveConfirmTitle;
+
+  /// No description provided for @leaveConfirmBody.
+  ///
+  /// In id, this message translates to:
+  /// **'Pesan lama tetap tersimpan di perangkat ini.'**
+  String get leaveConfirmBody;
+
+  /// No description provided for @leaveLabel.
+  ///
+  /// In id, this message translates to:
+  /// **'Keluar'**
+  String get leaveLabel;
+
+  /// No description provided for @cancelLabel.
+  ///
+  /// In id, this message translates to:
+  /// **'Batal'**
+  String get cancelLabel;
+
+  /// No description provided for @deviceIdHelp.
+  ///
+  /// In id, this message translates to:
+  /// **'Bagikan ID ini untuk memulai percakapan 1:1, atau gunakan untuk dukungan teknis.'**
+  String get deviceIdHelp;
+
+  /// No description provided for @securityDesc.
+  ///
+  /// In id, this message translates to:
+  /// **'X25519 + AES-GCM end-to-end — relay tidak bisa membaca pesan.'**
+  String get securityDesc;
+
+  /// No description provided for @messagePending.
+  ///
+  /// In id, this message translates to:
+  /// **'Menunggu perangkat'**
+  String get messagePending;
+
+  /// No description provided for @messageFailed.
+  ///
+  /// In id, this message translates to:
+  /// **'Gagal — tap untuk kirim ulang'**
+  String get messageFailed;
 }
 
 class _AppLocalizationsDelegate

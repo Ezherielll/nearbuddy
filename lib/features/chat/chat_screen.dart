@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
-import '../../theme/nearbuddy_color_scheme.dart';
 import '../../data/database/app_database.dart';
 import '../../domain/services/key_exchange_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../../main.dart';
 import '../group/group_controller.dart';
+import '../../features/shared/connection_status.dart';
 import 'chat_controller.dart';
+import 'widgets/connection_badge.dart';
 import 'widgets/date_divider.dart';
 import 'widgets/message_bubble.dart';
 import 'widgets/message_composer.dart';
@@ -86,14 +87,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(group?.name ?? '', style: theme.textTheme.p.copyWith(fontWeight: FontWeight.w600)),
+            Text(group?.name ?? '',
+                style: theme.textTheme.p.copyWith(fontWeight: FontWeight.w600)),
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(LucideIcons.lock, size: 11, color: cs.online),
-                const SizedBox(width: 4),
-                Text(l10n.encryptedLabel,
-                    style: TextStyle(fontSize: 11, color: cs.mutedForeground)),
+                ConnectionBadge(
+                    status:
+                        ref.watch(connectionStatusProvider).valueOrNull ??
+                            ConnectionStatus.searching),
+                const SizedBox(width: 8),
+                const EncryptedMarker(),
               ],
             ),
           ],

@@ -8,4 +8,8 @@ abstract final class AppConfig {
   /// Nearby service ID — dev and prod builds must not discover each other.
   static String nearbyServiceId(String groupId) =>
       isDev ? 'com.nearbuddy.dev.$groupId' : 'com.nearbuddy.$groupId';
+
+  /// Service ID for the ambient scan on Home (all devices, no group).
+  static String get scanServiceId =>
+      isDev ? 'com.nearbuddy.dev.scan' : 'com.nearbuddy.scan';
 }
