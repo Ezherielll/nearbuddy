@@ -42,8 +42,10 @@ Flutter 3.44 · Dart 3.12 · shadcn_ui ^0.56 · chat_bubbles ^1.10 · drift ^2.3
 
 ```bash
 # Run / build — MUST use flavors (plain commands skip the FLAVOR define)
-.\scripts\flavor.ps1 -Flavor dev -Action run     # or build
-.\scripts\flavor.ps1 -Flavor prod -Action build
+.\scripts\flavor.ps1 -Flavor dev -Action run     # debug run / hot reload
+.\scripts\flavor.ps1 -Flavor dev -Action build   # debug APK (large, dev only)
+.\scripts\flavor.ps1 -Flavor prod -Action release                # obfuscated release, 3 split APKs (per ABI)
+.\scripts\flavor.ps1 -Flavor dev -Action release -Arm64Only      # single android-arm64 release APK (internal)
 
 # Tests
 flutter test                                   # full suite
@@ -54,6 +56,8 @@ flutter pub run build_runner build
 # l10n (after editing lib/l10n/*.arb)
 flutter gen-l10n
 ```
+
+**Release builds** are obfuscated (`--obfuscate`) with symbols saved to `build/symbols/<flavor>` for stack-trace decoding. Debug APKs are huge (~165–230 MB — kernel blob + JIT engine + Vulkan validation layer); release split APKs are ~18–24 MB each (arm64 ≈ 21 MB, within the PRD ≤ 30 MB target).
 
 Flavor differences: `dev` = applicationId `.dev` suffix, label "NearBuddy Dev", DB `nearbuddy_db_dev`, Nearby service IDs under `com.nearbuddy.dev.*`; `prod` = clean values. Dev and prod builds never see each other on the mesh.
 
