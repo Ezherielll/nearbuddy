@@ -141,5 +141,11 @@
   "themeSystem": "Mengikuti sistem",
   "menuDisconnect": "Putuskan",
   "menuEncryptedInfo": "Terenkripsi end-to-end · koneksi langsung",
-  "connError": "Koneksi gagal"
+  "connError": "Koneksi gagal",
+  "emojiPickerTitle": "Emoji",
+  "emojiCatSmileys": "Senyum & Ekspresi",
+  "emojiCatGestures": "Gestur & Tangan",
+  "emojiCatHearts": "Hati",
+  "emojiCatAnimals": "Hewan & Makanan",
+  "emojiCatSymbols": "Simbol"
 }

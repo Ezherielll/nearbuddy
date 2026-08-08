@@ -6,6 +6,7 @@ import '../../core/constants.dart';
 import '../../core/crypto/identity_providers.dart';
 import '../../l10n/app_localizations.dart';
 import '../../main.dart';
+import '../../theme/nearbuddy_color_scheme.dart';
 import '../shared/widgets/avatar_initial.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -28,20 +29,56 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final l10n = AppLocalizations.of(context)!;
     final prefs = ref.read(appPreferencesProvider);
     final locale = ref.read(localeProvider);
+    final cs = ShadTheme.of(context).colorScheme;
     final chosen = await showShadDialog<String>(
       context: context,
       builder: (ctx) => ShadDialog(
-        title: Text(l10n.language),
         description: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: cs.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(LucideIcons.languages, size: 20, color: cs.primary),
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.language,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                        color: cs.foreground,
+                      ),
+                    ),
+                    Text(
+                      'Pilih bahasa antarmuka',
+                      style: TextStyle(fontSize: 12, color: cs.mutedForeground),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
             _LanguageOption(
               label: 'Bahasa Indonesia',
+              flag: '🇮🇩',
               selected: locale.languageCode == 'id',
               onTap: () => Navigator.of(ctx).pop('id'),
             ),
+            const SizedBox(height: 6),
             _LanguageOption(
               label: 'English',
+              flag: '🇺🇸',
               selected: locale.languageCode == 'en',
               onTap: () => Navigator.of(ctx).pop('en'),
             ),
@@ -79,35 +116,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _showThemeDialog() async {
-    final l10n = AppLocalizations.of(context)!;
     final prefs = ref.read(appPreferencesProvider);
     final current = ref.read(themeModeProvider);
-    final chosen = await showShadDialog<ThemeMode>(
+
+    final chosen = await showModalBottomSheet<ThemeMode>(
       context: context,
-      builder: (ctx) => ShadDialog(
-        title: Text(l10n.themeLabel),
-        description: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _ThemeOption(
-              label: l10n.themeLight,
-              selected: current == ThemeMode.light,
-              onTap: () => Navigator.of(ctx).pop(ThemeMode.light),
-            ),
-            _ThemeOption(
-              label: l10n.themeDark,
-              selected: current == ThemeMode.dark,
-              onTap: () => Navigator.of(ctx).pop(ThemeMode.dark),
-            ),
-            _ThemeOption(
-              label: l10n.themeSystem,
-              selected: current == ThemeMode.system,
-              onTap: () => Navigator.of(ctx).pop(ThemeMode.system),
-            ),
-          ],
-        ),
-      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _ThemeBottomSheet(current: current),
     );
+
     if (chosen == null || chosen == current) return;
     await prefs.setThemeMode(switch (chosen) {
       ThemeMode.light => 'light',
@@ -170,93 +188,186 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final nickname = prefs.nickname ?? '';
 
     return Scaffold(
+      backgroundColor: cs.background,
       appBar: AppBar(title: Text(l10n.settings)),
       body: ListView(
-        padding: const EdgeInsets.only(bottom: 24),
+        padding: const EdgeInsets.only(bottom: 32),
         children: [
-          // PROFILE
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+          // PROFILE CARD
+          Container(
+            margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: cs.card,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: cs.border, width: 1),
+            ),
             child: Column(
               children: [
-                AvatarInitial(name: nickname, size: 64),
-                const SizedBox(height: 10),
-                Text(nickname,
-                    style: theme.textTheme.h3,
-                    textAlign: TextAlign.center),
-                const SizedBox(height: 2),
-                Text(l10n.settingsProfileHint,
-                    style: theme.textTheme.small,
-                    textAlign: TextAlign.center),
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    AvatarInitial(name: nickname, size: 72),
+                    Positioned.fill(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: cs.primary.withValues(alpha: 0.4),
+                            width: 2.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 12),
+                Text(
+                  nickname,
+                  style: theme.textTheme.h3.copyWith(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  l10n.settingsProfileHint,
+                  style: TextStyle(fontSize: 13, color: cs.mutedForeground),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
                 ShadButton.outline(
                   onPressed: _showNicknameDialog,
-                  child: Text(l10n.settingsChangeNickname),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(LucideIcons.pencil, size: 14),
+                      const SizedBox(width: 6),
+                      Text(l10n.settingsChangeNickname),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
+
           // UMUM
           _SectionLabel(l10n.groupSection),
-          _SettingTile(
-            icon: LucideIcons.languages,
-            title: l10n.language,
-            subtitle: locale.languageCode == 'id'
-                ? 'Bahasa Indonesia'
-                : 'English',
-            trailing: Icon(LucideIcons.chevronRight,
-                size: 18, color: cs.mutedForeground),
-            onTap: _showLanguageDialog,
-          ),
-          // TAMPILAN
-          _SectionLabel(l10n.appearanceSection),
-          _SettingTile(
-            icon: LucideIcons.sunMoon,
-            title: l10n.themeLabel,
-            subtitle: _themeLabel(ref.watch(themeModeProvider), l10n),
-            trailing: Icon(LucideIcons.chevronRight,
-                size: 18, color: cs.mutedForeground),
-            onTap: _showThemeDialog,
-          ),
-          // IDENTITAS
-          _SectionLabel(l10n.identitySection),
-          _SettingTile(
-            icon: LucideIcons.user,
-            title: l10n.changeNickname,
-            subtitle: nickname,
-            trailing: Icon(LucideIcons.chevronRight,
-                size: 18, color: cs.mutedForeground),
-            onTap: _showNicknameDialog,
-          ),
-          _SettingTile(
-            icon: LucideIcons.fingerprint,
-            title: l10n.deviceIdLabel,
-            subtitle: '$deviceId\n${l10n.deviceIdHelp}',
-            trailing: ShadButton.outline(
-              onPressed: () => _copyDeviceId(deviceId),
-              child: Text(l10n.copyCode),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: cs.card,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: cs.border, width: 1),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: _SettingTile(
+                icon: LucideIcons.languages,
+                title: l10n.language,
+                subtitle: locale.languageCode == 'id'
+                    ? 'Bahasa Indonesia'
+                    : 'English',
+                onTap: _showLanguageDialog,
+              ),
             ),
           ),
+
+          // TAMPILAN
+          _SectionLabel(l10n.appearanceSection),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: cs.card,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: cs.border, width: 1),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: _SettingTile(
+                icon: LucideIcons.sunMoon,
+                title: l10n.themeLabel,
+                subtitle: _themeLabel(ref.watch(themeModeProvider), l10n),
+                onTap: _showThemeDialog,
+              ),
+            ),
+          ),
+
+          // IDENTITAS
+          _SectionLabel(l10n.identitySection),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: cs.card,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: cs.border, width: 1),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Column(
+                children: [
+                  _SettingTile(
+                    icon: LucideIcons.user,
+                    title: l10n.changeNickname,
+                    subtitle: nickname,
+                    onTap: _showNicknameDialog,
+                  ),
+                  Divider(height: 1, color: cs.border, indent: 70, endIndent: 20),
+                  _SettingTile(
+                    icon: LucideIcons.fingerprint,
+                    title: l10n.deviceIdLabel,
+                    subtitle: '$deviceId\n${l10n.deviceIdHelp}',
+                    trailing: ShadButton.outline(
+                      onPressed: () => _copyDeviceId(deviceId),
+                      child: Text(l10n.copyCode),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
           // KEAMANAN
           _SectionLabel(l10n.securitySection),
-          _SettingTile(
-            icon: LucideIcons.shieldCheck,
-            title: l10n.encryptionRow,
-            subtitle: l10n.encryptionRowSubtitle,
-            trailing: Icon(LucideIcons.chevronRight,
-                size: 18, color: cs.mutedForeground),
-            onTap: _showSecurityInfo,
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: cs.card,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: cs.border, width: 1),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: _SettingTile(
+                icon: LucideIcons.shieldCheck,
+                iconColor: cs.online,
+                title: l10n.encryptionRow,
+                subtitle: l10n.encryptionRowSubtitle,
+                onTap: _showSecurityInfo,
+              ),
+            ),
           ),
+
           // TENTANG
           _SectionLabel(l10n.aboutSection),
-          _SettingTile(
-            icon: LucideIcons.info,
-            title: l10n.appName,
-            subtitle: l10n.appVersion(_appVersion),
-            trailing: Icon(LucideIcons.chevronRight,
-                size: 18, color: cs.mutedForeground),
-            onTap: _showAbout,
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: cs.card,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: cs.border, width: 1),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: _SettingTile(
+                icon: LucideIcons.info,
+                title: l10n.appName,
+                subtitle: l10n.appVersion(_appVersion),
+                onTap: _showAbout,
+              ),
+            ),
           ),
         ],
       ),
@@ -270,13 +381,30 @@ class _SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = ShadTheme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 6),
-      child: Text(label,
-          style: ShadTheme.of(context).textTheme.small.copyWith(
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.6,
-              color: ShadTheme.of(context).colorScheme.mutedForeground)),
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+      child: Row(
+        children: [
+          Container(
+            width: 3,
+            height: 14,
+            decoration: BoxDecoration(
+              color: cs.primary,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: ShadTheme.of(context).textTheme.small.copyWith(
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.6,
+                  color: cs.mutedForeground,
+                ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -287,85 +415,364 @@ class _SettingTile extends StatelessWidget {
   final String? subtitle;
   final Widget? trailing;
   final VoidCallback? onTap;
+  final Color? iconColor;
+
   const _SettingTile({
     required this.icon,
     required this.title,
     this.subtitle,
     this.trailing,
     this.onTap,
+    this.iconColor,
   });
 
   @override
   Widget build(BuildContext context) {
     final cs = ShadTheme.of(context).colorScheme;
-    final theme = ShadTheme.of(context);
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: cs.secondary,
-                borderRadius: BorderRadius.circular(10),
+    final effectiveColor = iconColor ?? cs.primary;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        splashColor: cs.primary.withValues(alpha: 0.05),
+        highlightColor: cs.primary.withValues(alpha: 0.03),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      effectiveColor.withValues(alpha: 0.15),
+                      effectiveColor.withValues(alpha: 0.08),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, size: 18, color: effectiveColor),
               ),
-              child: Icon(icon, size: 18, color: cs.primary),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title,
-                      style: theme.textTheme.p
-                          .copyWith(fontWeight: FontWeight.w500)),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 2),
-                    Text(subtitle!,
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle!,
                         style: TextStyle(
-                            fontSize: 12, color: cs.mutedForeground)),
+                          fontSize: 12,
+                          color: cs.mutedForeground,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-            if (trailing != null) ...[
-              const SizedBox(width: 12),
-              trailing!,
+              if (trailing != null) ...[
+                const SizedBox(width: 12),
+                trailing!,
+              ] else if (onTap != null) ...[
+                const SizedBox(width: 12),
+                Icon(
+                  LucideIcons.chevronRight,
+                  size: 16,
+                  color: cs.border,
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _ThemeOption extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  const _ThemeOption({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
+class _ThemeBottomSheet extends StatefulWidget {
+  final ThemeMode current;
+  const _ThemeBottomSheet({required this.current});
+
+  @override
+  State<_ThemeBottomSheet> createState() => _ThemeBottomSheetState();
+}
+
+class _ThemeBottomSheetState extends State<_ThemeBottomSheet> {
+  late ThemeMode _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    _selected = widget.current;
+  }
 
   @override
   Widget build(BuildContext context) {
     final cs = ShadTheme.of(context).colorScheme;
-    // GestureDetector (not InkWell): ShadDialog has no Material ancestor.
+    final l10n = AppLocalizations.of(context)!;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: cs.background,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).padding.bottom + 20,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Drag handle
+          const SizedBox(height: 12),
+          Container(
+            width: 36,
+            height: 4,
+            decoration: BoxDecoration(
+              color: cs.border,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Header
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: cs.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(LucideIcons.sunMoon, size: 20, color: cs.primary),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.themeLabel,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Text(
+                        'Pilih tampilan aplikasi',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: cs.mutedForeground,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Segmented-style selector (3 stacked tiles)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Container(
+              decoration: BoxDecoration(
+                color: cs.muted,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              padding: const EdgeInsets.all(4),
+              child: Column(
+                children: [
+                  _ThemeTile(
+                    icon: LucideIcons.sun,
+                    label: l10n.themeLight,
+                    subtitle: 'Tampilan cerah dan bersih',
+                    selected: _selected == ThemeMode.light,
+                    onTap: () => setState(() => _selected = ThemeMode.light),
+                    cs: cs,
+                  ),
+                  const SizedBox(height: 4),
+                  _ThemeTile(
+                    icon: LucideIcons.moon,
+                    label: l10n.themeDark,
+                    subtitle: 'Nyaman di kondisi minim cahaya',
+                    selected: _selected == ThemeMode.dark,
+                    onTap: () => setState(() => _selected = ThemeMode.dark),
+                    cs: cs,
+                  ),
+                  const SizedBox(height: 4),
+                  _ThemeTile(
+                    icon: LucideIcons.monitor,
+                    label: l10n.themeSystem,
+                    subtitle: 'Mengikuti pengaturan sistem',
+                    selected: _selected == ThemeMode.system,
+                    onTap: () => setState(() => _selected = ThemeMode.system),
+                    cs: cs,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Apply button
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: GestureDetector(
+              onTap: () => Navigator.of(context).pop(_selected),
+              child: Container(
+                width: double.infinity,
+                height: 50,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  color: cs.primary,
+                ),
+                child: Center(
+                  child: Text(
+                    'Terapkan',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: cs.primaryForeground,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ThemeTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String subtitle;
+  final bool selected;
+  final VoidCallback onTap;
+  final ShadColorScheme cs;
+  const _ThemeTile({
+    required this.icon,
+    required this.label,
+    required this.subtitle,
+    required this.selected,
+    required this.onTap,
+    required this.cs,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: selected ? cs.background : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          border: selected
+              ? Border.all(color: cs.primary.withValues(alpha: 0.3), width: 1)
+              : null,
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
         child: Row(
           children: [
-            Expanded(child: Text(label)),
-            if (selected) Icon(LucideIcons.check, size: 18, color: cs.primary),
+            // Icon container
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: selected
+                    ? cs.primary.withValues(alpha: 0.12)
+                    : cs.border.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(9),
+              ),
+              child: Icon(
+                icon,
+                size: 18,
+                color: selected ? cs.primary : cs.mutedForeground,
+              ),
+            ),
+            const SizedBox(width: 12),
+            // Label + subtitle
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                      color: selected ? cs.foreground : cs.mutedForeground,
+                    ),
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    subtitle,
+                    style: TextStyle(fontSize: 11, color: cs.mutedForeground),
+                  ),
+                ],
+              ),
+            ),
+            // Check indicator
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 180),
+              child: selected
+                  ? Container(
+                      key: const ValueKey('checked'),
+                      width: 22,
+                      height: 22,
+                      decoration: BoxDecoration(
+                        color: cs.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        LucideIcons.check,
+                        size: 13,
+                        color: cs.primaryForeground,
+                      ),
+                    )
+                  : SizedBox.square(
+                      key: const ValueKey('unchecked'),
+                      dimension: 22,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: cs.border, width: 1.5),
+                        ),
+                      ),
+                    ),
+            ),
           ],
         ),
       ),
@@ -375,10 +782,13 @@ class _ThemeOption extends StatelessWidget {
 
 class _LanguageOption extends StatelessWidget {
   final String label;
+  final String flag;
   final bool selected;
   final VoidCallback onTap;
+
   const _LanguageOption({
     required this.label,
+    required this.flag,
     required this.selected,
     required this.onTap,
   });
@@ -386,17 +796,74 @@ class _LanguageOption extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = ShadTheme.of(context).colorScheme;
-    // GestureDetector (not InkWell): ShadDialog has no Material ancestor.
+
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: selected ? cs.primary.withValues(alpha: 0.08) : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          border: Border(
+            left: BorderSide(
+              color: selected ? cs.primary : Colors.transparent,
+              width: 3,
+            ),
+          ),
+        ),
         child: Row(
           children: [
-            Expanded(child: Text(label)),
+            Container(
+              width: 36,
+              height: 36,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: selected
+                    ? cs.primary.withValues(alpha: 0.15)
+                    : cs.muted,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                flag,
+                style: const TextStyle(fontSize: 18),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: cs.foreground,
+                ),
+              ),
+            ),
             if (selected)
-              Icon(LucideIcons.check, size: 18, color: cs.primary),
+              Container(
+                width: 22,
+                height: 22,
+                decoration: BoxDecoration(
+                  color: cs.primary,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  LucideIcons.check,
+                  size: 13,
+                  color: cs.primaryForeground,
+                ),
+              )
+            else
+              Container(
+                width: 22,
+                height: 22,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: cs.border, width: 1.5),
+                ),
+              ),
           ],
         ),
       ),
@@ -430,17 +897,69 @@ class _NicknameDialogState extends ConsumerState<_NicknameDialog> {
   void _onChanged() {
     final dirty = widget.controller.text.trim() !=
         (ref.read(appPreferencesProvider).nickname ?? '');
-    if (dirty != _dirty) setState(() => _dirty = dirty);
+    if (dirty != _dirty && mounted) {
+      setState(() => _dirty = dirty);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final cs = ShadTheme.of(context).colorScheme;
+
     return ShadDialog(
-      title: Text(l10n.changeNickname),
-      description: ShadInput(
-        controller: widget.controller,
-        placeholder: Text(l10n.nicknameHint),
+      description: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: cs.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(LucideIcons.user, size: 20, color: cs.primary),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.changeNickname,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                        color: cs.foreground,
+                      ),
+                    ),
+                    Text(
+                      l10n.nicknameHint,
+                      style: TextStyle(fontSize: 12, color: cs.mutedForeground),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ShadInput(
+            controller: widget.controller,
+            placeholder: Text(l10n.nicknameHint),
+            leading: Icon(LucideIcons.atSign, size: 16, color: cs.mutedForeground),
+          ),
+          const SizedBox(height: 6),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              '${widget.controller.text.length}/20',
+              style: TextStyle(fontSize: 11, color: cs.mutedForeground),
+            ),
+          ),
+        ],
       ),
       actions: [
         ShadButton.outline(
@@ -455,3 +974,4 @@ class _NicknameDialogState extends ConsumerState<_NicknameDialog> {
     );
   }
 }
+

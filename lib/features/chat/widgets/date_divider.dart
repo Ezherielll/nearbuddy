@@ -11,7 +11,6 @@ class DateDivider extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final cs = ShadTheme.of(context).colorScheme;
-    final theme = ShadTheme.of(context);
 
     final now = DateTime.now();
     final local = date.toLocal();
@@ -28,16 +27,24 @@ class DateDivider extends StatelessWidget {
     }
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Row(
-        children: [
-          Expanded(child: Divider(color: cs.border, height: 1)),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Text(label, style: theme.textTheme.small),
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+          decoration: BoxDecoration(
+            color: cs.muted,
+            borderRadius: BorderRadius.circular(20),
           ),
-          Expanded(child: Divider(color: cs.border, height: 1)),
-        ],
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: cs.mutedForeground,
+              letterSpacing: 0.1,
+            ),
+          ),
+        ),
       ),
     );
   }

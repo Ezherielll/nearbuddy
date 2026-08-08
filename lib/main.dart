@@ -4,11 +4,11 @@ import 'data/preferences/app_preferences.dart';
 import 'app.dart';
 import 'core/router.dart';
 
-final appPreferencesProvider = Provider<AppPreferences>((_) => throw UnimplementedError());
-final localeProvider = StateProvider<Locale>((ref) =>
-    Locale(ref.watch(appPreferencesProvider).languageCode));
+final appPreferencesProvider =
+    Provider<AppPreferences>((_) => throw UnimplementedError());
+final localeProvider = StateProvider<Locale>(
+    (ref) => Locale(ref.watch(appPreferencesProvider).languageCode));
 
-/// Persisted theme preference — 'light' | 'dark' | 'system'.
 final themeModeProvider = StateProvider<ThemeMode>((ref) {
   final v = ref.watch(appPreferencesProvider).themeMode;
   return switch (v) {

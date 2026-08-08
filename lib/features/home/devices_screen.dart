@@ -18,26 +18,28 @@ class DevicesScreen extends ConsumerStatefulWidget {
 }
 
 class _DevicesScreenState extends ConsumerState<DevicesScreen> {
+  late final ScanController _scan;
+
   @override
   void initState() {
     super.initState();
+    _scan = ref.read(scanControllerProvider);
     checkRadioAvailability().then((ok) {
       if (!mounted) return;  // screen may be gone before the check resolves
       ref.read(radioAvailableProvider.notifier).state = ok;
     });
-    ref.read(scanControllerProvider).start();
+    _scan.start();
   }
 
   @override
   void dispose() {
-    ref.read(scanControllerProvider).stop();
+    _scan.stop();
     super.dispose();
   }
 
   Future<void> _retry() async {
-    final ctrl = ref.read(scanControllerProvider);
-    await ctrl.stop();
-    await ctrl.start();
+    await _scan.stop();
+    await _scan.start();
   }
 
   @override

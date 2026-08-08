@@ -23,16 +23,18 @@ class InviteDevicesScreen extends ConsumerStatefulWidget {
 
 class _InviteDevicesScreenState extends ConsumerState<InviteDevicesScreen> {
   final _selected = <String>{};
+  late final ScanController _scan;
 
   @override
   void initState() {
     super.initState();
-    ref.read(scanControllerProvider).start();
+    _scan = ref.read(scanControllerProvider);
+    _scan.start();
   }
 
   @override
   void dispose() {
-    ref.read(scanControllerProvider).stop();
+    _scan.stop();
     super.dispose();
   }
 
@@ -106,7 +108,9 @@ class _InviteDevicesScreenState extends ConsumerState<InviteDevicesScreen> {
               padding: const EdgeInsets.all(16),
               child: NearBuddyButton(
                 label: l10n.startChat,
-                onPressed: () => context.go('/chat/${widget.groupId}'),
+                // push (not go): go() would reset the stack to [/chat] alone,
+                // breaking system back ("There is nothing to pop").
+                onPressed: () => context.push('/chat/${widget.groupId}'),
               ),
             ),
           ),

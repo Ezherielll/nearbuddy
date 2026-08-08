@@ -10,7 +10,6 @@ import '../../theme/nearbuddy_color_scheme.dart';
 import '../shared/widgets/avatar_initial.dart';
 import '../../features/shared/connection_status.dart';
 import 'chat_controller.dart';
-import 'widgets/connection_badge.dart';
 import 'widgets/connection_lost_banner.dart';
 import 'widgets/date_divider.dart';
 import 'widgets/leave_confirm_dialog.dart';
@@ -69,58 +68,152 @@ class _DmChatScreenState extends ConsumerState<DmChatScreen> {
     return children;
   }
 
+  String _subtitleFor(ConnectionStatus s, AppLocalizations l10n) {
+    switch (s) {
+      case ConnectionStatus.connected:
+        return l10n.connConnected;
+      case ConnectionStatus.searching:
+        return l10n.connConnecting;
+      case ConnectionStatus.outOfRange:
+        return l10n.connDisconnected;
+      case ConnectionStatus.radioOff:
+        return l10n.connRadioOff;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = ShadTheme.of(context).colorScheme;
-    final theme = ShadTheme.of(context);
     final sessionsDao = ref.read(sessionsDaoProvider);
     final controller = ref.read(chatControllerProvider);
     final myNick = ref.read(appPreferencesProvider).nickname ?? '';
     final peerTyping =
         ref.watch(typingSessionProvider) == widget.sessionId;
+    final status = ref.watch(connectionStatusProvider).valueOrNull ??
+        ConnectionStatus.searching;
 
     return FutureBuilder<SessionRow?>(
       future: sessionsDao.sessionById(widget.sessionId),
       builder: (ctx, snap) {
         final session = snap.data;
         final l10n = AppLocalizations.of(ctx)!;
+        final peerName = session?.peerNickname ?? '';
+
         return Scaffold(
+          backgroundColor: cs.background,
           appBar: AppBar(
-            titleSpacing: 0,
+            elevation: 0,
+            backgroundColor: cs.background,
+            surfaceTintColor: Colors.transparent,
+            leading: IconButton(
+              icon: const Icon(LucideIcons.arrowLeft, size: 22),
+              onPressed: () => context.pop(),
+            ),
+            titleSpacing: 4,
             title: Row(
               children: [
-                AvatarInitial(name: session?.peerNickname ?? '', size: 34),
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    AvatarInitial(name: peerName, size: 38),
+                    if (status == ConnectionStatus.connected)
+                      Positioned(
+                        right: 0,
+                        bottom: 0,
+                        child: Container(
+                          width: 11,
+                          height: 11,
+                          decoration: BoxDecoration(
+                            color: cs.online,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: cs.background, width: 2),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(session?.peerNickname ?? '',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.p.copyWith(
-                              fontWeight: FontWeight.w600, fontSize: 16)),
+                      Text(
+                        peerName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: cs.foreground,
+                        ),
+                      ),
                       if (peerTyping)
                         Text(
                           l10n.typingIndicator,
                           style: TextStyle(
-                              fontSize: 12,
-                              fontStyle: FontStyle.italic,
-                              color: cs.online),
+                            fontSize: 12,
+                            fontStyle: FontStyle.italic,
+                            color: cs.online,
+                          ),
                         )
                       else
-                        ConnectionBadge.chat(
-                            status: ref
-                                    .watch(connectionStatusProvider)
-                                    .valueOrNull ??
-                                ConnectionStatus.searching),
+                        Row(
+                          children: [
+                            Container(
+                              width: 7,
+                              height: 7,
+                              decoration: BoxDecoration(
+                                color: status == ConnectionStatus.connected
+                                    ? cs.online
+                                    : cs.mutedForeground,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              _subtitleFor(status, l10n),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: status == ConnectionStatus.connected
+                                    ? cs.online
+                                    : cs.mutedForeground,
+                              ),
+                            ),
+                          ],
+                        ),
                     ],
                   ),
                 ),
               ],
             ),
             actions: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: cs.online.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: cs.online.withValues(alpha: 0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(LucideIcons.shieldCheck, size: 13, color: cs.online),
+                    const SizedBox(width: 4),
+                    Text(
+                      l10n.menuEncryptedInfo.split(' ').first,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: cs.online,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               PopupMenuButton<String>(
                 icon: const Icon(LucideIcons.moreVertical, size: 20),
                 tooltip: '',
@@ -140,17 +233,22 @@ class _DmChatScreenState extends ConsumerState<DmChatScreen> {
                             Icon(LucideIcons.lock, size: 14, color: cs.online),
                             const SizedBox(width: 8),
                             Expanded(
-                              child: Text(l10n.menuEncryptedInfo,
-                                  style: const TextStyle(fontSize: 13)),
+                              child: Text(
+                                l10n.menuEncryptedInfo,
+                                style: const TextStyle(fontSize: 13),
+                              ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 4),
-                        Text(session?.peerDeviceId ?? '',
-                            style: TextStyle(
-                                fontFamily: 'monospace',
-                                fontSize: 11,
-                                color: cs.mutedForeground)),
+                        Text(
+                          session?.peerDeviceId ?? '',
+                          style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 11,
+                            color: cs.mutedForeground,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -159,7 +257,11 @@ class _DmChatScreenState extends ConsumerState<DmChatScreen> {
                     value: 'disconnect',
                     child: Row(
                       children: [
-                        Icon(LucideIcons.trash2, size: 16, color: cs.destructive),
+                        Icon(
+                          LucideIcons.trash2,
+                          size: 16,
+                          color: cs.destructive,
+                        ),
                         const SizedBox(width: 8),
                         Text(l10n.menuDisconnect),
                       ],
@@ -168,6 +270,10 @@ class _DmChatScreenState extends ConsumerState<DmChatScreen> {
                 ],
               ),
             ],
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(1),
+              child: Divider(height: 1, color: cs.border),
+            ),
           ),
           body: Column(children: [
             Expanded(
@@ -177,9 +283,49 @@ class _DmChatScreenState extends ConsumerState<DmChatScreen> {
                   final msgs = snap.data ?? [];
                   WidgetsBinding.instance
                       .addPostFrameCallback((_) => _scrollToBottom());
+                  if (msgs.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 72,
+                            height: 72,
+                            decoration: BoxDecoration(
+                              color: cs.primary.withValues(alpha: 0.08),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              LucideIcons.messageCircle,
+                              size: 32,
+                              color: cs.primary.withValues(alpha: 0.6),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            l10n.chatEmptyTitle,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: cs.foreground,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            l10n.chatEmptyBody(peerName),
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: cs.mutedForeground,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    );
+                  }
                   return ListView(
                     controller: _scrollCtrl,
-                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
                     children: _buildMessages(msgs, myNick, controller),
                   );
                 },

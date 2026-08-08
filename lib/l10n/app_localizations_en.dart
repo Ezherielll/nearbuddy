@@ -448,4 +448,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get connError => 'Connection failed';
+
+  @override
+  String get emojiPickerTitle => 'Emoji';
+
+  @override
+  String get emojiCatSmileys => 'Smileys & Expressions';
+
+  @override
+  String get emojiCatGestures => 'Gestures & Hands';
+
+  @override
+  String get emojiCatHearts => 'Hearts';
+
+  @override
+  String get emojiCatAnimals => 'Animals & Food';
+
+  @override
+  String get emojiCatSymbols => 'Symbols';
 }

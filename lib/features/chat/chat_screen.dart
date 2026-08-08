@@ -12,7 +12,6 @@ import '../shared/widgets/avatar_initial.dart';
 import '../../features/shared/connection_status.dart';
 import '../../theme/nearbuddy_color_scheme.dart';
 import 'chat_controller.dart';
-import 'widgets/connection_badge.dart';
 import 'widgets/connection_lost_banner.dart';
 import 'widgets/date_divider.dart';
 import 'widgets/leave_confirm_dialog.dart';
@@ -105,43 +104,143 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     return children;
   }
 
+  String _subtitleFor(ConnectionStatus s, AppLocalizations l10n) {
+    switch (s) {
+      case ConnectionStatus.connected:
+        return l10n.connConnected;
+      case ConnectionStatus.searching:
+        return l10n.connConnecting;
+      case ConnectionStatus.outOfRange:
+        return l10n.connDisconnected;
+      case ConnectionStatus.radioOff:
+        return l10n.connRadioOff;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final cs = ShadTheme.of(context).colorScheme;
-    final theme = ShadTheme.of(context);
     final group = ref.watch(currentGroupProvider);
     final controller = ref.read(chatControllerProvider);
     final myNick = ref.read(appPreferencesProvider).nickname ?? '';
     final peerName = group?.name ?? '';
+    final status = ref.watch(connectionStatusProvider).valueOrNull ??
+        ConnectionStatus.searching;
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        // Back from a conversation always returns Home — the chat may have
+        // been reached via push (create/invite/join) or go().
+        context.go('/home');
+      },
+      child: Scaffold(
+      backgroundColor: cs.background,
       appBar: AppBar(
-        titleSpacing: 0,
+        elevation: 0,
+        backgroundColor: cs.background,
+        surfaceTintColor: Colors.transparent,
+        leading: IconButton(
+          icon: const Icon(LucideIcons.arrowLeft, size: 22),
+          onPressed: () => context.pop(),
+        ),
+        titleSpacing: 4,
         title: Row(
           children: [
-            AvatarInitial(name: peerName, size: 34),
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                AvatarInitial(name: peerName, size: 38),
+                if (status == ConnectionStatus.connected)
+                  Positioned(
+                    right: 0,
+                    bottom: 0,
+                    child: Container(
+                      width: 11,
+                      height: 11,
+                      decoration: BoxDecoration(
+                        color: cs.online,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: cs.background, width: 2),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(peerName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.p
-                          .copyWith(fontWeight: FontWeight.w600, fontSize: 16)),
-                  ConnectionBadge.chat(
-                      status:
-                          ref.watch(connectionStatusProvider).valueOrNull ??
-                              ConnectionStatus.searching),
+                  Text(
+                    peerName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: cs.foreground,
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Container(
+                        width: 7,
+                        height: 7,
+                        decoration: BoxDecoration(
+                          color: status == ConnectionStatus.connected
+                              ? cs.online
+                              : cs.mutedForeground,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        _subtitleFor(status, l10n),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: status == ConnectionStatus.connected
+                              ? cs.online
+                              : cs.mutedForeground,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
           ],
         ),
         actions: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: cs.online.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: cs.online.withValues(alpha: 0.3),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(LucideIcons.shieldCheck, size: 13, color: cs.online),
+                const SizedBox(width: 4),
+                Text(
+                  l10n.menuEncryptedInfo.split(' ').first,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: cs.online,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
           PopupMenuButton<String>(
             icon: const Icon(LucideIcons.moreVertical, size: 20),
             tooltip: '',
@@ -157,8 +256,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     Icon(LucideIcons.lock, size: 14, color: cs.online),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(l10n.menuEncryptedInfo,
-                          style: const TextStyle(fontSize: 13)),
+                      child: Text(
+                        l10n.menuEncryptedInfo,
+                        style: const TextStyle(fontSize: 13),
+                      ),
                     ),
                   ],
                 ),
@@ -177,6 +278,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ],
           ),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Divider(height: 1, color: cs.border),
+        ),
       ),
       body: Column(children: [
         Expanded(
@@ -188,28 +293,47 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   .addPostFrameCallback((_) => _scrollToBottom());
               if (msgs.isEmpty) {
                 return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(LucideIcons.messageCircle,
-                            size: 32, color: cs.mutedForeground),
-                        const SizedBox(height: 10),
-                        Text(l10n.chatEmptyTitle,
-                            style: theme.textTheme.p
-                                .copyWith(fontWeight: FontWeight.w600)),
-                        const SizedBox(height: 2),
-                        Text(l10n.chatEmptyBody(peerName),
-                            style: theme.textTheme.small),
-                      ],
-                    ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          color: cs.primary.withValues(alpha: 0.08),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          LucideIcons.messageCircle,
+                          size: 32,
+                          color: cs.primary.withValues(alpha: 0.6),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        l10n.chatEmptyTitle,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: cs.foreground,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        l10n.chatEmptyBody(peerName),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: cs.mutedForeground,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
                 );
               }
               return ListView(
                 controller: _scrollCtrl,
-                padding: const EdgeInsets.symmetric(vertical: 6),
+                padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
                 children: _buildMessages(msgs, myNick, controller),
               );
             },
@@ -228,6 +352,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           locationLoading: _locLoading,
         ),
       ]),
+      ),
     );
   }
 

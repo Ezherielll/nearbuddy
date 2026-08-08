@@ -141,5 +141,11 @@
   "themeSystem": "System default",
   "menuDisconnect": "Disconnect",
   "menuEncryptedInfo": "End-to-end encrypted · direct connection",
-  "connError": "Connection failed"
+  "connError": "Connection failed",
+  "emojiPickerTitle": "Emoji",
+  "emojiCatSmileys": "Smileys & Expressions",
+  "emojiCatGestures": "Gestures & Hands",
+  "emojiCatHearts": "Hearts",
+  "emojiCatAnimals": "Animals & Food",
+  "emojiCatSymbols": "Symbols"
 }

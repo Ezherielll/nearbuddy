@@ -42,27 +42,32 @@ class MessageBubble extends StatelessWidget {
       onRetry: onRetry == null ? null : () => onRetry!(row.id),
     );
 
-    // Grouped consecutive messages from the same sender: no avatar — keeps
-    // the list light, like modern messengers. Spacing handled by the wrapper.
+    if (isMe) {
+      return bubble;
+    }
+
     if (grouped) {
-      return Align(
-        alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-        child: bubble,
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          const SizedBox(width: 44),
+          Flexible(child: bubble),
+          const SizedBox(width: 8),
+        ],
       );
     }
+
     return Row(
-      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        if (!isMe) ...[
-          const SizedBox(width: 12),
-          AvatarInitial(name: row.senderId, size: 28),
-          const SizedBox(width: 8),
-        ] else
-          const SizedBox(width: 12),
+        Padding(
+          padding: const EdgeInsets.only(left: 8, right: 6, bottom: 2),
+          child: AvatarInitial(name: row.senderId, size: 30),
+        ),
         Flexible(child: bubble),
-        if (isMe) const SizedBox(width: 12),
+        const SizedBox(width: 8),
       ],
     );
   }
 }
+

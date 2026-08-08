@@ -450,4 +450,22 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get connError => 'Koneksi gagal';
+
+  @override
+  String get emojiPickerTitle => 'Emoji';
+
+  @override
+  String get emojiCatSmileys => 'Senyum & Ekspresi';
+
+  @override
+  String get emojiCatGestures => 'Gestur & Tangan';
+
+  @override
+  String get emojiCatHearts => 'Hati';
+
+  @override
+  String get emojiCatAnimals => 'Hewan & Makanan';
+
+  @override
+  String get emojiCatSymbols => 'Simbol';
 }

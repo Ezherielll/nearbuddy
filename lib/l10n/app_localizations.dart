@@ -913,6 +913,42 @@ abstract class AppLocalizations {
   /// In id, this message translates to:
   /// **'Koneksi gagal'**
   String get connError;
+
+  /// No description provided for @emojiPickerTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Emoji'**
+  String get emojiPickerTitle;
+
+  /// No description provided for @emojiCatSmileys.
+  ///
+  /// In id, this message translates to:
+  /// **'Senyum & Ekspresi'**
+  String get emojiCatSmileys;
+
+  /// No description provided for @emojiCatGestures.
+  ///
+  /// In id, this message translates to:
+  /// **'Gestur & Tangan'**
+  String get emojiCatGestures;
+
+  /// No description provided for @emojiCatHearts.
+  ///
+  /// In id, this message translates to:
+  /// **'Hati'**
+  String get emojiCatHearts;
+
+  /// No description provided for @emojiCatAnimals.
+  ///
+  /// In id, this message translates to:
+  /// **'Hewan & Makanan'**
+  String get emojiCatAnimals;
+
+  /// No description provided for @emojiCatSymbols.
+  ///
+  /// In id, this message translates to:
+  /// **'Simbol'**
+  String get emojiCatSymbols;
 }
 
 class _AppLocalizationsDelegate

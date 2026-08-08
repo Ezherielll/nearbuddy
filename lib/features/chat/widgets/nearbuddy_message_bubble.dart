@@ -1,7 +1,5 @@
-import 'package:chat_bubbles/chat_bubbles.dart';
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
-import '../../../l10n/app_localizations.dart';
 import 'location_ping_card.dart';
 
 /// Internal NearBuddy message delivery state — maps 1:1 to the DB `status`
@@ -10,8 +8,6 @@ import 'location_ping_card.dart';
 enum MessageStatus { sending, sent, delivered, failed, pendingConnection }
 
 /// Presentation wrapper: translates NearBuddy message state into a bubble.
-/// Uses `chat_bubbles` (BubbleSpecialThree) purely as the rendering layer —
-/// all state, retry, and identity styling stays in this wrapper.
 class NearBuddyMessageBubble extends StatelessWidget {
   final String text;
   final DateTime timestamp;
@@ -22,6 +18,7 @@ class NearBuddyMessageBubble extends StatelessWidget {
   final bool isLocation;
   final double? latitude;
   final double? longitude;
+
   /// Show the bubble tail; grouped messages omit it.
   final bool tail;
 
@@ -45,121 +42,172 @@ class NearBuddyMessageBubble extends StatelessWidget {
         '${local.minute.toString().padLeft(2, '0')}';
   }
 
-  /// Custom status row — icon + text (never color alone) so pending/failed
-  /// states stay accessible. Sent/delivered use the package's built-in ticks.
-  Widget? _statusRow(ShadColorScheme cs, AppLocalizations l10n) {
-    if (!isMe) return null;
-    switch (status) {
-      case MessageStatus.pendingConnection:
-        return _row(cs, LucideIcons.clock, cs.mutedForeground,
-            l10n.messagePending, retryable: true);
-      case MessageStatus.failed:
-        return _row(cs, LucideIcons.alertCircle, cs.destructive,
-            l10n.messageFailed, retryable: true);
-      case MessageStatus.sending:
-        return _row(cs, LucideIcons.clock, cs.mutedForeground,
-            l10n.messagePending);
-      case MessageStatus.sent:
-      case MessageStatus.delivered:
-        return null;
-    }
-  }
-
-  Widget _row(ShadColorScheme cs, IconData icon, Color color, String label,
-      {bool retryable = false}) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 4),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 13, color: color),
-          const SizedBox(width: 4),
-          Text(label,
-              style: TextStyle(fontSize: 12, color: cs.mutedForeground)),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final cs = ShadTheme.of(context).colorScheme;
-    final l10n = AppLocalizations.of(context)!;
+    final retryable = (status == MessageStatus.pendingConnection ||
+            status == MessageStatus.failed) &&
+        onRetry != null;
 
     final Widget bubble;
-    if (isLocation && latitude != null && longitude != null) {
-      // Location cards keep the custom rendering (map link + coords).
+    if (isMe) {
+      // Sent bubble (Telegram vibrant indigo-blue)
       bubble = Container(
-        constraints:
-            BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
-        decoration: BoxDecoration(
-          color: isMe ? cs.primary : cs.secondary,
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.78,
+          minWidth: 80,
+        ),
+        decoration: const BoxDecoration(
+          color: Color(0xFF3D5AFE),
           borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(16),
-            topRight: const Radius.circular(16),
-            bottomLeft: Radius.circular(isMe ? 16 : 4),
-            bottomRight: Radius.circular(isMe ? 4 : 16),
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+            bottomLeft: Radius.circular(20),
+            bottomRight: Radius.circular(4),
           ),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        child: LocationPingCard(
-          latitude: latitude!,
-          longitude: longitude!,
-          onDark: isMe,
+        padding: const EdgeInsets.fromLTRB(14, 10, 14, 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isLocation && latitude != null && longitude != null)
+              LocationPingCard(
+                latitude: latitude!,
+                longitude: longitude!,
+                onDark: true,
+              )
+            else
+              Text(
+                text,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  height: 1.4,
+                ),
+              ),
+            const SizedBox(height: 2),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _time(context),
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.7),
+                    fontSize: 11,
+                  ),
+                ),
+                const SizedBox(width: 3),
+                if (status == MessageStatus.delivered)
+                  Icon(
+                    LucideIcons.checkCheck,
+                    size: 14,
+                    color: Colors.white.withValues(alpha: 0.9),
+                  )
+                else if (status == MessageStatus.sent)
+                  Icon(
+                    LucideIcons.check,
+                    size: 14,
+                    color: Colors.white.withValues(alpha: 0.7),
+                  )
+                else if (status == MessageStatus.pendingConnection ||
+                    status == MessageStatus.sending)
+                  Icon(
+                    LucideIcons.clock,
+                    size: 12,
+                    color: Colors.white.withValues(alpha: 0.6),
+                  )
+                else if (status == MessageStatus.failed)
+                  Icon(
+                    LucideIcons.alertCircle,
+                    size: 13,
+                    color: Colors.red.shade300,
+                  ),
+              ],
+            ),
+          ],
         ),
       );
     } else {
-      bubble = BubbleSpecialThree(
-        text: text,
-        isSender: isMe,
-        color: isMe ? cs.primary : cs.secondary,
-        textStyle: TextStyle(
-          fontSize: 15,
-          height: 1.3,
-          color: isMe ? cs.primaryForeground : cs.foreground,
-        ),
-        tail: tail,
-        sent: isMe && status == MessageStatus.sent,
-        delivered: isMe && status == MessageStatus.delivered,
-        timestamp: _time(context),
+      // Received bubble (card surface)
+      bubble = Container(
         constraints: BoxConstraints(
-            maxWidth: MediaQuery.of(context).size.width * 0.75),
+          maxWidth: MediaQuery.of(context).size.width * 0.78,
+        ),
+        decoration: BoxDecoration(
+          color: cs.card,
+          border: Border.all(color: cs.border, width: 1),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+            bottomLeft: Radius.circular(4),
+            bottomRight: Radius.circular(20),
+          ),
+        ),
+        padding: const EdgeInsets.fromLTRB(14, 10, 14, 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (senderName != null && senderName!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(
+                  senderName!,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: cs.primary,
+                  ),
+                ),
+              ),
+            if (isLocation && latitude != null && longitude != null)
+              LocationPingCard(
+                latitude: latitude!,
+                longitude: longitude!,
+                onDark: false,
+              )
+            else
+              Text(
+                text,
+                style: TextStyle(
+                  color: cs.foreground,
+                  fontSize: 15,
+                  height: 1.4,
+                ),
+              ),
+            const SizedBox(height: 2),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                _time(context),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: cs.mutedForeground,
+                ),
+              ),
+            ),
+          ],
+        ),
       );
     }
 
-    final statusRow = _statusRow(cs, l10n);
-    final retryable =
-        (status == MessageStatus.pendingConnection ||
-            status == MessageStatus.failed) &&
-            onRetry != null;
-
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      padding: EdgeInsets.only(
+        left: isMe ? 60 : 8,
+        right: isMe ? 8 : 60,
+        top: 2,
+        bottom: 2,
+      ),
       child: Align(
         alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-        child: Column(
-          crossAxisAlignment: isMe
-              ? CrossAxisAlignment.end
-              : CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (!isMe && senderName != null && senderName!.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(left: 4, bottom: 2),
-                child: Text(senderName!,
-                    style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: cs.primary)),
-              ),
-            GestureDetector(
-              onTap: retryable ? onRetry : null,
-              child: bubble,
-            ),
-            if (statusRow != null) statusRow,
-          ],
+        child: GestureDetector(
+          onTap: retryable ? onRetry : null,
+          child: bubble,
         ),
       ),
     );
   }
 }
+
+

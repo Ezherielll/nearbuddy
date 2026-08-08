@@ -5,6 +5,7 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 import '../../theme/nearbuddy_color_scheme.dart';
 import '../../l10n/app_localizations.dart';
 import '../../main.dart';
+import '../shared/widgets/nearbuddy_button.dart';
 
 class DisclaimerScreen extends ConsumerWidget {
   const DisclaimerScreen({super.key});
@@ -77,15 +78,12 @@ class DisclaimerScreen extends ConsumerWidget {
                 textAlign: TextAlign.center,
               ),
               const Spacer(),
-              ShadButton(
+              NearBuddyButton(
+                label: l10n.disclaimerAccept,
                 onPressed: () async {
                   await prefs.acceptDisclaimer();
                   if (context.mounted) context.go('/nickname');
                 },
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                child: Text(l10n.disclaimerAccept,
-                    style: theme.textTheme.p
-                        .copyWith(fontWeight: FontWeight.w600)),
               ),
             ],
           ),

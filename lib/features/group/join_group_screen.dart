@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import '../../domain/services/key_exchange_service.dart';
 import '../../l10n/app_localizations.dart';
@@ -53,7 +54,12 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
     final ok = await showVerificationDialog(context, sas);
     if (!mounted) return;
     await ref.read(keyExchangeServiceProvider).confirmSas(ok);
-    if (!ok && mounted) await ref.read(groupControllerProvider).leaveGroup();
+    if (!ok) {
+      if (mounted) await ref.read(groupControllerProvider).leaveGroup();
+      return;
+    }
+    // Verified — enter the chat (push keeps /home on the stack).
+    if (mounted) context.push('/chat/$_lastCode');
   }
 
   void _onJoinRejected() {

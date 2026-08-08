@@ -20,26 +20,53 @@ class ConnectionLostBanner extends StatelessWidget {
     final theme = ShadTheme.of(context);
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: cs.onlineSoft,
-      child: Row(
-        children: [
-          Icon(LucideIcons.wifiOff, size: 16, color: cs.warning),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title,
-                    style: theme.textTheme.small
-                        .copyWith(fontWeight: FontWeight.w600)),
-                Text(hint,
-                    style: theme.textTheme.small
-                        .copyWith(color: cs.mutedForeground)),
-              ],
+      decoration: BoxDecoration(
+        color: cs.warning.withValues(alpha: 0.12),
+        border: Border(
+          top: BorderSide(color: cs.warning.withValues(alpha: 0.4), width: 1),
+          bottom: BorderSide(color: cs.warning.withValues(alpha: 0.4), width: 1),
+        ),
+      ),
+      child: IntrinsicHeight(
+        child: Row(
+          children: [
+            Container(
+              width: 3,
+              color: cs.warning,
             ),
-          ),
-        ],
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  children: [
+                    Icon(LucideIcons.wifiOff, size: 16, color: cs.warning),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: theme.textTheme.small.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: cs.warning,
+                            ),
+                          ),
+                          Text(
+                            hint,
+                            style: theme.textTheme.small.copyWith(
+                              color: cs.mutedForeground,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

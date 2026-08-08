@@ -6,6 +6,7 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 import '../../core/constants.dart';
 import '../../l10n/app_localizations.dart';
 import '../../main.dart';
+import '../shared/widgets/nearbuddy_button.dart';
 
 class NicknameScreen extends ConsumerStatefulWidget {
   const NicknameScreen({super.key});
@@ -85,12 +86,9 @@ class _NicknameScreenState extends ConsumerState<NicknameScreen> {
                           },
                         ),
                         const SizedBox(height: 20),
-                        ShadButton(
+                        NearBuddyButton(
+                          label: l10n.continueLabel,
                           onPressed: _submit,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          child: Text(l10n.continueLabel,
-                              style: theme.textTheme.p
-                                  .copyWith(fontWeight: FontWeight.w600)),
                         ),
                       ],
                     ),

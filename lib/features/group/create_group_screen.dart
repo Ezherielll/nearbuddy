@@ -61,7 +61,8 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
       _showError(err);
       return;
     }
-    context.go('/invite/${ref.read(currentGroupProvider)!.id}', extra: name);
+    // push (not go): keeps /home on the stack so back navigation works.
+    context.push('/invite/${ref.read(currentGroupProvider)!.id}', extra: name);
   }
 
   void _showError(String code) {

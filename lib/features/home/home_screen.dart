@@ -1,3 +1,5 @@
+import 'dart:math' show cos, sin;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -68,19 +70,24 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
+  late final ScanController _scan;
+
   @override
   void initState() {
     super.initState();
+    // Capture the controller while `ref` is valid — never read `ref` in
+    // dispose (Riverpod throws "Cannot use ref after widget was disposed").
+    _scan = ref.read(scanControllerProvider);
     checkRadioAvailability().then((ok) {
       if (!mounted) return;  // widget may be gone before the permission check resolves
       ref.read(radioAvailableProvider.notifier).state = ok;
     });
-    ref.read(scanControllerProvider).start();
+    _scan.start();
   }
 
   @override
   void dispose() {
-    ref.read(scanControllerProvider).stop();
+    _scan.stop();
     super.dispose();
   }
 
@@ -93,7 +100,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = ShadTheme.of(context);
     final cs = ShadTheme.of(context).colorScheme;
     final isLow = ref.watch(lowBatteryProvider).valueOrNull ?? false;
     final status =
@@ -106,33 +112,58 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Scaffold(
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
           children: [
+            // HEADER
             Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Container(
-                  width: 44,
-                  height: 44,
+                  width: 60,
+                  height: 60,
                   decoration: BoxDecoration(
-                    color: cs.primary,
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(18),
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF3D5AFE), Color(0xFF1A3FD8)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
                   ),
-                  child: Icon(LucideIcons.shield,
-                      size: 22, color: cs.primaryForeground),
+                  child:
+                      const Icon(LucideIcons.shield, size: 30, color: Colors.white),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(l10n.appName, style: theme.textTheme.h3),
-                      Text(l10n.tagline, style: theme.textTheme.small),
+                      Text(
+                        l10n.appName,
+                        style: const TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      Text(
+                        l10n.tagline,
+                        style: TextStyle(fontSize: 13, color: cs.mutedForeground),
+                      ),
                     ],
                   ),
                 ),
-                ShadIconButton(
-                  icon: const Icon(LucideIcons.settings),
-                  onPressed: () => context.push('/settings'),
+                GestureDetector(
+                  onTap: () => context.push('/settings'),
+                  child: Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: cs.card,
+                      border: Border.all(color: cs.border, width: 1),
+                    ),
+                    child: Icon(LucideIcons.settings, size: 20, color: cs.foreground),
+                  ),
                 ),
               ],
             ),
@@ -145,9 +176,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               deviceCount: devices.length,
               devicesFound: l10n.devicesFound(devices.length),
             ),
-            const SizedBox(height: 20),
-            _SectionLabel(l10n.devicesNearbySection),
-            const SizedBox(height: 8),
+            const SizedBox(height: 24),
+            _SectionLabel(
+              l10n.devicesNearbySection,
+              trailing: GestureDetector(
+                onTap: _retryScan,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(LucideIcons.refreshCw, size: 14, color: cs.primary),
+                    const SizedBox(width: 4),
+                    Text(
+                      l10n.searchAgain,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: cs.primary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
             _NearbySection(
               devices: devices,
               connectedPeers: ref.read(peerDiscoveryServiceProvider).connectedPeers,
@@ -160,46 +211,118 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               onSeeAll: () => context.push('/devices'),
               seeAllLabel: l10n.seeAllDevices,
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             _SectionLabel(l10n.communicationSection),
-            const SizedBox(height: 8),
-            _ActionCard(
-              icon: LucideIcons.users,
-              title: l10n.createGroup,
-              description: l10n.createGroupDesc,
-              tint: cs.primary,
-              onTap: () => context.push('/create-group'),
-            ),
-            const SizedBox(height: 10),
-            _ActionCard(
-              icon: LucideIcons.messageCircle,
-              title: l10n.dmSessions,
-              description: l10n.dmSessionsDesc,
-              tint: cs.online,
-              onTap: () => context.push('/dms'),
-            ),
-            const SizedBox(height: 8),
-            Center(
-              child: ShadButton.ghost(
-                onPressed: () => context.push('/join-group'),
-                child: Text('${l10n.joinGroup} — ${l10n.groupCode}',
-                    style: theme.textTheme.small),
-              ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _ActionGridCard(
+                    icon: LucideIcons.users,
+                    iconColor: cs.primary,
+                    title: l10n.createGroup,
+                    description: l10n.createGroupDesc,
+                    onTap: () => context.push('/create-group'),
+                    cs: cs,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _ActionGridCard(
+                    icon: LucideIcons.messageCircle,
+                    iconColor: cs.online,
+                    title: l10n.dmSessions,
+                    description: l10n.dmSessionsDesc,
+                    onTap: () => context.push('/dms'),
+                    cs: cs,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _ActionGridCard(
+                    icon: LucideIcons.qrCode,
+                    iconColor: const Color(0xFF7C3AED),
+                    title: l10n.joinGroup,
+                    description: l10n.groupCode,
+                    onTap: () => context.push('/join-group'),
+                    cs: cs,
+                  ),
+                ),
+              ],
             ),
             if (groups.isNotEmpty) ...[
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
               _SectionLabel(l10n.myGroupsSection),
               const SizedBox(height: 8),
               for (final g in groups) _GroupRow(group: g),
             ],
-            const SizedBox(height: 20),
-            Center(
-              child: Column(
+            const SizedBox(height: 24),
+            // FOOTER BANNER
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 16, 0, 16),
+              decoration: BoxDecoration(
+                color: cs.primary.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: cs.primary.withValues(alpha: 0.12)),
+              ),
+              child: Row(
                 children: [
-                  Icon(LucideIcons.lock, size: 18, color: cs.mutedForeground),
-                  const SizedBox(height: 8),
-                  Text(l10n.homeEmptyDesc,
-                      style: theme.textTheme.muted, textAlign: TextAlign.center),
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: cs.primary,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(LucideIcons.shield, size: 24, color: Colors.white),
+                      ),
+                      Positioned(
+                        right: -4,
+                        bottom: -4,
+                        child: Container(
+                          width: 20,
+                          height: 20,
+                          decoration: BoxDecoration(
+                            color: cs.card,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: cs.border),
+                          ),
+                          child: Icon(LucideIcons.lock, size: 11, color: cs.primary),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Secure. Private. Direct.',
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          l10n.homeEmptyDesc,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: cs.mutedForeground,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Transform.translate(
+                    offset: const Offset(8, 0),
+                    child: Opacity(
+                      opacity: 0.12,
+                      child: Icon(LucideIcons.shieldCheck, size: 64, color: cs.primary),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -230,7 +353,6 @@ class _ConnectionPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = ShadTheme.of(context).colorScheme;
-    final theme = ShadTheme.of(context);
     final l10n = AppLocalizations.of(context)!;
 
     final (color, title, subtitle) = isLow
@@ -248,50 +370,300 @@ class _ConnectionPanel extends StatelessWidget {
           };
 
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.fromLTRB(20, 18, 16, 18),
       decoration: BoxDecoration(
-        color: cs.card,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: cs.border),
+        color: cs.primary.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: cs.primary.withValues(alpha: 0.15), width: 1),
       ),
       child: Row(
         children: [
-          if (isLow)
-            Icon(LucideIcons.batteryWarning, size: 22, color: color)
-          else
-            _PulsingDot(color: color),
-          const SizedBox(width: 14),
+          // LEFT: radar/battery + status text
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            flex: 3,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text(title,
-                    style: theme.textTheme.p
-                        .copyWith(fontWeight: FontWeight.w700, fontSize: 16)),
-                if (subtitle.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(subtitle, style: theme.textTheme.small),
-                ],
+                if (isLow)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4),
+                    child:
+                        Icon(LucideIcons.batteryWarning, size: 24, color: color),
+                  )
+                else
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4),
+                    child: _RadarAnimation(color: color),
+                  ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: cs.mutedForeground,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
+          // RIGHT: phone connection illustration
+          const SizedBox(width: 110, child: _PhoneConnectionIllustration()),
         ],
       ),
     );
   }
 }
 
-class _SectionLabel extends StatelessWidget {
-  final String label;
-  const _SectionLabel(this.label);
+/// Animated radar ping — honors reduced-motion (static icon fallback).
+class _RadarAnimation extends StatefulWidget {
+  final Color color;
+  const _RadarAnimation({required this.color});
+  @override
+  State<_RadarAnimation> createState() => _RadarAnimationState();
+}
+
+class _RadarAnimationState extends State<_RadarAnimation>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Text(label,
-        style: ShadTheme.of(context).textTheme.small.copyWith(
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.6,
-            color: ShadTheme.of(context).colorScheme.mutedForeground));
+    if (MediaQuery.of(context).disableAnimations) {
+      return SizedBox(
+        width: 48,
+        height: 48,
+        child: Icon(LucideIcons.radar, size: 24, color: widget.color),
+      );
+    }
+    return SizedBox(
+      width: 48,
+      height: 48,
+      child: AnimatedBuilder(
+        animation: _ctrl,
+        builder: (_, __) =>
+            CustomPaint(painter: _RadarPainter(_ctrl.value, widget.color)),
+      ),
+    );
+  }
+}
+
+class _RadarPainter extends CustomPainter {
+  final double progress;
+  final Color color;
+  const _RadarPainter(this.progress, this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final maxR = size.width / 2;
+
+    // 3 concentric rings at staggered phases
+    for (int i = 0; i < 3; i++) {
+      final phase = (progress - i * 0.33).clamp(0.0, 1.0);
+      final r = maxR * phase;
+      final opacity = (1.0 - phase) * 0.4;
+      canvas.drawCircle(
+        center,
+        r,
+        Paint()
+          ..color = color.withValues(alpha: opacity)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5,
+      );
+    }
+
+    // Center dot with a small static circle background
+    canvas.drawCircle(
+      center,
+      maxR * 0.28,
+      Paint()..color = color.withValues(alpha: 0.12),
+    );
+    canvas.drawCircle(center, maxR * 0.14, Paint()..color = color);
+
+    // Radar sweep line (thin line rotating from center)
+    final angle = progress * 2 * 3.14159;
+    final sweepEnd = Offset(
+      center.dx + maxR * 0.5 * cos(angle - 1.5708),
+      center.dy + maxR * 0.5 * sin(angle - 1.5708),
+    );
+    canvas.drawLine(
+      center,
+      sweepEnd,
+      Paint()
+        ..color = color.withValues(alpha: 0.6)
+        ..strokeWidth = 1.5
+        ..strokeCap = StrokeCap.round,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_RadarPainter old) => old.progress != progress;
+}
+
+/// Two phone outlines connected by a dashed line (right side of the panel).
+class _PhoneConnectionIllustration extends StatelessWidget {
+  const _PhoneConnectionIllustration();
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = ShadTheme.of(context).colorScheme;
+    return SizedBox(
+      height: 64,
+      child: CustomPaint(painter: _PhoneConnPainter(cs.primary)),
+    );
+  }
+}
+
+class _PhoneConnPainter extends CustomPainter {
+  final Color color;
+  const _PhoneConnPainter(this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+    final phoneW = w * 0.22;
+    final phoneH = h * 0.85;
+    final phoneBg = color.withValues(alpha: 0.1);
+    final framePaint = Paint()
+      ..color = color.withValues(alpha: 0.5)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+    final fillPaint = Paint()..color = phoneBg;
+
+    // Left phone
+    final leftRect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(0, (h - phoneH) / 2, phoneW, phoneH),
+      const Radius.circular(6),
+    );
+    canvas.drawRRect(leftRect, fillPaint);
+    canvas.drawRRect(leftRect, framePaint);
+    // Person icon inside left phone (simplified: circle + rectangle)
+    final lCx = phoneW / 2;
+    final lCy = (h - phoneH) / 2 + phoneH * 0.35;
+    canvas.drawCircle(
+      Offset(lCx, lCy),
+      phoneW * 0.2,
+      Paint()..color = color.withValues(alpha: 0.5),
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(
+          lCx - phoneW * 0.25,
+          lCy + phoneW * 0.25,
+          phoneW * 0.5,
+          phoneH * 0.22,
+        ),
+        const Radius.circular(3),
+      ),
+      Paint()..color = color.withValues(alpha: 0.5),
+    );
+
+    // Right phone (mirrored)
+    final rightRect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(w - phoneW, (h - phoneH) / 2, phoneW, phoneH),
+      const Radius.circular(6),
+    );
+    canvas.drawRRect(rightRect, fillPaint);
+    canvas.drawRRect(rightRect, framePaint);
+    final rCx = w - phoneW / 2;
+    final rCy = lCy;
+    canvas.drawCircle(
+      Offset(rCx, rCy),
+      phoneW * 0.2,
+      Paint()..color = color.withValues(alpha: 0.5),
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(
+          rCx - phoneW * 0.25,
+          rCy + phoneW * 0.25,
+          phoneW * 0.5,
+          phoneH * 0.22,
+        ),
+        const Radius.circular(3),
+      ),
+      Paint()..color = color.withValues(alpha: 0.5),
+    );
+
+    // Dashed line between phones
+    final dashPaint = Paint()
+      ..color = color.withValues(alpha: 0.4)
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
+    const dashLen = 4.0;
+    const gapLen = 4.0;
+    double x = phoneW + 4;
+    final endX = w - phoneW - 4;
+    final midY = h / 2;
+    while (x < endX) {
+      canvas.drawLine(
+        Offset(x, midY),
+        Offset((x + dashLen).clamp(x, endX), midY),
+        dashPaint,
+      );
+      x += dashLen + gapLen;
+    }
+  }
+
+  @override
+  bool shouldRepaint(_PhoneConnPainter old) => false;
+}
+
+class _SectionLabel extends StatelessWidget {
+  final String label;
+  final Widget? trailing;
+  const _SectionLabel(this.label, {this.trailing});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = ShadTheme.of(context).colorScheme;
+    final labelWidget = Text(
+      label,
+      style: TextStyle(
+        fontSize: 15,
+        fontWeight: FontWeight.w700,
+        color: cs.foreground,
+      ),
+    );
+    if (trailing == null) return labelWidget;
+    return Row(
+      children: [
+        Expanded(child: labelWidget),
+        trailing!,
+      ],
+    );
   }
 }
 
@@ -326,25 +698,67 @@ class _NearbySection extends StatelessWidget {
 
     if (devices.isEmpty) {
       return Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(24, 32, 24, 28),
         decoration: BoxDecoration(
           color: cs.card,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(color: cs.border),
         ),
         child: Column(
           children: [
-            Icon(LucideIcons.radar, size: 28, color: cs.mutedForeground),
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: cs.primary.withValues(alpha: 0.08),
+              ),
+              child: Icon(
+                LucideIcons.radar,
+                size: 36,
+                color: cs.primary.withValues(alpha: 0.8),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              emptyTitle,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            ),
             const SizedBox(height: 8),
-            Text(emptyTitle,
-                style: theme.textTheme.p.copyWith(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 4),
-            Text(emptyHint,
-                style: theme.textTheme.small, textAlign: TextAlign.center),
-            const SizedBox(height: 12),
-            ShadButton.outline(
-              onPressed: onSearchAgain,
-              child: Text(searchAgain),
+            Text(
+              emptyHint,
+              style: TextStyle(
+                fontSize: 13,
+                color: cs.mutedForeground,
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            GestureDetector(
+              onTap: onSearchAgain,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(24),
+                  color: cs.primary,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(LucideIcons.search, size: 16, color: cs.primaryForeground),
+                    const SizedBox(width: 8),
+                    Text(
+                      searchAgain,
+                      style: TextStyle(
+                        color: cs.primaryForeground,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
@@ -483,58 +897,82 @@ class _GroupRow extends ConsumerWidget {
   }
 }
 
-class _ActionCard extends StatelessWidget {
+
+/// Compact 3-column action card for the Home quick actions grid.
+class _ActionGridCard extends StatelessWidget {
   final IconData icon;
+  final Color iconColor;
   final String title;
   final String description;
-  final Color tint;
   final VoidCallback onTap;
-  const _ActionCard({
+  final ShadColorScheme cs;
+  const _ActionGridCard({
     required this.icon,
+    required this.iconColor,
     required this.title,
     required this.description,
-    required this.tint,
     required this.onTap,
+    required this.cs,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = ShadTheme.of(context);
-    final cs = ShadTheme.of(context).colorScheme;
-    return ShadCard(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(12, 16, 12, 14),
+        decoration: BoxDecoration(
+          color: cs.card,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: cs.border, width: 1),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, size: 22, color: iconColor),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              description,
+              style: TextStyle(
+                fontSize: 11,
+                color: cs.mutedForeground,
+                height: 1.4,
+              ),
+              maxLines: 2,
+            ),
+            const SizedBox(height: 10),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Container(
+                width: 26,
+                height: 26,
                 decoration: BoxDecoration(
-                  color: tint.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(12),
+                  color: cs.muted,
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, size: 22, color: tint),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title,
-                        style: theme.textTheme.p
-                            .copyWith(fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 2),
-                    Text(description, style: theme.textTheme.small),
-                  ],
+                child: Icon(
+                  LucideIcons.chevronRight,
+                  size: 14,
+                  color: cs.mutedForeground,
                 ),
               ),
-              Icon(LucideIcons.chevronRight,
-                  size: 18, color: cs.mutedForeground),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
