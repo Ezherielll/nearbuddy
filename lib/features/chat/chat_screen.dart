@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +8,7 @@ import '../../domain/services/key_exchange_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../../main.dart';
 import '../group/group_controller.dart';
+import '../shared/widgets/avatar_initial.dart';
 import '../../features/shared/connection_status.dart';
 import 'chat_controller.dart';
 import 'widgets/connection_badge.dart';
@@ -28,16 +30,23 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _msgCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
   bool _locLoading = false;
+  StreamSubscription<String>? _sasSub;
 
   @override
   void initState() {
     super.initState();
-    ref.read(groupControllerProvider).sasRequestHandler = _onSas;
+    // Wire the SAS verification challenge to this screen. The subscription is
+    // cancelled in dispose — the async handler re-checks mounted after every
+    // await so `ref`/context are never used after the widget is disposed.
+    _sasSub = ref
+        .read(keyExchangeServiceProvider)
+        .onSasChallenge
+        .listen(_onSas);
   }
 
   @override
   void dispose() {
-    ref.read(groupControllerProvider).sasRequestHandler = null;
+    _sasSub?.cancel();
     _msgCtrl.dispose();
     _scrollCtrl.dispose();
     super.dispose();
@@ -46,8 +55,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Future<void> _onSas(String sas) async {
     if (!mounted) return;
     final ok = await showVerificationDialog(context, sas);
+    if (!mounted) return;   // screen may be gone while the dialog was open
     await ref.read(keyExchangeServiceProvider).confirmSas(ok);
-    if (!ok && mounted) await ref.read(groupControllerProvider).leaveGroup();
+    if (!ok && mounted) {
+      await ref.read(groupControllerProvider).leaveGroup();
+    }
   }
 
   void _scrollToBottom() {
@@ -60,16 +72,26 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         duration: const Duration(milliseconds: 250), curve: Curves.easeOut);
   }
 
-  List<Widget> _buildMessages(List<MessageRow> msgs, String myNick) {
+  List<Widget> _buildMessages(
+      List<MessageRow> msgs, String myNick, ChatController controller) {
     final children = <Widget>[];
     DateTime? lastDay;
+    String? lastSender;
     for (final m in msgs) {
       final day = DateTime(m.timestamp.year, m.timestamp.month, m.timestamp.day);
       if (lastDay == null || day != lastDay) {
         children.add(DateDivider(date: m.timestamp));
         lastDay = day;
+        lastSender = null;
       }
-      children.add(MessageBubble(row: m, isMe: m.senderId == myNick));
+      final sameSenderAsPrev = m.senderId == lastSender;
+      lastSender = m.senderId;
+      children.add(MessageBubble(
+        row: m,
+        isMe: m.senderId == myNick,
+        grouped: sameSenderAsPrev,
+        onRetry: (id) => controller.retryMessage(id),
+      ));
     }
     return children;
   }
@@ -82,25 +104,38 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final group = ref.watch(currentGroupProvider);
     final controller = ref.read(chatControllerProvider);
     final myNick = ref.read(appPreferencesProvider).nickname ?? '';
+    final peerName = group?.name ?? '';
 
     return Scaffold(
       appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
+        titleSpacing: 0,
+        title: Row(
           children: [
-            Text(group?.name ?? '',
-                style: theme.textTheme.p.copyWith(fontWeight: FontWeight.w600)),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ConnectionBadge(
-                    status:
-                        ref.watch(connectionStatusProvider).valueOrNull ??
-                            ConnectionStatus.searching),
-                const SizedBox(width: 8),
-                const EncryptedMarker(),
-              ],
+            AvatarInitial(name: peerName, size: 34),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(peerName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.p
+                          .copyWith(fontWeight: FontWeight.w600)),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ConnectionBadge(
+                          status:
+                              ref.watch(connectionStatusProvider).valueOrNull ??
+                                  ConnectionStatus.searching),
+                      const SizedBox(width: 8),
+                      const EncryptedMarker(),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -128,16 +163,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               if (msgs.isEmpty) {
                 return Center(
                   child: Padding(
-                    padding: const EdgeInsets.all(32),
+                    padding: const EdgeInsets.all(24),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(LucideIcons.messageCircle,
-                            size: 40, color: cs.mutedForeground),
-                        const SizedBox(height: 12),
-                        Text(l10n.homeEmptyDesc,
-                            style: theme.textTheme.muted,
-                            textAlign: TextAlign.center),
+                            size: 32, color: cs.mutedForeground),
+                        const SizedBox(height: 10),
+                        Text(l10n.chatEmptyTitle,
+                            style: theme.textTheme.p
+                                .copyWith(fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 2),
+                        Text(l10n.chatEmptyBody(peerName),
+                            style: theme.textTheme.small),
                       ],
                     ),
                   ),
@@ -145,8 +183,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               }
               return ListView(
                 controller: _scrollCtrl,
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                children: _buildMessages(msgs, myNick),
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                children: _buildMessages(msgs, myNick, controller),
               );
             },
           ),
@@ -154,7 +192,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         if (ref.watch(connectionStatusProvider).valueOrNull ==
             ConnectionStatus.outOfRange)
           ConnectionLostBanner(
-            title: l10n.connectionLost(group?.name ?? ''),
+            title: l10n.connectionLost(peerName),
             hint: l10n.messageWillWait,
           ),
         MessageComposer(

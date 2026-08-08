@@ -107,8 +107,7 @@ class _InviteDevicesScreenState extends ConsumerState<InviteDevicesScreen> {
                 onPressed: () => context.go('/chat/${widget.groupId}'),
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 child: Text(l10n.startChat,
-                    style: theme.textTheme.p
-                        .copyWith(fontWeight: FontWeight.w600)),
+                    style: const TextStyle(fontWeight: FontWeight.w600)),
               ),
             ),
           ),

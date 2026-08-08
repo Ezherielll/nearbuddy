@@ -22,12 +22,16 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
   bool _connecting = false;
   String _lastCode = '';
   Timer? _connectTimer;
+  StreamSubscription<String>? _sasSub;
   StreamSubscription? _rejectedSub;
 
   @override
   void initState() {
     super.initState();
-    ref.read(groupControllerProvider).sasRequestHandler = _onSas;
+    _sasSub = ref
+        .read(keyExchangeServiceProvider)
+        .onSasChallenge
+        .listen(_onSas);
     _rejectedSub = ref
         .read(keyExchangeServiceProvider)
         .onJoinRejected
@@ -36,7 +40,7 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
 
   @override
   void dispose() {
-    ref.read(groupControllerProvider).sasRequestHandler = null;
+    _sasSub?.cancel();
     _rejectedSub?.cancel();
     _connectTimer?.cancel();
     super.dispose();
@@ -46,6 +50,7 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
     _connectTimer?.cancel();
     if (!mounted) return;
     final ok = await showVerificationDialog(context, sas);
+    if (!mounted) return;
     await ref.read(keyExchangeServiceProvider).confirmSas(ok);
     if (!ok && mounted) await ref.read(groupControllerProvider).leaveGroup();
   }
@@ -248,8 +253,7 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                             padding:
                                 const EdgeInsets.symmetric(vertical: 16),
                             child: Text(l10n.joinGroup,
-                                style: theme.textTheme.p
-                                    .copyWith(fontWeight: FontWeight.w600)),
+                                style: const TextStyle(fontWeight: FontWeight.w600)),
                           ),
                       ],
                     ),

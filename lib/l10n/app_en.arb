@@ -122,5 +122,16 @@
   "learnSecurity": "Learn how security works",
   "securityDialogTitle": "How security works",
   "securityDialogBody": "NearBuddy uses a per-device X25519 key with 6-digit verification, and messages are encrypted with AES-GCM. Relay devices only forward messages without being able to read them.",
-  "pendingConnectionLabel": "Waiting for connection"
+  "pendingConnectionLabel": "Waiting for connection",
+  "chatEmptyTitle": "Start a conversation",
+  "chatEmptyBody": "Send your first message to {name}.",
+  "@chatEmptyBody": { "placeholders": { "name": { "type": "String" } } },
+  "settingsProfileHint": "Name visible to other devices",
+  "settingsChangeNickname": "Change nickname",
+  "aboutSection": "About",
+  "appVersion": "Version {version}",
+  "@appVersion": { "placeholders": { "version": { "type": "String" } } },
+  "aboutNearBuddy": "About NearBuddy",
+  "encryptionRow": "Encryption",
+  "encryptionRowSubtitle": "Messages are encrypted and stored locally"
 }

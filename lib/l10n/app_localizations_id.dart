@@ -394,4 +394,36 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get pendingConnectionLabel => 'Menunggu koneksi';
+
+  @override
+  String get chatEmptyTitle => 'Mulai percakapan';
+
+  @override
+  String chatEmptyBody(String name) {
+    return 'Kirim pesan pertama ke $name.';
+  }
+
+  @override
+  String get settingsProfileHint => 'Nama yang terlihat oleh perangkat lain';
+
+  @override
+  String get settingsChangeNickname => 'Ganti nickname';
+
+  @override
+  String get aboutSection => 'Tentang';
+
+  @override
+  String appVersion(String version) {
+    return 'Versi $version';
+  }
+
+  @override
+  String get aboutNearBuddy => 'Tentang NearBuddy';
+
+  @override
+  String get encryptionRow => 'Enkripsi';
+
+  @override
+  String get encryptionRowSubtitle =>
+      'Pesan terenkripsi dan disimpan secara lokal';
 }

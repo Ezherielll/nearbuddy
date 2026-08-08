@@ -108,35 +108,42 @@ class _MessageComposerState extends State<MessageComposer> {
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+          padding: const EdgeInsets.fromLTRB(10, 6, 10, 6),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               if (widget.onSendLocation != null)
                 SizedBox.square(
-                  dimension: 48,
-                  child: ShadIconButton(
-                    icon: widget.locationLoading
-                        ? SizedBox.square(
-                            dimension: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: cs.primary,
-                            ),
-                          )
-                        : const Icon(LucideIcons.mapPin),
-                    onPressed: widget.locationLoading ? null : _sendLocation,
+                  dimension: 44,
+                  child: Tooltip(
+                    message: l10n.sendLocationTooltip,
+                    child: ShadIconButton(
+                      icon: widget.locationLoading
+                          ? SizedBox.square(
+                              dimension: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: cs.primary,
+                              ),
+                            )
+                          : const Icon(LucideIcons.mapPin, size: 20),
+                      onPressed:
+                          widget.locationLoading ? null : _sendLocation,
+                    ),
                   ),
                 ),
+              const SizedBox(width: 6),
               Expanded(
                 child: ShadTextarea(
                   controller: widget.controller,
                   maxLength: AppConstants.maxMessageLength,
                   placeholder: Text(l10n.send),
+                  minHeight: 40,
+                  maxHeight: 96,
                   onChanged: (_) {},
                   decoration: const ShadDecoration(
                     border: ShadBorder(
-                      radius: BorderRadius.all(Radius.circular(24)),
+                      radius: BorderRadius.all(Radius.circular(22)),
                     ),
                   ),
                 ),
@@ -146,11 +153,11 @@ class _MessageComposerState extends State<MessageComposer> {
                 child: _showCounter
                     ? Padding(
                         key: const ValueKey('counter'),
-                        padding: const EdgeInsets.only(left: 8, bottom: 6),
+                        padding: const EdgeInsets.only(left: 6, bottom: 4),
                         child: Text(
                           '$_count/${AppConstants.maxMessageLength}',
                           style: TextStyle(
-                            fontSize: 11,
+                            fontSize: 10,
                             fontFeatures: const [FontFeature.tabularFigures()],
                             color: _counterColor(ratio),
                           ),
@@ -158,12 +165,12 @@ class _MessageComposerState extends State<MessageComposer> {
                       )
                     : const SizedBox.shrink(key: ValueKey('no-counter')),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               Tooltip(
                 message: l10n.sendMessageTooltip,
                 child: ShadButton(
                   onPressed: _hasText ? _send : null,
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(11),
                   child: Icon(LucideIcons.send,
                       size: 20,
                       color: _hasText ? cs.primaryForeground : cs.mutedForeground),

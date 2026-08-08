@@ -71,8 +71,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    checkRadioAvailability().then(
-        (ok) => ref.read(radioAvailableProvider.notifier).state = ok);
+    checkRadioAvailability().then((ok) {
+      if (!mounted) return;  // widget may be gone before the permission check resolves
+      ref.read(radioAvailableProvider.notifier).state = ok;
+    });
     ref.read(scanControllerProvider).start();
   }
 

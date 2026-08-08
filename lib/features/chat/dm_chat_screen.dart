@@ -43,16 +43,26 @@ class _DmChatScreenState extends ConsumerState<DmChatScreen> {
         duration: const Duration(milliseconds: 250), curve: Curves.easeOut);
   }
 
-  List<Widget> _buildMessages(List<MessageRow> msgs, String myNick) {
+  List<Widget> _buildMessages(
+      List<MessageRow> msgs, String myNick, ChatController controller) {
     final children = <Widget>[];
     DateTime? lastDay;
+    String? lastSender;
     for (final m in msgs) {
       final day = DateTime(m.timestamp.year, m.timestamp.month, m.timestamp.day);
       if (lastDay == null || day != lastDay) {
         children.add(DateDivider(date: m.timestamp));
         lastDay = day;
+        lastSender = null;
       }
-      children.add(MessageBubble(row: m, isMe: m.senderId == myNick));
+      final sameSenderAsPrev = m.senderId == lastSender;
+      lastSender = m.senderId;
+      children.add(MessageBubble(
+        row: m,
+        isMe: m.senderId == myNick,
+        grouped: sameSenderAsPrev,
+        onRetry: (id) => controller.retryMessage(id),
+      ));
     }
     return children;
   }
@@ -137,7 +147,7 @@ class _DmChatScreenState extends ConsumerState<DmChatScreen> {
                   return ListView(
                     controller: _scrollCtrl,
                     padding: const EdgeInsets.symmetric(vertical: 8),
-                    children: _buildMessages(msgs, myNick),
+                    children: _buildMessages(msgs, myNick, controller),
                   );
                 },
               ),

@@ -392,4 +392,36 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pendingConnectionLabel => 'Waiting for connection';
+
+  @override
+  String get chatEmptyTitle => 'Start a conversation';
+
+  @override
+  String chatEmptyBody(String name) {
+    return 'Send your first message to $name.';
+  }
+
+  @override
+  String get settingsProfileHint => 'Name visible to other devices';
+
+  @override
+  String get settingsChangeNickname => 'Change nickname';
+
+  @override
+  String get aboutSection => 'About';
+
+  @override
+  String appVersion(String version) {
+    return 'Version $version';
+  }
+
+  @override
+  String get aboutNearBuddy => 'About NearBuddy';
+
+  @override
+  String get encryptionRow => 'Encryption';
+
+  @override
+  String get encryptionRowSubtitle =>
+      'Messages are encrypted and stored locally';
 }

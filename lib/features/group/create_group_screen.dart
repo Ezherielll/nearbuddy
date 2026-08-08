@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,22 +20,27 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
   final _formKey = GlobalKey<ShadFormState>();
   bool _usePin = false;
   bool _loading = false;
+  StreamSubscription<String>? _sasSub;
 
   @override
   void initState() {
     super.initState();
-    ref.read(groupControllerProvider).sasRequestHandler = _onSas;
+    _sasSub = ref
+        .read(keyExchangeServiceProvider)
+        .onSasChallenge
+        .listen(_onSas);
   }
 
   @override
   void dispose() {
-    ref.read(groupControllerProvider).sasRequestHandler = null;
+    _sasSub?.cancel();
     super.dispose();
   }
 
   Future<void> _onSas(String sas) async {
     if (!mounted) return;
     final ok = await showVerificationDialog(context, sas);
+    if (!mounted) return;
     await ref.read(keyExchangeServiceProvider).confirmSas(ok);
     if (!ok && mounted) await ref.read(groupControllerProvider).leaveGroup();
   }
@@ -139,8 +145,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                         onPressed: _create,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         child: Text(l10n.createGroup,
-                            style: theme.textTheme.p
-                                .copyWith(fontWeight: FontWeight.w600)),
+                            style: const TextStyle(fontWeight: FontWeight.w600)),
                       ),
                   ],
                 ),

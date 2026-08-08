@@ -122,5 +122,16 @@
   "learnSecurity": "Pelajari cara kerja keamanan",
   "securityDialogTitle": "Cara kerja keamanan",
   "securityDialogBody": "NearBuddy menggunakan kunci X25519 per perangkat dengan verifikasi 6 angka, dan pesan dienkripsi AES-GCM. Perangkat perantara hanya meneruskan pesan tanpa bisa membacanya.",
-  "pendingConnectionLabel": "Menunggu koneksi"
+  "pendingConnectionLabel": "Menunggu koneksi",
+  "chatEmptyTitle": "Mulai percakapan",
+  "chatEmptyBody": "Kirim pesan pertama ke {name}.",
+  "@chatEmptyBody": { "placeholders": { "name": { "type": "String" } } },
+  "settingsProfileHint": "Nama yang terlihat oleh perangkat lain",
+  "settingsChangeNickname": "Ganti nickname",
+  "aboutSection": "Tentang",
+  "appVersion": "Versi {version}",
+  "@appVersion": { "placeholders": { "version": { "type": "String" } } },
+  "aboutNearBuddy": "Tentang NearBuddy",
+  "encryptionRow": "Enkripsi",
+  "encryptionRowSubtitle": "Pesan terenkripsi dan disimpan secara lokal"
 }

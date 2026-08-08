@@ -811,6 +811,60 @@ abstract class AppLocalizations {
   /// In id, this message translates to:
   /// **'Menunggu koneksi'**
   String get pendingConnectionLabel;
+
+  /// No description provided for @chatEmptyTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Mulai percakapan'**
+  String get chatEmptyTitle;
+
+  /// No description provided for @chatEmptyBody.
+  ///
+  /// In id, this message translates to:
+  /// **'Kirim pesan pertama ke {name}.'**
+  String chatEmptyBody(String name);
+
+  /// No description provided for @settingsProfileHint.
+  ///
+  /// In id, this message translates to:
+  /// **'Nama yang terlihat oleh perangkat lain'**
+  String get settingsProfileHint;
+
+  /// No description provided for @settingsChangeNickname.
+  ///
+  /// In id, this message translates to:
+  /// **'Ganti nickname'**
+  String get settingsChangeNickname;
+
+  /// No description provided for @aboutSection.
+  ///
+  /// In id, this message translates to:
+  /// **'Tentang'**
+  String get aboutSection;
+
+  /// No description provided for @appVersion.
+  ///
+  /// In id, this message translates to:
+  /// **'Versi {version}'**
+  String appVersion(String version);
+
+  /// No description provided for @aboutNearBuddy.
+  ///
+  /// In id, this message translates to:
+  /// **'Tentang NearBuddy'**
+  String get aboutNearBuddy;
+
+  /// No description provided for @encryptionRow.
+  ///
+  /// In id, this message translates to:
+  /// **'Enkripsi'**
+  String get encryptionRow;
+
+  /// No description provided for @encryptionRowSubtitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Pesan terenkripsi dan disimpan secara lokal'**
+  String get encryptionRowSubtitle;
 }
 
 class _AppLocalizationsDelegate

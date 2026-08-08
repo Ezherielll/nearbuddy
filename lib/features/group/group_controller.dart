@@ -22,10 +22,6 @@ class GroupController {
   final Ref _ref;
   GroupController(this._ref);
 
-  /// The active screen registers its SAS dialog handler here (single writer
-  /// at a time) so the handshake dialog is shown without duplicate listeners.
-  Future<void> Function(String sas)? sasRequestHandler;
-
   StreamSubscription? _payloadSub;
   StreamSubscription? _peerConnectedSub;
   StreamSubscription? _peerVerifiedSub;

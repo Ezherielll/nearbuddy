@@ -21,6 +21,10 @@ class _DevicesScreenState extends ConsumerState<DevicesScreen> {
   @override
   void initState() {
     super.initState();
+    checkRadioAvailability().then((ok) {
+      if (!mounted) return;  // screen may be gone before the check resolves
+      ref.read(radioAvailableProvider.notifier).state = ok;
+    });
     ref.read(scanControllerProvider).start();
   }
 
