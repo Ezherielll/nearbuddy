@@ -23,7 +23,7 @@ NearBuddy is a general-purpose peer-to-peer mesh messenger that works **without 
 Get the latest release APK for your device architecture from [GitHub Releases](../../releases):
 
 | Architecture | Device Type | APK File | Size |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | **ARM64 (`arm64-v8a`)** *(Recommended)* | Modern Android phones & tablets | `app-prod-arm64-v8a-release.apk` | ~18-24 MB |
 | **ARMv7 (`armeabi-v7a`)** | Legacy 32-bit Android devices | `app-prod-armeabi-v7a-release.apk` | ~18-24 MB |
 | **x86_64 (`x86_64`)** | Emulators & Intel/AMD Android devices | `app-prod-x86_64-release.apk` | ~18-24 MB |
@@ -253,15 +253,3 @@ lib/
 - Relay nodes are cryptographically unable to read message content or derive keys
 
 ---
-
-## Known Limitations
-
-| Limitation | Rationale |
-| --- | --- |
-| No forward secrecy | Double-ratchet is explicitly out of scope |
-| No rekey on member leave | Group key is memory-scoped; app restart triggers re-key |
-| Manual retry for failed messages | No automatic store-and-forward by design |
-| DM requires prior group contact | Peer public key must be known before a DM session |
-| No at-rest encryption | SQLCipher deferred |
-
-Intentionally out of scope: `flutter_map`, SOS, voice messaging, cloud sync.
