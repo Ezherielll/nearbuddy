@@ -5,7 +5,7 @@
 **Offline-first P2P mesh messenger · Android · IOS · No internet required**
 
 ![Platform](https://img.shields.io/badge/platform-Android-3DDC84?logo=android&logoColor=white)
-![iOS](https://img.shields.io/badge/platform-iOS-000000?logo=apple&logoColor=white)
+![iOS](https://img.shields.io/badge/platform-iOS-007AFF?logo=apple&logoColor=white)
 ![Flutter](https://img.shields.io/badge/Flutter-3.44+-54C5F8?logo=flutter&logoColor=white)
 ![minSdk](https://img.shields.io/badge/minSdk-23-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
