@@ -61,4 +61,24 @@ class GroupsDao extends DatabaseAccessor<AppDatabase> with _$GroupsDaoMixin {
         .getSingleOrNull();
     return row?.publicKey;
   }
+
+  /// Every known device public key across all groups, latest `lastSeen`
+  /// first and one entry per device. Used for DM sender discovery: the
+  /// receiver of a DM has no session for the sender's sessionId, so the
+  /// pairwise key is tried against every known device until the MAC
+  /// authenticates (C1).
+  Future<List<({String deviceId, String pubKeyB64})>> allMemberPublicKeys() async {
+    final rows = await (select(members)
+          ..where((m) => m.publicKey.isNotNull())
+          ..orderBy([(m) => OrderingTerm.desc(m.lastSeen)]))
+        .get();
+    final seen = <String>{};
+    final out = <({String deviceId, String pubKeyB64})>[];
+    for (final r in rows) {
+      if (seen.add(r.deviceId)) {
+        out.add((deviceId: r.deviceId, pubKeyB64: r.publicKey!));
+      }
+    }
+    return out;
+  }
 }

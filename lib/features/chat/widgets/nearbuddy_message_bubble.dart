@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
+import '../../../theme/nearbuddy_typography.dart';
 import 'location_ping_card.dart';
 
 /// Internal NearBuddy message delivery state — maps 1:1 to the DB `status`
@@ -80,10 +81,8 @@ class NearBuddyMessageBubble extends StatelessWidget {
             else
               Text(
                 text,
-                style: const TextStyle(
+                style: NearBuddyTypography.chatBodyStyle.copyWith(
                   color: Colors.white,
-                  fontSize: 15,
-                  height: 1.4,
                 ),
               ),
             const SizedBox(height: 2),
@@ -92,9 +91,8 @@ class NearBuddyMessageBubble extends StatelessWidget {
               children: [
                 Text(
                   _time(context),
-                  style: TextStyle(
+                  style: NearBuddyTypography.chatMetaStyle.copyWith(
                     color: Colors.white.withValues(alpha: 0.7),
-                    fontSize: 11,
                   ),
                 ),
                 const SizedBox(width: 3),
@@ -170,10 +168,8 @@ class NearBuddyMessageBubble extends StatelessWidget {
             else
               Text(
                 text,
-                style: TextStyle(
+                style: NearBuddyTypography.chatBodyStyle.copyWith(
                   color: cs.foreground,
-                  fontSize: 15,
-                  height: 1.4,
                 ),
               ),
             const SizedBox(height: 2),
@@ -181,8 +177,7 @@ class NearBuddyMessageBubble extends StatelessWidget {
               alignment: Alignment.centerRight,
               child: Text(
                 _time(context),
-                style: TextStyle(
-                  fontSize: 11,
+                style: NearBuddyTypography.chatMetaStyle.copyWith(
                   color: cs.mutedForeground,
                 ),
               ),

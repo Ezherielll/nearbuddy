@@ -19,47 +19,46 @@ class AppLocalizationsId extends AppLocalizations {
       'NearBuddy adalah alat komunikasi komunitas, bukan pengganti layanan darurat resmi. Jangan andalkan aplikasi ini sebagai satu-satunya alat dalam situasi darurat.';
 
   @override
-  String get disclaimerAccept => 'Saya Mengerti';
+  String get disclaimerAccept => 'Saya mengerti';
 
   @override
   String get nicknameTitle => 'Siapa namamu?';
 
   @override
-  String get nicknameHint => 'Masukkan nickname (3-20 karakter)';
+  String get nicknameHint => 'Masukkan nama (3-20 karakter)';
 
   @override
-  String get nicknameError => 'Nickname harus 3-20 karakter';
+  String get nicknameError => 'Nama harus 3-20 karakter';
 
   @override
   String get continueLabel => 'Lanjut';
 
   @override
-  String get createGroup => 'Buat Grup';
+  String get createGroup => 'Buat grup';
 
   @override
-  String get joinGroup => 'Gabung Grup';
+  String get joinGroup => 'Gabung grup';
 
   @override
-  String get groupName => 'Nama Grup';
+  String get groupName => 'Nama grup';
 
   @override
-  String get groupPin => 'PIN Grup (opsional)';
+  String get groupPin => 'PIN grup (opsional)';
 
   @override
-  String get nearbyGroups => 'Grup di Sekitar';
+  String get nearbyGroups => 'Grup di sekitar';
 
   @override
-  String get noNearbyGroups =>
-      'Tidak ada grup ditemukan. Buat grup baru atau tunggu.';
+  String get noNearbyGroups => 'Belum ada grup. Buat grup baru atau tunggu.';
 
   @override
   String get send => 'Kirim';
 
   @override
-  String get sendLocation => 'Kirim Lokasi Saya';
+  String get sendLocation => 'Kirim lokasi';
 
   @override
-  String get sendLocationConfirm => 'Kirim koordinat lokasi Anda sekarang?';
+  String get sendLocationConfirm => 'Kirim lokasimu sekarang?';
 
   @override
   String get locationPingLabel => 'Lokasi';
@@ -79,21 +78,21 @@ class AppLocalizationsId extends AppLocalizations {
   String get messageDelivered => 'Diterima';
 
   @override
-  String get lowBatteryMode => 'Mode Hemat Aktif';
+  String get lowBatteryMode => 'Mode hemat aktif';
 
   @override
-  String get permissionRequired => 'Izin Diperlukan';
+  String get permissionRequired => 'Izin diperlukan';
 
   @override
   String get permissionExplanation =>
-      'NearBuddy memerlukan izin Bluetooth dan Lokasi untuk menemukan perangkat di sekitar.';
+      'NearBuddy membutuhkan izin Bluetooth dan lokasi untuk menemukan perangkat di dekatmu.';
 
   @override
-  String get grantPermission => 'Berikan Izin';
+  String get grantPermission => 'Izinkan';
 
   @override
   String get nicknameInUse =>
-      'Nickname sudah dipakai anggota lain. Pilih nama lain.';
+      'Nama sudah dipakai anggota lain. Pilih nama lain.';
 
   @override
   String get settings => 'Pengaturan';
@@ -102,71 +101,71 @@ class AppLocalizationsId extends AppLocalizations {
   String get language => 'Bahasa';
 
   @override
-  String get changeNickname => 'Ganti Nickname';
+  String get changeNickname => 'Ganti nama';
 
   @override
-  String get leaveGroup => 'Keluar dari Grup';
+  String get leaveGroup => 'Keluar dari grup';
 
   @override
   String get members => 'Anggota';
 
   @override
-  String get verifyTitle => 'Verifikasi Perangkat';
+  String get verifyTitle => 'Verifikasi perangkat';
 
   @override
   String get verifyBody => 'Kedua perangkat harus menampilkan angka yang sama:';
 
   @override
-  String get verifyMatch => 'Angka Cocok';
+  String get verifyMatch => 'Angka cocok';
 
   @override
-  String get verifyMismatch => 'Tidak Cocok';
+  String get verifyMismatch => 'Tidak cocok';
 
   @override
-  String get groupCode => 'Kode Grup';
+  String get groupCode => 'Kode grup';
 
   @override
   String get pinError => 'PIN minimal 4 digit';
 
   @override
-  String get groupCodeHint => 'Masukkan kode grup untuk bergabung';
+  String get groupCodeHint => 'Masukkan kode';
 
   @override
-  String get dmSessions => 'Pesan Pribadi';
+  String get dmSessions => 'Pesan pribadi';
 
   @override
-  String get dmNew => 'Percakapan Baru';
+  String get dmNew => 'Percakapan baru';
 
   @override
   String get dmEmpty =>
       'Belum ada percakapan. Mulai dari daftar anggota atau masukkan ID perangkat.';
 
   @override
-  String get dmPeerDeviceId => 'ID Perangkat';
+  String get dmPeerDeviceId => 'ID perangkat';
 
   @override
-  String get dmPeerNickname => 'Nama Kontak';
+  String get dmPeerNickname => 'Nama kontak';
 
   @override
   String get dmKeyMissing =>
       'Belum ada kunci perangkat — coba lagi setelah verifikasi grup';
 
   @override
-  String get decryptFailed => 'Tidak dapat mendekripsi pesan ini';
+  String get decryptFailed => 'Pesan ini tidak dapat dibaca';
 
   @override
-  String get deviceIdLabel => 'ID Perangkat';
+  String get deviceIdLabel => 'ID perangkat';
 
   @override
   String get permissionDenied =>
-      'Izin Bluetooth/Lokasi diperlukan untuk menemukan perangkat di sekitar.';
+      'Izin Bluetooth dan lokasi diperlukan untuk menemukan perangkat di sekitar.';
 
   @override
   String get sessionStartFailed =>
-      'Gagal memulai sesi — periksa Bluetooth/WiFi dan coba lagi.';
+      'Gagal memulai sesi — periksa Bluetooth/Wi-Fi dan coba lagi.';
 
   @override
-  String get nicknameSaved => 'Nickname diperbarui';
+  String get nicknameSaved => 'Nama diperbarui';
 
   @override
   String get tagline => 'Chat tanpa internet, tanpa server.';
@@ -176,16 +175,17 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get readyStatusDesc =>
-      'Semua pesan terenkripsi dan tetap di perangkat ini.';
+      'Semua pesan terenkripsi dan hanya tersimpan di perangkat ini.';
 
   @override
-  String get createGroupDesc => 'Buat ruang baru, dengan PIN opsional';
+  String get createGroupDesc =>
+      'Buat ruang untuk berkomunikasi tanpa internet.';
 
   @override
-  String get joinGroupDesc => 'Masuk ke grup dengan kode';
+  String get joinGroupDesc => 'Masukkan kode grup untuk bergabung.';
 
   @override
-  String get dmSessionsDesc => 'Percakapan 1:1 terenkripsi end-to-end';
+  String get dmSessionsDesc => 'Chat langsung dengan perangkat di sekitar.';
 
   @override
   String get homeEmptyTitle => 'Mulai percakapan pertama';
@@ -205,7 +205,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get disclaimerBullet3 => 'Bukan pengganti layanan darurat resmi';
 
   @override
-  String get encryptedLabel => 'Terenskripsi';
+  String get encryptedLabel => 'Terenkripsi';
 
   @override
   String get todayLabel => 'Hari ini';
@@ -217,7 +217,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get copyCode => 'Salin';
 
   @override
-  String get codeCopied => 'Kode disalin';
+  String get codeCopied => 'Kode disalin.';
 
   @override
   String get sendMessageTooltip => 'Kirim pesan';
@@ -248,8 +248,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get connSearching => 'Mencari perangkat…';
 
   @override
-  String get connOutOfRange =>
-      'Di luar jangkauan — pesan terkirim otomatis saat terhubung';
+  String get connOutOfRange => 'Di luar jangkauan — kirim ulang saat terhubung';
 
   @override
   String get connRadioOff => 'Bluetooth/Wi-Fi mati — aktifkan untuk terhubung';
@@ -261,10 +260,10 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get devicesEmpty =>
-      'Belum ada perangkat terdeteksi di sekitar. Pastikan Bluetooth/Wi-Fi aktif.';
+      'Belum ada perangkat di sekitar. Pastikan Bluetooth/Wi-Fi aktif.';
 
   @override
-  String get devicesNearbySection => 'Perangkat di Sekitar';
+  String get devicesNearbySection => 'Perangkat di sekitar';
 
   @override
   String get deviceDetected => 'terdeteksi';
@@ -285,7 +284,8 @@ class AppLocalizationsId extends AppLocalizations {
   String get leaveConfirmTitle => 'Keluar dari grup?';
 
   @override
-  String get leaveConfirmBody => 'Pesan lama tetap tersimpan di perangkat ini.';
+  String get leaveConfirmBody =>
+      'Kamu tidak akan menerima pesan dari grup ini lagi.';
 
   @override
   String get leaveLabel => 'Keluar';
@@ -295,17 +295,16 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get deviceIdHelp =>
-      'Bagikan ID ini untuk memulai percakapan 1:1, atau gunakan untuk dukungan teknis.';
+      'Digunakan untuk mengenali perangkat di jaringan lokal.';
 
   @override
-  String get securityDesc =>
-      'X25519 + AES-GCM end-to-end — relay tidak bisa membaca pesan.';
+  String get securityDesc => 'Pesan dienkripsi selama komunikasi.';
 
   @override
-  String get messagePending => 'Menunggu perangkat';
+  String get messagePending => 'Menunggu koneksi';
 
   @override
-  String get messageFailed => 'Gagal — tap untuk kirim ulang';
+  String get messageFailed => 'Gagal — ketuk untuk kirim ulang';
 
   @override
   String get connConnecting => 'Menghubungkan…';
@@ -336,7 +335,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get communicationSection => 'Komunikasi';
 
   @override
-  String get myGroupsSection => 'Grup Saya';
+  String get myGroupsSection => 'Grup saya';
 
   @override
   String get inviteDevices => 'Undang perangkat';
@@ -346,7 +345,7 @@ class AppLocalizationsId extends AppLocalizations {
       'Perangkat terpilih akan terhubung otomatis saat bergabung.';
 
   @override
-  String get startChat => 'Mulai Chat';
+  String get startChat => 'Mulai chat';
 
   @override
   String connectingTo(String name) {
@@ -370,7 +369,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get messageWillWait =>
-      'Pesan akan ditandai menunggu — ketuk ikon untuk kirim ulang.';
+      'Pesan akan ditandai menunggu — ketuk pesan untuk kirim ulang.';
 
   @override
   String get deviceIdCopied => 'ID perangkat disalin.';
@@ -380,7 +379,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get securityBody =>
-      'Pesan dienkripsi dan disimpan secara lokal di perangkat ini.';
+      'Pesan dienkripsi saat dikirim dan disimpan hanya di perangkat ini.';
 
   @override
   String get learnSecurity => 'Pelajari cara kerja keamanan';
@@ -390,7 +389,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get securityDialogBody =>
-      'NearBuddy menggunakan kunci X25519 per perangkat dengan verifikasi 6 angka, dan pesan dienkripsi AES-GCM. Perangkat perantara hanya meneruskan pesan tanpa bisa membacanya.';
+      'NearBuddy memakai kunci X25519 per perangkat, verifikasi 6 angka, dan enkripsi AES-GCM. Perangkat perantara hanya meneruskan pesan — tidak bisa membacanya.';
 
   @override
   String get pendingConnectionLabel => 'Menunggu koneksi';
@@ -407,7 +406,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get settingsProfileHint => 'Nama yang terlihat oleh perangkat lain';
 
   @override
-  String get settingsChangeNickname => 'Ganti nickname';
+  String get settingsChangeNickname => 'Ganti nama';
 
   @override
   String get aboutSection => 'Tentang';
@@ -424,8 +423,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get encryptionRow => 'Enkripsi';
 
   @override
-  String get encryptionRowSubtitle =>
-      'Pesan terenkripsi dan disimpan secara lokal';
+  String get encryptionRowSubtitle => 'Pesan dienkripsi selama komunikasi';
 
   @override
   String get appearanceSection => 'Tampilan';
@@ -468,4 +466,32 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get emojiCatSymbols => 'Simbol';
+
+  @override
+  String get languageDialogSubtitle => 'Pilih bahasa antarmuka';
+
+  @override
+  String get themeSheetSubtitle => 'Pilih tampilan aplikasi';
+
+  @override
+  String get themeLightDesc => 'Tampilan cerah dan bersih';
+
+  @override
+  String get themeDarkDesc => 'Nyaman di kondisi minim cahaya';
+
+  @override
+  String get themeSystemDesc => 'Mengikuti mode perangkat';
+
+  @override
+  String get applyLabel => 'Terapkan';
+
+  @override
+  String get messageHint => 'Tulis pesan…';
+
+  @override
+  String get secureDirectTagline => 'Secure. Private. Direct.';
+
+  @override
+  String get aboutBody =>
+      'NearBuddy adalah aplikasi pesan peer-to-peer yang bekerja tanpa internet maupun sinyal seluler. Pesan dienkripsi dan hanya tersimpan di perangkatmu.';
 }

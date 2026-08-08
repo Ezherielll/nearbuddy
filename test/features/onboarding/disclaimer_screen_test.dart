@@ -33,6 +33,6 @@ void main() {
     await tester.pumpWidget(wrap(const DisclaimerScreen(), prefs));
     await tester.pumpAndSettle();
     expect(find.text('Pemberitahuan Penting'), findsOneWidget);
-    expect(find.text('Saya Mengerti'), findsOneWidget);
+    expect(find.text('Saya mengerti'), findsOneWidget);
   });
 }

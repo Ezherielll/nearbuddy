@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../domain/services/peer_discovery_service.dart';
@@ -29,7 +30,13 @@ class ScanController {
       _devices.remove(eid);
       _ref.read(nearbyDevicesProvider.notifier).remove(eid);
     });
-    await _peer.startScan();
+    try {
+      await _peer.startScan();
+    } catch (_) {
+      // Permission denied / radio off: the scan cannot run, but this must
+      // never surface as an unhandled exception (the Home UI shows the
+      // permission banner instead).
+    }
   }
 
   Future<void> stop() async {
@@ -73,8 +80,12 @@ final radioAvailableProvider = StateProvider<bool>((_) => true);
 /// `restricted` counts as available (neverForLocation flag on Bluetooth/
 /// Nearby Wi-Fi still allows scanning).
 Future<bool> checkRadioAvailability() async {
-  final s = await Permission.bluetoothScan.status;
-  final wifi = await Permission.nearbyWifiDevices.status;
   bool ok(PermissionStatus st) => st.isGranted || st.isLimited || st.isRestricted;
-  return ok(s) || ok(wifi);
+  if (Platform.isIOS) {
+    return ok(await Permission.bluetooth.status);
+  }
+  final s = await Permission.bluetoothScan.status;
+  final advertise = await Permission.bluetoothAdvertise.status;
+  final wifi = await Permission.nearbyWifiDevices.status;
+  return ok(s) || ok(advertise) || ok(wifi);
 }

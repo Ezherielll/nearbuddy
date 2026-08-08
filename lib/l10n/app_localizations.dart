@@ -119,7 +119,7 @@ abstract class AppLocalizations {
   /// No description provided for @disclaimerAccept.
   ///
   /// In id, this message translates to:
-  /// **'Saya Mengerti'**
+  /// **'Saya mengerti'**
   String get disclaimerAccept;
 
   /// No description provided for @nicknameTitle.
@@ -131,13 +131,13 @@ abstract class AppLocalizations {
   /// No description provided for @nicknameHint.
   ///
   /// In id, this message translates to:
-  /// **'Masukkan nickname (3-20 karakter)'**
+  /// **'Masukkan nama (3-20 karakter)'**
   String get nicknameHint;
 
   /// No description provided for @nicknameError.
   ///
   /// In id, this message translates to:
-  /// **'Nickname harus 3-20 karakter'**
+  /// **'Nama harus 3-20 karakter'**
   String get nicknameError;
 
   /// No description provided for @continueLabel.
@@ -149,37 +149,37 @@ abstract class AppLocalizations {
   /// No description provided for @createGroup.
   ///
   /// In id, this message translates to:
-  /// **'Buat Grup'**
+  /// **'Buat grup'**
   String get createGroup;
 
   /// No description provided for @joinGroup.
   ///
   /// In id, this message translates to:
-  /// **'Gabung Grup'**
+  /// **'Gabung grup'**
   String get joinGroup;
 
   /// No description provided for @groupName.
   ///
   /// In id, this message translates to:
-  /// **'Nama Grup'**
+  /// **'Nama grup'**
   String get groupName;
 
   /// No description provided for @groupPin.
   ///
   /// In id, this message translates to:
-  /// **'PIN Grup (opsional)'**
+  /// **'PIN grup (opsional)'**
   String get groupPin;
 
   /// No description provided for @nearbyGroups.
   ///
   /// In id, this message translates to:
-  /// **'Grup di Sekitar'**
+  /// **'Grup di sekitar'**
   String get nearbyGroups;
 
   /// No description provided for @noNearbyGroups.
   ///
   /// In id, this message translates to:
-  /// **'Tidak ada grup ditemukan. Buat grup baru atau tunggu.'**
+  /// **'Belum ada grup. Buat grup baru atau tunggu.'**
   String get noNearbyGroups;
 
   /// No description provided for @send.
@@ -191,13 +191,13 @@ abstract class AppLocalizations {
   /// No description provided for @sendLocation.
   ///
   /// In id, this message translates to:
-  /// **'Kirim Lokasi Saya'**
+  /// **'Kirim lokasi'**
   String get sendLocation;
 
   /// No description provided for @sendLocationConfirm.
   ///
   /// In id, this message translates to:
-  /// **'Kirim koordinat lokasi Anda sekarang?'**
+  /// **'Kirim lokasimu sekarang?'**
   String get sendLocationConfirm;
 
   /// No description provided for @locationPingLabel.
@@ -233,31 +233,31 @@ abstract class AppLocalizations {
   /// No description provided for @lowBatteryMode.
   ///
   /// In id, this message translates to:
-  /// **'Mode Hemat Aktif'**
+  /// **'Mode hemat aktif'**
   String get lowBatteryMode;
 
   /// No description provided for @permissionRequired.
   ///
   /// In id, this message translates to:
-  /// **'Izin Diperlukan'**
+  /// **'Izin diperlukan'**
   String get permissionRequired;
 
   /// No description provided for @permissionExplanation.
   ///
   /// In id, this message translates to:
-  /// **'NearBuddy memerlukan izin Bluetooth dan Lokasi untuk menemukan perangkat di sekitar.'**
+  /// **'NearBuddy membutuhkan izin Bluetooth dan lokasi untuk menemukan perangkat di dekatmu.'**
   String get permissionExplanation;
 
   /// No description provided for @grantPermission.
   ///
   /// In id, this message translates to:
-  /// **'Berikan Izin'**
+  /// **'Izinkan'**
   String get grantPermission;
 
   /// No description provided for @nicknameInUse.
   ///
   /// In id, this message translates to:
-  /// **'Nickname sudah dipakai anggota lain. Pilih nama lain.'**
+  /// **'Nama sudah dipakai anggota lain. Pilih nama lain.'**
   String get nicknameInUse;
 
   /// No description provided for @settings.
@@ -275,13 +275,13 @@ abstract class AppLocalizations {
   /// No description provided for @changeNickname.
   ///
   /// In id, this message translates to:
-  /// **'Ganti Nickname'**
+  /// **'Ganti nama'**
   String get changeNickname;
 
   /// No description provided for @leaveGroup.
   ///
   /// In id, this message translates to:
-  /// **'Keluar dari Grup'**
+  /// **'Keluar dari grup'**
   String get leaveGroup;
 
   /// No description provided for @members.
@@ -293,7 +293,7 @@ abstract class AppLocalizations {
   /// No description provided for @verifyTitle.
   ///
   /// In id, this message translates to:
-  /// **'Verifikasi Perangkat'**
+  /// **'Verifikasi perangkat'**
   String get verifyTitle;
 
   /// No description provided for @verifyBody.
@@ -305,19 +305,19 @@ abstract class AppLocalizations {
   /// No description provided for @verifyMatch.
   ///
   /// In id, this message translates to:
-  /// **'Angka Cocok'**
+  /// **'Angka cocok'**
   String get verifyMatch;
 
   /// No description provided for @verifyMismatch.
   ///
   /// In id, this message translates to:
-  /// **'Tidak Cocok'**
+  /// **'Tidak cocok'**
   String get verifyMismatch;
 
   /// No description provided for @groupCode.
   ///
   /// In id, this message translates to:
-  /// **'Kode Grup'**
+  /// **'Kode grup'**
   String get groupCode;
 
   /// No description provided for @pinError.
@@ -329,19 +329,19 @@ abstract class AppLocalizations {
   /// No description provided for @groupCodeHint.
   ///
   /// In id, this message translates to:
-  /// **'Masukkan kode grup untuk bergabung'**
+  /// **'Masukkan kode'**
   String get groupCodeHint;
 
   /// No description provided for @dmSessions.
   ///
   /// In id, this message translates to:
-  /// **'Pesan Pribadi'**
+  /// **'Pesan pribadi'**
   String get dmSessions;
 
   /// No description provided for @dmNew.
   ///
   /// In id, this message translates to:
-  /// **'Percakapan Baru'**
+  /// **'Percakapan baru'**
   String get dmNew;
 
   /// No description provided for @dmEmpty.
@@ -353,13 +353,13 @@ abstract class AppLocalizations {
   /// No description provided for @dmPeerDeviceId.
   ///
   /// In id, this message translates to:
-  /// **'ID Perangkat'**
+  /// **'ID perangkat'**
   String get dmPeerDeviceId;
 
   /// No description provided for @dmPeerNickname.
   ///
   /// In id, this message translates to:
-  /// **'Nama Kontak'**
+  /// **'Nama kontak'**
   String get dmPeerNickname;
 
   /// No description provided for @dmKeyMissing.
@@ -371,31 +371,31 @@ abstract class AppLocalizations {
   /// No description provided for @decryptFailed.
   ///
   /// In id, this message translates to:
-  /// **'Tidak dapat mendekripsi pesan ini'**
+  /// **'Pesan ini tidak dapat dibaca'**
   String get decryptFailed;
 
   /// No description provided for @deviceIdLabel.
   ///
   /// In id, this message translates to:
-  /// **'ID Perangkat'**
+  /// **'ID perangkat'**
   String get deviceIdLabel;
 
   /// No description provided for @permissionDenied.
   ///
   /// In id, this message translates to:
-  /// **'Izin Bluetooth/Lokasi diperlukan untuk menemukan perangkat di sekitar.'**
+  /// **'Izin Bluetooth dan lokasi diperlukan untuk menemukan perangkat di sekitar.'**
   String get permissionDenied;
 
   /// No description provided for @sessionStartFailed.
   ///
   /// In id, this message translates to:
-  /// **'Gagal memulai sesi — periksa Bluetooth/WiFi dan coba lagi.'**
+  /// **'Gagal memulai sesi — periksa Bluetooth/Wi-Fi dan coba lagi.'**
   String get sessionStartFailed;
 
   /// No description provided for @nicknameSaved.
   ///
   /// In id, this message translates to:
-  /// **'Nickname diperbarui'**
+  /// **'Nama diperbarui'**
   String get nicknameSaved;
 
   /// No description provided for @tagline.
@@ -413,25 +413,25 @@ abstract class AppLocalizations {
   /// No description provided for @readyStatusDesc.
   ///
   /// In id, this message translates to:
-  /// **'Semua pesan terenkripsi dan tetap di perangkat ini.'**
+  /// **'Semua pesan terenkripsi dan hanya tersimpan di perangkat ini.'**
   String get readyStatusDesc;
 
   /// No description provided for @createGroupDesc.
   ///
   /// In id, this message translates to:
-  /// **'Buat ruang baru, dengan PIN opsional'**
+  /// **'Buat ruang untuk berkomunikasi tanpa internet.'**
   String get createGroupDesc;
 
   /// No description provided for @joinGroupDesc.
   ///
   /// In id, this message translates to:
-  /// **'Masuk ke grup dengan kode'**
+  /// **'Masukkan kode grup untuk bergabung.'**
   String get joinGroupDesc;
 
   /// No description provided for @dmSessionsDesc.
   ///
   /// In id, this message translates to:
-  /// **'Percakapan 1:1 terenkripsi end-to-end'**
+  /// **'Chat langsung dengan perangkat di sekitar.'**
   String get dmSessionsDesc;
 
   /// No description provided for @homeEmptyTitle.
@@ -467,7 +467,7 @@ abstract class AppLocalizations {
   /// No description provided for @encryptedLabel.
   ///
   /// In id, this message translates to:
-  /// **'Terenskripsi'**
+  /// **'Terenkripsi'**
   String get encryptedLabel;
 
   /// No description provided for @todayLabel.
@@ -491,7 +491,7 @@ abstract class AppLocalizations {
   /// No description provided for @codeCopied.
   ///
   /// In id, this message translates to:
-  /// **'Kode disalin'**
+  /// **'Kode disalin.'**
   String get codeCopied;
 
   /// No description provided for @sendMessageTooltip.
@@ -551,7 +551,7 @@ abstract class AppLocalizations {
   /// No description provided for @connOutOfRange.
   ///
   /// In id, this message translates to:
-  /// **'Di luar jangkauan — pesan terkirim otomatis saat terhubung'**
+  /// **'Di luar jangkauan — kirim ulang saat terhubung'**
   String get connOutOfRange;
 
   /// No description provided for @connRadioOff.
@@ -569,13 +569,13 @@ abstract class AppLocalizations {
   /// No description provided for @devicesEmpty.
   ///
   /// In id, this message translates to:
-  /// **'Belum ada perangkat terdeteksi di sekitar. Pastikan Bluetooth/Wi-Fi aktif.'**
+  /// **'Belum ada perangkat di sekitar. Pastikan Bluetooth/Wi-Fi aktif.'**
   String get devicesEmpty;
 
   /// No description provided for @devicesNearbySection.
   ///
   /// In id, this message translates to:
-  /// **'Perangkat di Sekitar'**
+  /// **'Perangkat di sekitar'**
   String get devicesNearbySection;
 
   /// No description provided for @deviceDetected.
@@ -617,7 +617,7 @@ abstract class AppLocalizations {
   /// No description provided for @leaveConfirmBody.
   ///
   /// In id, this message translates to:
-  /// **'Pesan lama tetap tersimpan di perangkat ini.'**
+  /// **'Kamu tidak akan menerima pesan dari grup ini lagi.'**
   String get leaveConfirmBody;
 
   /// No description provided for @leaveLabel.
@@ -635,25 +635,25 @@ abstract class AppLocalizations {
   /// No description provided for @deviceIdHelp.
   ///
   /// In id, this message translates to:
-  /// **'Bagikan ID ini untuk memulai percakapan 1:1, atau gunakan untuk dukungan teknis.'**
+  /// **'Digunakan untuk mengenali perangkat di jaringan lokal.'**
   String get deviceIdHelp;
 
   /// No description provided for @securityDesc.
   ///
   /// In id, this message translates to:
-  /// **'X25519 + AES-GCM end-to-end — relay tidak bisa membaca pesan.'**
+  /// **'Pesan dienkripsi selama komunikasi.'**
   String get securityDesc;
 
   /// No description provided for @messagePending.
   ///
   /// In id, this message translates to:
-  /// **'Menunggu perangkat'**
+  /// **'Menunggu koneksi'**
   String get messagePending;
 
   /// No description provided for @messageFailed.
   ///
   /// In id, this message translates to:
-  /// **'Gagal — tap untuk kirim ulang'**
+  /// **'Gagal — ketuk untuk kirim ulang'**
   String get messageFailed;
 
   /// No description provided for @connConnecting.
@@ -713,7 +713,7 @@ abstract class AppLocalizations {
   /// No description provided for @myGroupsSection.
   ///
   /// In id, this message translates to:
-  /// **'Grup Saya'**
+  /// **'Grup saya'**
   String get myGroupsSection;
 
   /// No description provided for @inviteDevices.
@@ -731,7 +731,7 @@ abstract class AppLocalizations {
   /// No description provided for @startChat.
   ///
   /// In id, this message translates to:
-  /// **'Mulai Chat'**
+  /// **'Mulai chat'**
   String get startChat;
 
   /// No description provided for @connectingTo.
@@ -767,7 +767,7 @@ abstract class AppLocalizations {
   /// No description provided for @messageWillWait.
   ///
   /// In id, this message translates to:
-  /// **'Pesan akan ditandai menunggu — ketuk ikon untuk kirim ulang.'**
+  /// **'Pesan akan ditandai menunggu — ketuk pesan untuk kirim ulang.'**
   String get messageWillWait;
 
   /// No description provided for @deviceIdCopied.
@@ -785,7 +785,7 @@ abstract class AppLocalizations {
   /// No description provided for @securityBody.
   ///
   /// In id, this message translates to:
-  /// **'Pesan dienkripsi dan disimpan secara lokal di perangkat ini.'**
+  /// **'Pesan dienkripsi saat dikirim dan disimpan hanya di perangkat ini.'**
   String get securityBody;
 
   /// No description provided for @learnSecurity.
@@ -803,7 +803,7 @@ abstract class AppLocalizations {
   /// No description provided for @securityDialogBody.
   ///
   /// In id, this message translates to:
-  /// **'NearBuddy menggunakan kunci X25519 per perangkat dengan verifikasi 6 angka, dan pesan dienkripsi AES-GCM. Perangkat perantara hanya meneruskan pesan tanpa bisa membacanya.'**
+  /// **'NearBuddy memakai kunci X25519 per perangkat, verifikasi 6 angka, dan enkripsi AES-GCM. Perangkat perantara hanya meneruskan pesan — tidak bisa membacanya.'**
   String get securityDialogBody;
 
   /// No description provided for @pendingConnectionLabel.
@@ -833,7 +833,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsChangeNickname.
   ///
   /// In id, this message translates to:
-  /// **'Ganti nickname'**
+  /// **'Ganti nama'**
   String get settingsChangeNickname;
 
   /// No description provided for @aboutSection.
@@ -863,7 +863,7 @@ abstract class AppLocalizations {
   /// No description provided for @encryptionRowSubtitle.
   ///
   /// In id, this message translates to:
-  /// **'Pesan terenkripsi dan disimpan secara lokal'**
+  /// **'Pesan dienkripsi selama komunikasi'**
   String get encryptionRowSubtitle;
 
   /// No description provided for @appearanceSection.
@@ -949,6 +949,60 @@ abstract class AppLocalizations {
   /// In id, this message translates to:
   /// **'Simbol'**
   String get emojiCatSymbols;
+
+  /// No description provided for @languageDialogSubtitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Pilih bahasa antarmuka'**
+  String get languageDialogSubtitle;
+
+  /// No description provided for @themeSheetSubtitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Pilih tampilan aplikasi'**
+  String get themeSheetSubtitle;
+
+  /// No description provided for @themeLightDesc.
+  ///
+  /// In id, this message translates to:
+  /// **'Tampilan cerah dan bersih'**
+  String get themeLightDesc;
+
+  /// No description provided for @themeDarkDesc.
+  ///
+  /// In id, this message translates to:
+  /// **'Nyaman di kondisi minim cahaya'**
+  String get themeDarkDesc;
+
+  /// No description provided for @themeSystemDesc.
+  ///
+  /// In id, this message translates to:
+  /// **'Mengikuti mode perangkat'**
+  String get themeSystemDesc;
+
+  /// No description provided for @applyLabel.
+  ///
+  /// In id, this message translates to:
+  /// **'Terapkan'**
+  String get applyLabel;
+
+  /// No description provided for @messageHint.
+  ///
+  /// In id, this message translates to:
+  /// **'Tulis pesan…'**
+  String get messageHint;
+
+  /// No description provided for @secureDirectTagline.
+  ///
+  /// In id, this message translates to:
+  /// **'Secure. Private. Direct.'**
+  String get secureDirectTagline;
+
+  /// No description provided for @aboutBody.
+  ///
+  /// In id, this message translates to:
+  /// **'NearBuddy adalah aplikasi pesan peer-to-peer yang bekerja tanpa internet maupun sinyal seluler. Pesan dienkripsi dan hanya tersimpan di perangkatmu.'**
+  String get aboutBody;
 }
 
 class _AppLocalizationsDelegate

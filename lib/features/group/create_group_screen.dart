@@ -21,7 +21,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
   final _formKey = GlobalKey<ShadFormState>();
   bool _usePin = false;
   bool _loading = false;
-  StreamSubscription<String>? _sasSub;
+  StreamSubscription<SasChallenge>? _sasSub;
 
   @override
   void initState() {
@@ -38,11 +38,14 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
     super.dispose();
   }
 
-  Future<void> _onSas(String sas) async {
+  Future<void> _onSas(SasChallenge challenge) async {
     if (!mounted) return;
-    final ok = await showVerificationDialog(context, sas);
+    final ok = await showVerificationDialog(context, challenge.sas);
     if (!mounted) return;
-    await ref.read(keyExchangeServiceProvider).confirmSas(ok);
+    // Verdict is bound to the endpoint whose digits the user compared (C2).
+    await ref
+        .read(keyExchangeServiceProvider)
+        .confirmSas(ok, endpointId: challenge.endpointId);
     if (!ok && mounted) await ref.read(groupControllerProvider).leaveGroup();
   }
 
@@ -61,8 +64,10 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
       _showError(err);
       return;
     }
-    // push (not go): keeps /home on the stack so back navigation works.
-    context.push('/invite/${ref.read(currentGroupProvider)!.id}', extra: name);
+    // Replace (not push): the form screen has served its purpose — keep only
+    // /home on the stack so back navigation goes straight to the main menu.
+    context.pushReplacement(
+        '/invite/${ref.read(currentGroupProvider)!.id}', extra: name);
   }
 
   void _showError(String code) {

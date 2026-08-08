@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../theme/nearbuddy_typography.dart';
 
 /// Location ping card — rendered inside a bubble; [onDark] adapts colors
 /// for bubbles on the primary (own-message) background.
@@ -50,7 +51,7 @@ class LocationPingCard extends StatelessWidget {
         Text(
           '${latitude.toStringAsFixed(6)}, ${longitude.toStringAsFixed(6)}',
           style: TextStyle(
-              fontFamily: 'monospace',
+              fontFamily: AppFonts.mono,
               fontSize: 11,
               color: subtle),
         ),

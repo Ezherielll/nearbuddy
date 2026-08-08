@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import '../../data/database/app_database.dart';
+import '../../domain/models/group_session.dart';
 import '../../domain/services/key_exchange_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../../main.dart';
@@ -30,7 +31,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _msgCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
   bool _locLoading = false;
-  StreamSubscription<String>? _sasSub;
+  StreamSubscription<SasChallenge>? _sasSub;
 
   @override
   void initState() {
@@ -42,6 +43,26 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         .read(keyExchangeServiceProvider)
         .onSasChallenge
         .listen(_onSas);
+    _ensureSession();
+  }
+
+  /// The chat may be opened from the group list, where createGroup/joinGroup
+  /// never ran — without a current group, ChatController drops outgoing
+  /// messages silently. Adopt the routed group as the active session.
+  Future<void> _ensureSession() async {
+    final current = ref.read(currentGroupProvider);
+    if (current != null && current.id == widget.groupId) return;
+    final row = await ref.read(groupsDaoProvider).groupById(widget.groupId);
+    if (!mounted || row == null) return;
+    final existing = ref.read(currentGroupProvider);
+    if (existing != null && existing.id == widget.groupId) return;
+    ref.read(currentGroupProvider.notifier).state = GroupSession(
+      id: row.id,
+      name: row.name,
+      pin: row.pin,
+      createdAt: row.createdAt,
+      isOwner: row.isOwner,
+    );
   }
 
   @override
@@ -52,11 +73,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     super.dispose();
   }
 
-  Future<void> _onSas(String sas) async {
+  Future<void> _onSas(SasChallenge challenge) async {
     if (!mounted) return;
-    final ok = await showVerificationDialog(context, sas);
+    final ok = await showVerificationDialog(context, challenge.sas);
     if (!mounted) return;   // screen may be gone while the dialog was open
-    await ref.read(keyExchangeServiceProvider).confirmSas(ok);
+    // Verdict is bound to the endpoint whose digits the user compared (C2).
+    await ref
+        .read(keyExchangeServiceProvider)
+        .confirmSas(ok, endpointId: challenge.endpointId);
     if (!ok && mounted) {
       await ref.read(groupControllerProvider).leaveGroup();
     }

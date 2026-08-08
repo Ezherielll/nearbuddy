@@ -1,12 +1,16 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
+import '../../domain/services/key_exchange_service.dart';
 import '../../l10n/app_localizations.dart';
+import '../chat/widgets/verification_dialog.dart';
 import '../home/scan_controller.dart';
 import '../shared/widgets/avatar_initial.dart';
 import '../shared/widgets/empty_state.dart';
 import '../shared/widgets/nearbuddy_button.dart';
+import 'group_controller.dart';
 
 /// Post-create step: pick devices nearby to invite. Selected devices connect
 /// automatically once they join — invitation is a local, honest step, not a
@@ -24,18 +28,37 @@ class InviteDevicesScreen extends ConsumerStatefulWidget {
 class _InviteDevicesScreenState extends ConsumerState<InviteDevicesScreen> {
   final _selected = <String>{};
   late final ScanController _scan;
+  StreamSubscription<SasChallenge>? _sasSub;
 
   @override
   void initState() {
     super.initState();
     _scan = ref.read(scanControllerProvider);
     _scan.start();
+    // M7: joiners can connect while the owner is still on this screen — the
+    // SAS challenge must be answered here or the joiner times out.
+    _sasSub = ref
+        .read(keyExchangeServiceProvider)
+        .onSasChallenge
+        .listen(_onSas);
   }
 
   @override
   void dispose() {
+    _sasSub?.cancel();
     _scan.stop();
     super.dispose();
+  }
+
+  Future<void> _onSas(SasChallenge challenge) async {
+    if (!mounted) return;
+    final ok = await showVerificationDialog(context, challenge.sas);
+    if (!mounted) return;
+    // Verdict is bound to the endpoint whose digits the user compared (C2).
+    await ref
+        .read(keyExchangeServiceProvider)
+        .confirmSas(ok, endpointId: challenge.endpointId);
+    if (!ok && mounted) await ref.read(groupControllerProvider).leaveGroup();
   }
 
   @override
@@ -108,9 +131,11 @@ class _InviteDevicesScreenState extends ConsumerState<InviteDevicesScreen> {
               padding: const EdgeInsets.all(16),
               child: NearBuddyButton(
                 label: l10n.startChat,
-                // push (not go): go() would reset the stack to [/chat] alone,
-                // breaking system back ("There is nothing to pop").
-                onPressed: () => context.push('/chat/${widget.groupId}'),
+                // Replace (not go): keeps /home on the stack, so system back
+                // from the chat goes straight to the main menu instead of
+                // re-entering the invite flow.
+                onPressed: () =>
+                    context.pushReplacement('/chat/${widget.groupId}'),
               ),
             ),
           ),

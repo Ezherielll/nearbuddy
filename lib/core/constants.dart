@@ -10,4 +10,7 @@ abstract final class AppConstants {
   static const int pinLengthMax = 6;
   static const int relayDeduplicationCacheSeconds = 30;
   static const int lowBatteryThresholdPercent = 20;
+
+  /// Display version (matches pubspec `version:`).
+  static const String appVersion = '1.0.0';
 }

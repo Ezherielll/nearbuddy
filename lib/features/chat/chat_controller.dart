@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 import 'package:cryptography/cryptography.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,9 +8,11 @@ import 'package:geolocator/geolocator.dart';
 import '../../core/constants.dart';
 import '../../core/crypto/crypto_service.dart';
 import '../../core/crypto/identity_providers.dart';
+import '../../core/crypto/key_manager.dart';
 import '../../core/utils/permission_handler_service.dart';
 import '../../core/utils/uuid_generator.dart';
 import '../../data/database/app_database.dart';
+import '../../data/database/daos/groups_dao.dart';
 import '../../data/database/daos/messages_dao.dart';
 import '../../data/database/daos/sessions_dao.dart';
 import '../../data/preferences/app_preferences.dart';
@@ -39,10 +42,12 @@ class ChatController {
 
   MessagesDao get _dao => _ref.read(messagesDaoProvider);
   SessionsDao get _sessionsDao => _ref.read(sessionsDaoProvider);
+  GroupsDao get _groupsDao => _ref.read(groupsDaoProvider);
   PeerDiscoveryService get _peer => _ref.read(peerDiscoveryServiceProvider);
   AppPreferences get _prefs => _ref.read(appPreferencesProvider);
   KeyExchangeService get _kx => _ref.read(keyExchangeServiceProvider);
   CryptoService get _crypto => _ref.read(cryptoServiceProvider);
+  KeyManager get _keys => _ref.read(keyManagerProvider);
   String? get _gid => _ref.read(currentGroupProvider)?.id;
 
   Stream<List<MessageRow>> watchMessages(String groupId) =>
@@ -75,28 +80,38 @@ class ChatController {
         }
         if (!j.containsKey('v')) return;   // unknown control — GroupController handles
         final env = MessageEnvelope.fromWireJson(j);
-        if (env.gid != _gid) return;
         if (!_dedup(env.id)) return;
 
-        // Relay decision — BEFORE decryption (relays never need the key)
+        // Relay decision — BEFORE decryption (relays never need the key).
+        // Group AND DM envelopes are flooded the same way; the hop limit is
+        // the envelope's own `max`, capped at the global 3-hop hard limit.
         final age = DateTime.now().difference(env.ts).inSeconds;
-        if (env.hop < AppConstants.maxHops && age < AppConstants.relayTtlSeconds) {
+        final hopsAllowed = math.min(env.max, AppConstants.maxHops);
+        if (env.hop < hopsAllowed && age < AppConstants.relayTtlSeconds) {
           await _peer.sendToAll(
               jsonEncode(env.copyWith(hop: env.hop + 1).toWireJson()));
         }
 
-        // Decrypt only if addressed to us (group) or to our device (DM)
+        // Decrypt only if addressed to us: group envelope of our current
+        // group, or a DM whose cleartext `to` is our deviceId.
         final myId = await _ref.read(myDeviceIdProvider.future);
-        if (env.kind == 'dm' && env.to != myId) return;
-        final key = await _decryptionKey(env);
-        if (key == null) return;   // session/key missing — cannot decrypt
-        final plain = await _crypto.open(
-            SecretBox.fromConcatenation(
-                [...env.nonce, ...env.ciphertext],
-                nonceLength: 12, macLength: 16),
-            key);
+        final isForMe = env.kind == 'g' ? env.gid == _gid : env.to == myId;
+        if (!isForMe) return;
+        final String plain;
+        final String? dmSenderDeviceId;
+        if (env.kind == 'g') {
+          final opened = await _openGroup(env);
+          if (opened == null) return;   // group key missing — cannot decrypt
+          plain = opened;
+          dmSenderDeviceId = null;
+        } else {
+          final opened = await _openDm(env);
+          if (opened == null) return;   // no known peer can decrypt it
+          plain = opened.plain;
+          dmSenderDeviceId = opened.senderDeviceId;
+        }
         final msg = Message.fromPayloadJson(jsonDecode(plain));
-        await _persist(env, msg);
+        await _persistIncoming(env, msg, dmSenderDeviceId: dmSenderDeviceId);
         // delivery receipt (DM only): tell the sender we got it
         if (env.kind == 'dm') {
           await _peer.sendToAll(jsonEncode({'t': 'ack', 'id': env.id}));
@@ -125,18 +140,71 @@ class ChatController {
     }));
   }
 
-  Future<SecretKey?> _decryptionKey(MessageEnvelope env) async {
-    if (env.kind == 'g') {
-      final bytes = _kx.groupKeyFor(env.gid);
-      return bytes == null ? null : SecretKeyData(bytes);
-    }
-    final session = await _sessionsDao.sessionById(env.gid);
-    if (session == null) return null;
+  SecretBox _box(MessageEnvelope env) => SecretBox.fromConcatenation(
+      [...env.nonce, ...env.ciphertext], nonceLength: 12, macLength: 16);
+
+  Future<String?> _openGroup(MessageEnvelope env) async {
+    final bytes = _kx.groupKeyFor(env.gid);
+    if (bytes == null) return null;
     try {
-      return SecretKeyData(await _kx.pairwiseKeyFor(session.peerDeviceId));
-    } on StateError {
+      return await _crypto.open(_box(env), SecretKeyData(bytes));
+    } on SecretBoxAuthenticationError {
       return null;
     }
+  }
+
+  /// Opens a DM. The receiver has no session row for the sender's sessionId
+  /// (sessions only exist on the initiator), so when the session is unknown
+  /// the sender is discovered by trying every known member public key — the
+  /// AES-GCM MAC rejects wrong keys (C1). Returns the plaintext and the
+  /// matched sender deviceId, or null when no known peer can decrypt.
+  Future<({String plain, String senderDeviceId})?> _openDm(
+      MessageEnvelope env) async {
+    final session = await _sessionsDao.sessionById(env.gid);
+    if (session != null) {
+      try {
+        final key = SecretKeyData(await _kx.pairwiseKeyFor(session.peerDeviceId));
+        return (plain: await _crypto.open(_box(env), key),
+            senderDeviceId: session.peerDeviceId);
+      } on StateError {
+        return null;
+      }
+    }
+    final mine = await _keys.ensureIdentityKey();
+    final candidates = await _groupsDao.allMemberPublicKeys();
+    for (final c in candidates) {
+      try {
+        final pub = SimplePublicKey(base64Decode(c.pubKeyB64),
+            type: KeyPairType.x25519);
+        final key =
+            SecretKeyData(await _crypto.pairwiseKeyBytes(mine, pub));
+        final plain = await _crypto.open(_box(env), key);
+        return (plain: plain, senderDeviceId: c.deviceId);
+      } catch (_) {
+        // wrong key — try the next known device
+      }
+    }
+    return null;
+  }
+
+  /// Persists an incoming DM under a LOCAL session: reuses the existing
+  /// session for the sender if any, otherwise creates one keyed on the
+  /// sender's sessionId (so both sides share one thread id).
+  Future<void> _persistIncoming(MessageEnvelope env, Message msg,
+      {required String? dmSenderDeviceId}) async {
+    var localGid = env.gid;
+    if (dmSenderDeviceId != null) {
+      final existing = await _sessionsDao.sessionForPeer(dmSenderDeviceId);
+      if (existing != null) {
+        localGid = existing.id;
+      } else {
+        await _sessionsDao.upsertSession(SessionsCompanion.insert(
+          id: env.gid, peerDeviceId: dmSenderDeviceId,
+          peerNickname: msg.senderId, createdAt: DateTime.now(),
+        ));
+      }
+    }
+    await _persist(env, msg, localGid: localGid);
   }
 
   Future<void> sendTextMessage(String content) async {
@@ -253,9 +321,10 @@ class ChatController {
     }
   }
 
-  Future<void> _persist(MessageEnvelope env, Message msg, {String? status}) =>
+  Future<void> _persist(MessageEnvelope env, Message msg,
+      {String? status, String? localGid}) =>
       _dao.insertMessage(MessagesCompanion.insert(
-        id: env.id, groupId: env.gid, senderId: msg.senderId,
+        id: env.id, groupId: localGid ?? env.gid, senderId: msg.senderId,
         content: msg.content, type: msg.type.name, timestamp: msg.timestamp,
         hopCount: Value(env.hop), to: Value(env.to),
         status: Value(status),

@@ -207,7 +207,7 @@ class _MessageComposerState extends State<MessageComposer> {
                           }) =>
                               null,
                           decoration: InputDecoration(
-                            hintText: l10n.send,
+                            hintText: l10n.messageHint,
                             hintStyle: TextStyle(
                               color: cs.mutedForeground,
                               fontSize: 15,

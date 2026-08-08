@@ -22,9 +22,10 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
   final _formKey = GlobalKey<ShadFormState>();
   bool _loading = false;
   bool _connecting = false;
+  bool _enteredChat = false;
   String _lastCode = '';
   Timer? _connectTimer;
-  StreamSubscription<String>? _sasSub;
+  StreamSubscription<SasChallenge>? _sasSub;
   StreamSubscription? _rejectedSub;
 
   @override
@@ -48,16 +49,21 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
     super.dispose();
   }
 
-  Future<void> _onSas(String sas) async {
+  Future<void> _onSas(SasChallenge challenge) async {
     _connectTimer?.cancel();
     if (!mounted) return;
-    final ok = await showVerificationDialog(context, sas);
+    final ok = await showVerificationDialog(context, challenge.sas);
     if (!mounted) return;
-    await ref.read(keyExchangeServiceProvider).confirmSas(ok);
+    // Verdict is bound to the endpoint whose digits the user compared (C2).
+    await ref
+        .read(keyExchangeServiceProvider)
+        .confirmSas(ok, endpointId: challenge.endpointId);
     if (!ok) {
       if (mounted) await ref.read(groupControllerProvider).leaveGroup();
       return;
     }
+    if (_enteredChat) return;   // a previous peer already moved us into chat
+    _enteredChat = true;
     // Verified — enter the chat (push keeps /home on the stack).
     if (mounted) context.push('/chat/$_lastCode');
   }

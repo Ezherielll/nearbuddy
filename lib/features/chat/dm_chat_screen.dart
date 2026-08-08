@@ -7,6 +7,7 @@ import '../../data/database/daos/sessions_dao.dart';
 import '../../l10n/app_localizations.dart';
 import '../../main.dart';
 import '../../theme/nearbuddy_color_scheme.dart';
+import '../../theme/nearbuddy_typography.dart';
 import '../shared/widgets/avatar_initial.dart';
 import '../../features/shared/connection_status.dart';
 import 'chat_controller.dart';
@@ -244,7 +245,7 @@ class _DmChatScreenState extends ConsumerState<DmChatScreen> {
                         Text(
                           session?.peerDeviceId ?? '',
                           style: TextStyle(
-                            fontFamily: 'monospace',
+                            fontFamily: AppFonts.mono,
                             fontSize: 11,
                             color: cs.mutedForeground,
                           ),

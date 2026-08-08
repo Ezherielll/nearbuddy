@@ -18,6 +18,11 @@ final themeModeProvider = StateProvider<ThemeMode>((ref) {
   };
 });
 
+/// Reactive nickname — Settings updates it after persisting so screens that
+/// watch it (e.g. the Settings profile card) rebuild immediately.
+final nicknameProvider = StateProvider<String>(
+    (ref) => ref.watch(appPreferencesProvider).nickname ?? '');
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await AppPreferences.create();

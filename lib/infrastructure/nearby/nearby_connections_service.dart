@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show Platform;
 import 'package:nearby_connections/nearby_connections.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_config.dart';
 import '../../domain/services/peer_discovery_service.dart';
+import 'unimplemented_peer_discovery_service.dart';
 
 class NearbyConnectionsService implements PeerDiscoveryService {
   final _nearby = Nearby();
@@ -141,6 +143,9 @@ class NearbyConnectionsService implements PeerDiscoveryService {
 }
 
 final peerDiscoveryServiceProvider = Provider<PeerDiscoveryService>((ref) {
+  // nearby_connections is Android-only. iOS gets an honest stub (MPC in v1.1);
+  // the plugin's Dart code still compiles on iOS, only the channel is absent.
+  if (Platform.isIOS) return UnimplementedPeerDiscoveryService();
   final s = NearbyConnectionsService();
   ref.onDispose(s.dispose);
   return s;

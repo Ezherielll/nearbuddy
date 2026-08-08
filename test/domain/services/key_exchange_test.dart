@@ -77,7 +77,7 @@ void main() {
     await svc.handleIncomingControl('ep-1', jsonEncode(KeyHello(
       pubKey: memberPubB64, nickname: 'Nadia', pin: null,
     ).toJson()));
-    await svc.confirmSas(true);   // local user confirms the SAS digits
+    await svc.confirmSas(true, endpointId: 'ep-1');   // local user confirms the SAS digits
 
     // no group key yet → no KEY payload is sent (verify_ok already went out)
     await svc.sendGroupKeyTo('ep-1', 'g1');
@@ -114,7 +114,7 @@ void main() {
     );
 
     String? sasChallenge;
-    final sub = svc.onSasChallenge.listen((s) => sasChallenge = s);
+    final sub = svc.onSasChallenge.listen((c) => sasChallenge = c.sas);
     addTearDown(sub.cancel);
 
     // owner introduces itself
@@ -125,7 +125,7 @@ void main() {
     expect(sasChallenge, matches(RegExp(r'^\d{6}$')));
 
     // local user confirms — only then is a key accepted
-    await svc.confirmSas(true);
+    await svc.confirmSas(true, endpointId: 'ep-owner');
     await pumpEventQueue();
     expect(peer.sentTo('ep-owner').single, contains('verify_ok'));
 
@@ -147,6 +147,108 @@ void main() {
     await pumpEventQueue();
     expect(verified, 'ep-owner');
   });
+
+  test('C2: handshake state is per-endpoint — verdicts and keys never cross peers', () async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    final owner = await crypto.generateKeyPair();
+    final memberA = await crypto.generateKeyPair();
+    final memberB = await crypto.generateKeyPair();
+    final pubA = base64Encode((await memberA.extractPublicKey()).bytes);
+    final pubB = base64Encode((await memberB.extractPublicKey()).bytes);
+
+    final peer = _FakePeer();
+    final ownerSeed = await owner.extractPrivateKeyBytes();
+    final svc = KeyExchangeService(
+      crypto,
+      KeyManager(_MemoryStore({'identity_priv_seed_b64': base64Encode(ownerSeed)})),
+      db.groupsDao,
+      peer,
+    );
+
+    final challenges = <(String, String)>[];
+    final sub = svc.onSasChallenge.listen((c) => challenges.add((c.endpointId, c.sas)));
+    addTearDown(sub.cancel);
+
+    // two joiners connect and say hello
+    await svc.handleIncomingControl('ep-a', jsonEncode(KeyHello(
+      pubKey: pubA, nickname: 'A', pin: null,
+    ).toJson()));
+    await svc.handleIncomingControl('ep-b', jsonEncode(KeyHello(
+      pubKey: pubB, nickname: 'B', pin: null,
+    ).toJson()));
+    await pumpEventQueue();
+    expect(challenges.map((c) => c.$1), containsAll(['ep-a', 'ep-b']));
+
+    // user verifies ONLY ep-a; the verdict must go to ep-a, not ep-b
+    await svc.confirmSas(true, endpointId: 'ep-a');
+    expect(peer.sentTo('ep-a').single, contains('verify_ok'));
+    expect(peer.sentTo('ep-b'), isEmpty);
+
+    // group key must be delivered ONLY to the verified endpoint
+    final groupKey = await svc.generateGroupKey('g1');
+    await svc.sendGroupKeyTo('ep-a', 'g1');
+    await svc.sendGroupKeyTo('ep-b', 'g1');
+    expect(peer.sentTo('ep-a').where((s) => s.contains('"t":"key"')), hasLength(1));
+    expect(peer.sentTo('ep-b').where((s) => s.contains('"t":"key"')), isEmpty);
+
+    // ep-b must NOT be able to deliver a key either (its SAS is unconfirmed)
+    final pairwiseB = await crypto.pairwiseKeyBytes(memberB, await owner.extractPublicKey());
+    final boxB = await crypto.seal(base64Encode(groupKey), SecretKeyData(pairwiseB));
+    await svc.handleIncomingControl('ep-b', jsonEncode(KeyDelivery(
+      gid: 'g2',
+      key: base64Encode([...boxB.nonce, ...boxB.cipherText, ...boxB.mac.bytes]),
+    ).toJson()));
+    expect(svc.groupKeyFor('g2'), isNull);
+
+    // ...but ep-a (confirmed) can
+    final pairwiseA = await crypto.pairwiseKeyBytes(memberA, await owner.extractPublicKey());
+    final boxA = await crypto.seal(base64Encode(groupKey), SecretKeyData(pairwiseA));
+    await svc.handleIncomingControl('ep-a', jsonEncode(KeyDelivery(
+      gid: 'g2',
+      key: base64Encode([...boxA.nonce, ...boxA.cipherText, ...boxA.mac.bytes]),
+    ).toJson()));
+    expect(svc.groupKeyFor('g2'), groupKey);
+  });
+
+  test('H2: receiving verify_fail rejects only that peer — the session stays up', () async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    final owner = await crypto.generateKeyPair();
+    final member = await crypto.generateKeyPair();
+    final pub = base64Encode((await member.extractPublicKey()).bytes);
+    final ownerSeed = await owner.extractPrivateKeyBytes();
+
+    final peer = _FakePeer();
+    final svc = KeyExchangeService(
+      crypto,
+      KeyManager(_MemoryStore({'identity_priv_seed_b64': base64Encode(ownerSeed)})),
+      db.groupsDao,
+      peer,
+    );
+
+    await svc.handleIncomingControl('ep-bad', jsonEncode(KeyHello(
+      pubKey: pub, nickname: 'Bad', pin: null,
+    ).toJson()));
+
+    String? rejected;
+    final sub = svc.onJoinRejected.listen((e) => rejected = e);
+    addTearDown(sub.cancel);
+
+    await svc.handleIncomingControl('ep-bad', jsonEncode(const {'t': 'verify_fail'}));
+    await pumpEventQueue();
+    expect(rejected, 'ep-bad');
+    // the member's own session must NOT be torn down
+    expect(peer.stopCalls, 0);
+    // a key from that peer is now rejected (endpoint state was removed)
+    final pairwise = await crypto.pairwiseKeyBytes(member, await owner.extractPublicKey());
+    final box = await crypto.seal(base64Encode(List.generate(32, (i) => i)), SecretKeyData(pairwise));
+    await svc.handleIncomingControl('ep-bad', jsonEncode(KeyDelivery(
+      gid: 'g1',
+      key: base64Encode([...box.nonce, ...box.cipherText, ...box.mac.bytes]),
+    ).toJson()));
+    expect(svc.groupKeyFor('g1'), isNull);
+  });
 }
 
 class _MemoryStore implements KeyValueStore {
@@ -161,6 +263,7 @@ class _MemoryStore implements KeyValueStore {
 
 class _FakePeer implements PeerDiscoveryService {
   final _sent = <String, List<String>>{};
+  int stopCalls = 0;
   List<String> sentTo(String endpointId) => _sent[endpointId] ?? const [];
 
   @override
@@ -186,7 +289,9 @@ class _FakePeer implements PeerDiscoveryService {
       {required String groupId, required String nickname, String? pin}) async {}
 
   @override
-  Future<void> stopSession() async {}
+  Future<void> stopSession() async {
+    stopCalls++;
+  }
 
   @override
   Future<Set<String>> sendToAll(String jsonPayload) async => {};

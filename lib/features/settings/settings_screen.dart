@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import '../../core/constants.dart';
 import '../../core/crypto/identity_providers.dart';
@@ -16,7 +17,6 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  static const _appVersion = '1.0.0';
 
   Future<void> _copyDeviceId(String deviceId) async {
     await Clipboard.setData(ClipboardData(text: deviceId));
@@ -61,7 +61,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ),
                     ),
                     Text(
-                      'Pilih bahasa antarmuka',
+                      l10n.languageDialogSubtitle,
                       style: TextStyle(fontSize: 12, color: cs.mutedForeground),
                     ),
                   ],
@@ -112,6 +112,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
     await prefs.setNickname(v);
     if (!mounted) return;
+    // Publish the change so the Settings page (and anything else watching
+    // nicknameProvider) rebuilds immediately — appPreferencesProvider is a
+    // plain Provider mutated in place, so watch alone would never fire.
+    ref.read(nicknameProvider.notifier).state = v;
     ShadToaster.of(context).show(ShadToast(title: Text(l10n.nicknameSaved)));
   }
 
@@ -160,32 +164,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Future<void> _showAbout() async {
-    final l10n = AppLocalizations.of(context)!;
-    await showShadDialog<void>(
-      context: context,
-      builder: (ctx) => ShadDialog(
-        title: Text(l10n.aboutNearBuddy),
-        description: Text(l10n.tagline),
-        actions: [
-          ShadButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(l10n.cancelLabel),
-          ),
-        ],
-      ),
-    );
-  }
+  Future<void> _showAbout() => context.push('/about');
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = ShadTheme.of(context);
     final cs = ShadTheme.of(context).colorScheme;
-    final prefs = ref.read(appPreferencesProvider);
     final locale = ref.watch(localeProvider);
     final deviceId = ref.watch(myDeviceIdProvider).valueOrNull ?? '—';
-    final nickname = prefs.nickname ?? '';
+    final nickname = ref.watch(nicknameProvider);
 
     return Scaffold(
       backgroundColor: cs.background,
@@ -364,7 +352,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               child: _SettingTile(
                 icon: LucideIcons.info,
                 title: l10n.appName,
-                subtitle: l10n.appVersion(_appVersion),
+                subtitle: l10n.appVersion(AppConstants.appVersion),
                 onTap: _showAbout,
               ),
             ),
@@ -575,7 +563,7 @@ class _ThemeBottomSheetState extends State<_ThemeBottomSheet> {
                         ),
                       ),
                       Text(
-                        'Pilih tampilan aplikasi',
+                        l10n.themeSheetSubtitle,
                         style: TextStyle(
                           fontSize: 12,
                           color: cs.mutedForeground,
@@ -603,7 +591,7 @@ class _ThemeBottomSheetState extends State<_ThemeBottomSheet> {
                   _ThemeTile(
                     icon: LucideIcons.sun,
                     label: l10n.themeLight,
-                    subtitle: 'Tampilan cerah dan bersih',
+                    subtitle: l10n.themeLightDesc,
                     selected: _selected == ThemeMode.light,
                     onTap: () => setState(() => _selected = ThemeMode.light),
                     cs: cs,
@@ -612,7 +600,7 @@ class _ThemeBottomSheetState extends State<_ThemeBottomSheet> {
                   _ThemeTile(
                     icon: LucideIcons.moon,
                     label: l10n.themeDark,
-                    subtitle: 'Nyaman di kondisi minim cahaya',
+                    subtitle: l10n.themeDarkDesc,
                     selected: _selected == ThemeMode.dark,
                     onTap: () => setState(() => _selected = ThemeMode.dark),
                     cs: cs,
@@ -621,7 +609,7 @@ class _ThemeBottomSheetState extends State<_ThemeBottomSheet> {
                   _ThemeTile(
                     icon: LucideIcons.monitor,
                     label: l10n.themeSystem,
-                    subtitle: 'Mengikuti pengaturan sistem',
+                    subtitle: l10n.themeSystemDesc,
                     selected: _selected == ThemeMode.system,
                     onTap: () => setState(() => _selected = ThemeMode.system),
                     cs: cs,
@@ -646,7 +634,7 @@ class _ThemeBottomSheetState extends State<_ThemeBottomSheet> {
                 ),
                 child: Center(
                   child: Text(
-                    'Terapkan',
+                    l10n.applyLabel,
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
@@ -733,7 +721,7 @@ class _ThemeTile extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                      color: selected ? cs.foreground : cs.mutedForeground,
+                      color: cs.foreground,
                     ),
                   ),
                   const SizedBox(height: 1),

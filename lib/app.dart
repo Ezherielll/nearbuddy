@@ -6,6 +6,7 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 import 'core/router.dart';
 import 'main.dart';
 import 'theme/nearbuddy_color_scheme.dart';
+import 'theme/nearbuddy_typography.dart';
 
 class NearBuddyApp extends ConsumerWidget {
   const NearBuddyApp({super.key});
@@ -17,10 +18,13 @@ class NearBuddyApp extends ConsumerWidget {
       theme: ShadThemeData(
         brightness: Brightness.light,
         colorScheme: const NearBuddyColorScheme.light(),
+        // Same scale + families for light and dark — only colors differ.
+        textTheme: NearBuddyTypography.textTheme,
       ),
       darkTheme: ShadThemeData(
         brightness: Brightness.dark,
         colorScheme: const NearBuddyColorScheme.dark(),
+        textTheme: NearBuddyTypography.textTheme,
       ),
       themeMode: themeMode,
       appBuilder: (context) {
@@ -29,6 +33,8 @@ class NearBuddyApp extends ConsumerWidget {
           routerConfig: appRouter,
           theme: Theme.of(context),
           locale: locale,
+          // Hide the red "DEBUG" ribbon that Flutter shows in debug builds.
+          debugShowCheckedModeBanner: false,
           localizationsDelegates: const [
             AppLocalizations.delegate,
             GlobalShadLocalizations.delegate,

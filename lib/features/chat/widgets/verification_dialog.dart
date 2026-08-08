@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../theme/nearbuddy_typography.dart';
 
 /// The key E2EE moment: shows the 6-digit SAS (grouped XXX XXX) in a
 /// premium monospace presentation and asks the user to compare devices.
@@ -35,7 +36,7 @@ Future<bool> showVerificationDialog(BuildContext context, String sas) async {
               grouped,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontFamily: 'monospace',
+                fontFamily: AppFonts.mono,
                 fontSize: 36,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 6,

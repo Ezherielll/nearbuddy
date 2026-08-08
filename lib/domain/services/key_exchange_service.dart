@@ -20,6 +20,24 @@ final keyExchangeServiceProvider = Provider<KeyExchangeService>((ref) =>
       ref.watch(peerDiscoveryServiceProvider),
     ));
 
+/// One SAS challenge: the digits to compare AND the endpoint they belong
+/// to, so the user's verdict is always delivered to the right peer (C2).
+class SasChallenge {
+  final String endpointId;
+  final String sas;
+  const SasChallenge({required this.endpointId, required this.sas});
+}
+
+/// Handshake state for ONE connected endpoint (C2): a joiner in a cluster
+/// connects to several members at once, and each hello must not clobber
+/// another's pubkey / SAS verdict. A peer is only trusted (gets / delivers
+/// the group key) once ITS OWN endpoint's SAS was confirmed by the local user.
+class _EndpointState {
+  final SimplePublicKey pubKey;
+  bool sasConfirmed = false;
+  _EndpointState(this.pubKey);
+}
+
 /// Orchestrates the E2EE join handshake over a direct connection:
 /// hello (pubkey+pin) → SAS display/verify → (key holder) encrypted group key.
 class KeyExchangeService {
@@ -29,12 +47,11 @@ class KeyExchangeService {
   final PeerDiscoveryService _peer;
 
   final _groupKeys = <String, Uint8List>{};
-  final _endpointPubKeys = <String, SimplePublicKey>{};   // endpointId → pubkey
-  final _sasChallengeCtrl = StreamController<String>.broadcast();
+  final _sasChallengeCtrl = StreamController<SasChallenge>.broadcast();
   final _peerVerifiedCtrl = StreamController<String>.broadcast();
   final _joinRejectedCtrl = StreamController<String>.broadcast();
-  String? _pendingEndpoint;
-  bool _sasConfirmed = false;
+
+  final _endpoints = <String, _EndpointState>{};
 
   /// Optional PIN gate, registered by GroupController (Task 11). Called with
   /// the peer's hello PIN before the SAS challenge is raised; `false` rejects
@@ -43,8 +60,9 @@ class KeyExchangeService {
 
   KeyExchangeService(this._crypto, this._keys, this._groupsDao, this._peer);
 
-  /// SAS to display for the active join; UI subscribes and calls [confirmSas].
-  Stream<String> get onSasChallenge => _sasChallengeCtrl.stream;
+  /// SAS challenges for the active joins; UI subscribes and calls
+  /// [confirmSas] with the challenge's [SasChallenge.endpointId].
+  Stream<SasChallenge> get onSasChallenge => _sasChallengeCtrl.stream;
 
     /// Fires with the endpointId once that peer confirmed the SAS match.
     /// This is the trigger for delivering the group key (Task 11 wiring).
@@ -67,17 +85,18 @@ class KeyExchangeService {
     await _peer.sendTo(endpointId, jsonEncode(hello.toJson()));
   }
 
-  /// Local user's verdict on the SAS: sends verify_ok / verify_fail to the
-  /// peer whose hello was last received. Mismatch aborts the session.
-  Future<void> confirmSas(bool match) async {
-    final endpoint = _pendingEndpoint;
-    if (endpoint == null) return;
-    _sasConfirmed = match;
+  /// Local user's verdict on the SAS for a SPECIFIC endpoint (C2): the
+  /// verdict goes to the peer whose digits the user actually compared.
+  /// Mismatch removes that endpoint from the handshake — the peer's own
+  /// join timeout aborts its session; the local group session stays up.
+  Future<void> confirmSas(bool match, {required String endpointId}) async {
+    final state = _endpoints[endpointId];
+    if (state == null) return;
+    state.sasConfirmed = match;
     await _peer.sendTo(
-        endpoint, jsonEncode({'t': match ? 'verify_ok' : 'verify_fail'}));
+        endpointId, jsonEncode({'t': match ? 'verify_ok' : 'verify_fail'}));
     if (!match) {
-      _endpointPubKeys.remove(endpoint);
-      _pendingEndpoint = null;
+      _endpoints.remove(endpointId);
     }
   }
 
@@ -90,15 +109,16 @@ class KeyExchangeService {
 
   Uint8List? groupKeyFor(String groupId) => _groupKeys[groupId];
 
-  /// Delivery side of the group key. Call ONLY after the endpoint's
+  /// Delivery side of the group key. Call ONLY after THIS endpoint's
   /// `verify_ok` was received (SAS confirmed both ways) and, for PIN
-  /// groups, the join PIN was validated (Task 11). No-op without a key.
+  /// groups, the join PIN was validated (Task 11). No-op without a key
+  /// or when that endpoint is not (or no longer) SAS-verified.
   Future<void> sendGroupKeyTo(String endpointId, String groupId) async {
     final key = _groupKeys[groupId];
-    final pub = _endpointPubKeys[endpointId];
-    if (key == null || pub == null || !_sasConfirmed) return;
+    final state = _endpoints[endpointId];
+    if (key == null || state == null || !state.sasConfirmed) return;
     final pairwise =
-        await _crypto.pairwiseKeyBytes(await _keys.ensureIdentityKey(), pub);
+        await _crypto.pairwiseKeyBytes(await _keys.ensureIdentityKey(), state.pubKey);
     final box = await _crypto.seal(base64Encode(key), SecretKeyData(pairwise));
     final packed = base64Encode([...box.nonce, ...box.cipherText, ...box.mac.bytes]);
     await _peer.sendTo(endpointId,
@@ -126,26 +146,27 @@ class KeyExchangeService {
           await _peer.sendTo(fromEndpointId, jsonEncode({'t': 'verify_fail'}));
           return;
         }
-        _endpointPubKeys[fromEndpointId] =
-            SimplePublicKey(base64Decode(hello.pubKey), type: KeyPairType.x25519);
-        _pendingEndpoint = fromEndpointId;
-        _sasConfirmed = false;
+        _endpoints[fromEndpointId] = _EndpointState(
+            SimplePublicKey(base64Decode(hello.pubKey), type: KeyPairType.x25519));
         final sas = await _crypto.sas(
-            await _keys.ensureIdentityKey(), _endpointPubKeys[fromEndpointId]!);
-        _sasChallengeCtrl.add(sas);
+            await _keys.ensureIdentityKey(), _endpoints[fromEndpointId]!.pubKey);
+        _sasChallengeCtrl.add(
+            SasChallenge(endpointId: fromEndpointId, sas: sas));
       case 'verify_ok':
         // peer confirmed the SAS — fire the trigger for group key delivery
         _peerVerifiedCtrl.add(fromEndpointId);
       case 'verify_fail':
         _joinRejectedCtrl.add(fromEndpointId);
-        await _peer.stopSession();
+        // H2: never stopSession() here — the group session belongs to every
+        // member; only this peer's join is rejected.
+        _endpoints.remove(fromEndpointId);
       case 'key':
-        if (!_sasConfirmed) return;   // never accept keys from unverified peers
+        // never accept keys from an endpoint whose SAS was not confirmed
+        final state = _endpoints[fromEndpointId];
+        if (state == null || !state.sasConfirmed) return;
         final delivery = KeyDelivery.fromJson(j);
-        final pub = _endpointPubKeys[fromEndpointId];
-        if (pub == null) return;
         final pairwise =
-            await _crypto.pairwiseKeyBytes(await _keys.ensureIdentityKey(), pub);
+            await _crypto.pairwiseKeyBytes(await _keys.ensureIdentityKey(), state.pubKey);
         final plain = await _crypto.open(
             SecretBox.fromConcatenation(base64Decode(delivery.key),
                 nonceLength: 12, macLength: 16),

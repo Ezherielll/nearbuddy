@@ -41,17 +41,24 @@ class GroupController {
     try {
       final id = UuidGenerator.generate();
       await _kx.generateGroupKey(id);   // owner holds the group key
+      // The ambient scan advertises on the same ConnectionsClient — stop it
+      // first, or the group session's startAdvertising fails with a
+      // "already advertising" PlatformException.
+      await _peer.stopScan();
+      await _peer.startSession(
+          groupId: id, nickname: _prefs.nickname ?? 'Unknown', pin: pin);
+      // Insert only AFTER the session started: a failed startSession must
+      // not leave a ghost group row behind.
       await _dao.insertGroup(GroupsCompanion.insert(
         id: id, name: name, pin: Value(pin),
         createdAt: DateTime.now(), isOwner: const Value(true),
       ));
-      await _peer.startSession(
-          groupId: id, nickname: _prefs.nickname ?? 'Unknown', pin: pin);
       _ref.read(currentGroupProvider.notifier).state =
           GroupSession(id: id, name: name, pin: pin, createdAt: DateTime.now(), isOwner: true);
       _listen();
       return null;
     } catch (_) {
+      await _peer.stopSession();
       return 'session';
     }
   }
@@ -66,6 +73,7 @@ class GroupController {
         .requestNearbyPermissions();
     if (!ok) return 'permission';
     try {
+      await _peer.stopScan();   // ambient scan would conflict with the session
       await _peer.startSession(
           groupId: groupId, nickname: _prefs.nickname ?? 'Unknown', pin: pin);
       await _dao.insertGroup(GroupsCompanion.insert(
@@ -76,6 +84,7 @@ class GroupController {
       _listen();
       return null;
     } catch (_) {
+      await _peer.stopSession();
       return 'session';
     }
   }

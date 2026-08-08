@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import '../../l10n/app_localizations.dart';
+import '../../theme/nearbuddy_typography.dart';
 import '../shared/widgets/empty_state.dart';
 import '../shared/widgets/avatar_initial.dart';
 import 'dm_controller.dart';
@@ -69,7 +70,7 @@ class _DmSessionsScreenState extends ConsumerState<DmSessionsScreen> {
                                 s.peerDeviceId,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
-                                    fontFamily: 'monospace',
+                                    fontFamily: AppFonts.mono,
                                     fontSize: 11,
                                     color: cs.mutedForeground),
                               ),
@@ -108,9 +109,8 @@ class _DmSessionsScreenState extends ConsumerState<DmSessionsScreen> {
             const SizedBox(height: 6),
             ShadInput(
               controller: deviceIdCtrl,
-              style: const TextStyle(fontFamily: 'monospace'),
-            ),
-          ],
+              style: NearBuddyTypography.monoStyle,
+            ),          ],
         ),
         actions: [
           ShadButton.outline(

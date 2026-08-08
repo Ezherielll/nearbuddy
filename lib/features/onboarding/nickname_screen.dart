@@ -6,6 +6,7 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 import '../../core/constants.dart';
 import '../../l10n/app_localizations.dart';
 import '../../main.dart';
+import '../../theme/nearbuddy_logo.dart';
 import '../shared/widgets/nearbuddy_button.dart';
 
 class NicknameScreen extends ConsumerStatefulWidget {
@@ -29,7 +30,6 @@ class _NicknameScreenState extends ConsumerState<NicknameScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = ShadTheme.of(context);
-    final cs = ShadTheme.of(context).colorScheme;
 
     return Scaffold(
       body: SafeArea(
@@ -40,14 +40,10 @@ class _NicknameScreenState extends ConsumerState<NicknameScreen> {
             children: [
               const Spacer(),
               Center(
-                child: Container(
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    color: cs.primary,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Icon(LucideIcons.shield, size: 36, color: cs.primaryForeground),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child:
+                      const NearBuddyLogo(size: 72, drawBackground: true),
                 ),
               ),
               const SizedBox(height: 16),

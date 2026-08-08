@@ -4,11 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
+import '../../core/app_config.dart';
 import '../../core/utils/battery_monitor.dart';
+import '../../core/utils/permission_handler_service.dart';
 import '../../data/database/app_database.dart';
 import '../../infrastructure/nearby/nearby_connections_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/nearbuddy_color_scheme.dart';
+import '../../theme/nearbuddy_logo.dart';
+import '../group/group_controller.dart';
 import '../shared/connection_status.dart';
 import '../shared/widgets/avatar_initial.dart';
 import 'scan_controller.dart';
@@ -71,6 +75,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   late final ScanController _scan;
+  bool _permissionDenied = false;
 
   @override
   void initState() {
@@ -82,7 +87,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       if (!mounted) return;  // widget may be gone before the permission check resolves
       ref.read(radioAvailableProvider.notifier).state = ok;
     });
+    _bootstrap();
+  }
+
+  /// Requests nearby permissions before starting the ambient scan. Without
+  /// BLUETOOTH_ADVERTISE (Android 12+) startAdvertising throws
+  /// MISSING_PERMISSION_BLUETOOTH_ADVERTISE — ask first, then scan.
+  Future<void> _bootstrap() async {
+    final granted = await ref
+        .read(permissionHandlerServiceProvider)
+        .requestNearbyPermissions();
+    if (!mounted) return;
+    if (granted) {
+      _startScanIfIdle();
+    } else {
+      setState(() => _permissionDenied = true);
+    }
+  }
+
+  /// The ambient scan cannot run while a group session is advertising on the
+  /// same ConnectionsClient — only scan when no session is active.
+  void _startScanIfIdle() {
+    if (ref.read(currentGroupProvider) != null) return;
     _scan.start();
+  }
+
+  Future<void> _grantPermissions() async {
+    final granted = await ref
+        .read(permissionHandlerServiceProvider)
+        .requestNearbyPermissions();
+    if (!mounted) return;
+    if (granted) {
+      setState(() => _permissionDenied = false);
+      _startScanIfIdle();
+    }
   }
 
   @override
@@ -118,19 +156,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(18),
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF3D5AFE), Color(0xFF1A3FD8)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                  ),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
                   child:
-                      const Icon(LucideIcons.shield, size: 30, color: Colors.white),
+                      const NearBuddyLogo(size: 60, drawBackground: true),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -141,8 +170,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         l10n.appName,
                         style: const TextStyle(
                           fontSize: 26,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.5,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.3,
                         ),
                       ),
                       Text(
@@ -168,6 +197,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ],
             ),
             const SizedBox(height: 20),
+            if (_permissionDenied && !AppConfig.isDev) ...[
+              _PermissionBanner(
+                title: l10n.permissionRequired,
+                body: l10n.permissionExplanation,
+                actionLabel: l10n.grantPermission,
+                onGrant: _grantPermissions,
+                cs: cs,
+              ),
+              const SizedBox(height: 16),
+            ],
             _ConnectionPanel(
               status: status,
               radioOn: radioOn,
@@ -214,41 +253,47 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             const SizedBox(height: 24),
             _SectionLabel(l10n.communicationSection),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _ActionGridCard(
-                    icon: LucideIcons.users,
-                    iconColor: cs.primary,
-                    title: l10n.createGroup,
-                    description: l10n.createGroupDesc,
-                    onTap: () => context.push('/create-group'),
-                    cs: cs,
+            // Equal-height cards: titles may wrap to 2 lines (e.g. "Pesan
+            // pribadi"), so IntrinsicHeight + Spacer keeps all three cards
+            // the same height with bottom-aligned chevrons.
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: _ActionGridCard(
+                      icon: LucideIcons.users,
+                      iconColor: cs.primary,
+                      title: l10n.createGroup,
+                      description: l10n.createGroupDesc,
+                      onTap: () => context.push('/create-group'),
+                      cs: cs,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _ActionGridCard(
-                    icon: LucideIcons.messageCircle,
-                    iconColor: cs.online,
-                    title: l10n.dmSessions,
-                    description: l10n.dmSessionsDesc,
-                    onTap: () => context.push('/dms'),
-                    cs: cs,
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _ActionGridCard(
+                      icon: LucideIcons.messageCircle,
+                      iconColor: cs.online,
+                      title: l10n.dmSessions,
+                      description: l10n.dmSessionsDesc,
+                      onTap: () => context.push('/dms'),
+                      cs: cs,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _ActionGridCard(
-                    icon: LucideIcons.qrCode,
-                    iconColor: const Color(0xFF7C3AED),
-                    title: l10n.joinGroup,
-                    description: l10n.groupCode,
-                    onTap: () => context.push('/join-group'),
-                    cs: cs,
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _ActionGridCard(
+                      icon: LucideIcons.qrCode,
+                      iconColor: const Color(0xFF7C3AED),
+                      title: l10n.joinGroup,
+                      description: l10n.groupCode,
+                      onTap: () => context.push('/join-group'),
+                      cs: cs,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             if (groups.isNotEmpty) ...[
               const SizedBox(height: 24),
@@ -300,9 +345,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Secure. Private. Direct.',
-                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                        Text(
+                          l10n.secureDirectTagline,
+                          style: const TextStyle(
+                              fontSize: 14, fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -461,14 +507,14 @@ class _RadarAnimationState extends State<_RadarAnimation>
   Widget build(BuildContext context) {
     if (MediaQuery.of(context).disableAnimations) {
       return SizedBox(
-        width: 48,
-        height: 48,
-        child: Icon(LucideIcons.radar, size: 24, color: widget.color),
+        width: 40,
+        height: 40,
+        child: Icon(LucideIcons.radar, size: 20, color: widget.color),
       );
     }
     return SizedBox(
-      width: 48,
-      height: 48,
+      width: 40,
+      height: 40,
       child: AnimatedBuilder(
         animation: _ctrl,
         builder: (_, __) =>
@@ -663,6 +709,91 @@ class _SectionLabel extends StatelessWidget {
         Expanded(child: labelWidget),
         trailing!,
       ],
+    );
+  }
+}
+
+/// Shown on Home when nearby permissions were declined — the ambient scan
+/// cannot advertise without BLUETOOTH_ADVERTISE (Android 12+).
+class _PermissionBanner extends StatelessWidget {
+  final String title;
+  final String body;
+  final String actionLabel;
+  final VoidCallback onGrant;
+  final ShadColorScheme cs;
+
+  const _PermissionBanner({
+    required this.title,
+    required this.body,
+    required this.actionLabel,
+    required this.onGrant,
+    required this.cs,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cs.warning.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: cs.warning.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(LucideIcons.alertCircle, size: 18, color: cs.warning),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            body,
+            style: TextStyle(
+              fontSize: 12,
+              color: cs.mutedForeground,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 12),
+          GestureDetector(
+            onTap: onGrant,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24),
+                color: cs.primary,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(LucideIcons.shieldCheck, size: 15, color: cs.primaryForeground),
+                  const SizedBox(width: 6),
+                  Text(
+                    actionLabel,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: cs.primaryForeground,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -942,7 +1073,7 @@ class _ActionGridCard extends StatelessWidget {
             Text(
               title,
               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-              maxLines: 1,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 4),
@@ -954,8 +1085,9 @@ class _ActionGridCard extends StatelessWidget {
                 height: 1.4,
               ),
               maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 10),
+            const Spacer(),
             Align(
               alignment: Alignment.centerRight,
               child: Container(

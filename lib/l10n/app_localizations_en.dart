@@ -19,46 +19,46 @@ class AppLocalizationsEn extends AppLocalizations {
       'NearBuddy is a community communication tool, not a substitute for official emergency services. Do not rely on this app as your sole tool in emergency situations.';
 
   @override
-  String get disclaimerAccept => 'I Understand';
+  String get disclaimerAccept => 'I understand';
 
   @override
-  String get nicknameTitle => 'What is your name?';
+  String get nicknameTitle => 'What\'s your name?';
 
   @override
-  String get nicknameHint => 'Enter nickname (3-20 characters)';
+  String get nicknameHint => 'Enter a name (3-20 characters)';
 
   @override
-  String get nicknameError => 'Nickname must be 3-20 characters';
+  String get nicknameError => 'Name must be 3-20 characters';
 
   @override
   String get continueLabel => 'Continue';
 
   @override
-  String get createGroup => 'Create Group';
+  String get createGroup => 'Create group';
 
   @override
-  String get joinGroup => 'Join Group';
+  String get joinGroup => 'Join group';
 
   @override
-  String get groupName => 'Group Name';
+  String get groupName => 'Group name';
 
   @override
   String get groupPin => 'Group PIN (optional)';
 
   @override
-  String get nearbyGroups => 'Nearby Groups';
+  String get nearbyGroups => 'Nearby groups';
 
   @override
-  String get noNearbyGroups => 'No groups found. Create one or wait.';
+  String get noNearbyGroups => 'No groups yet. Create one or wait.';
 
   @override
   String get send => 'Send';
 
   @override
-  String get sendLocation => 'Send My Location';
+  String get sendLocation => 'Send location';
 
   @override
-  String get sendLocationConfirm => 'Send your current coordinates now?';
+  String get sendLocationConfirm => 'Send your location now?';
 
   @override
   String get locationPingLabel => 'Location';
@@ -78,20 +78,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get messageDelivered => 'Delivered';
 
   @override
-  String get lowBatteryMode => 'Power Saver Active';
+  String get lowBatteryMode => 'Power saver on';
 
   @override
-  String get permissionRequired => 'Permission Required';
+  String get permissionRequired => 'Permission needed';
 
   @override
   String get permissionExplanation =>
-      'NearBuddy needs Bluetooth and Location permissions to discover nearby devices.';
+      'NearBuddy needs Bluetooth and location access to find devices near you.';
 
   @override
-  String get grantPermission => 'Grant Permission';
+  String get grantPermission => 'Allow';
 
   @override
-  String get nicknameInUse => 'Nickname already taken. Please choose another.';
+  String get nicknameInUse =>
+      'This name is already taken by another member. Choose another.';
 
   @override
   String get settings => 'Settings';
@@ -100,40 +101,40 @@ class AppLocalizationsEn extends AppLocalizations {
   String get language => 'Language';
 
   @override
-  String get changeNickname => 'Change Nickname';
+  String get changeNickname => 'Change name';
 
   @override
-  String get leaveGroup => 'Leave Group';
+  String get leaveGroup => 'Leave group';
 
   @override
   String get members => 'Members';
 
   @override
-  String get verifyTitle => 'Verify Device';
+  String get verifyTitle => 'Verify device';
 
   @override
   String get verifyBody => 'Both devices must show the same number:';
 
   @override
-  String get verifyMatch => 'Numbers Match';
+  String get verifyMatch => 'Numbers match';
 
   @override
-  String get verifyMismatch => 'Mismatch';
+  String get verifyMismatch => 'Don\'t match';
 
   @override
-  String get groupCode => 'Group Code';
+  String get groupCode => 'Group code';
 
   @override
   String get pinError => 'PIN must be at least 4 digits';
 
   @override
-  String get groupCodeHint => 'Enter the group code to join';
+  String get groupCodeHint => 'Enter code';
 
   @override
-  String get dmSessions => 'Private Messages';
+  String get dmSessions => 'Private messages';
 
   @override
-  String get dmNew => 'New Conversation';
+  String get dmNew => 'New conversation';
 
   @override
   String get dmEmpty =>
@@ -143,28 +144,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dmPeerDeviceId => 'Device ID';
 
   @override
-  String get dmPeerNickname => 'Contact Name';
+  String get dmPeerNickname => 'Contact name';
 
   @override
   String get dmKeyMissing =>
       'Device key missing — try again after group verification';
 
   @override
-  String get decryptFailed => 'Cannot decrypt this message';
+  String get decryptFailed => 'This message can\'t be read';
 
   @override
   String get deviceIdLabel => 'Device ID';
 
   @override
   String get permissionDenied =>
-      'Bluetooth/Location permission is required to discover nearby devices.';
+      'Bluetooth and location permission is needed to find nearby devices.';
 
   @override
   String get sessionStartFailed =>
-      'Failed to start session — check Bluetooth/WiFi and try again.';
+      'Couldn\'t start the session — check Bluetooth/Wi-Fi and try again.';
 
   @override
-  String get nicknameSaved => 'Nickname updated';
+  String get nicknameSaved => 'Name updated';
 
   @override
   String get tagline => 'Chat without internet, without servers.';
@@ -174,16 +175,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get readyStatusDesc =>
-      'All messages are encrypted and stay on this device.';
+      'All messages are encrypted and stay only on this device.';
 
   @override
-  String get createGroupDesc => 'Create a new room, with optional PIN';
+  String get createGroupDesc => 'Create a space to talk without internet.';
 
   @override
-  String get joinGroupDesc => 'Join a group with a code';
+  String get joinGroupDesc => 'Enter a group code to join.';
 
   @override
-  String get dmSessionsDesc => 'End-to-end encrypted 1:1 conversations';
+  String get dmSessionsDesc => 'Chat directly with nearby devices.';
 
   @override
   String get homeEmptyTitle => 'Start your first conversation';
@@ -215,7 +216,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get copyCode => 'Copy';
 
   @override
-  String get codeCopied => 'Code copied';
+  String get codeCopied => 'Code copied.';
 
   @override
   String get sendMessageTooltip => 'Send message';
@@ -246,11 +247,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connSearching => 'Searching for devices…';
 
   @override
-  String get connOutOfRange =>
-      'Out of range — messages send automatically when connected';
+  String get connOutOfRange => 'Out of range — resend when connected';
 
   @override
-  String get connRadioOff => 'Bluetooth/Wi-Fi off — enable to connect';
+  String get connRadioOff => 'Bluetooth/Wi-Fi is off — enable it to connect';
 
   @override
   String devicesFound(int count) {
@@ -259,10 +259,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get devicesEmpty =>
-      'No devices detected nearby. Make sure Bluetooth/Wi-Fi is on.';
+      'No devices nearby. Make sure Bluetooth/Wi-Fi is on.';
 
   @override
-  String get devicesNearbySection => 'Nearby Devices';
+  String get devicesNearbySection => 'Nearby devices';
 
   @override
   String get deviceDetected => 'detected';
@@ -274,7 +274,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noDevicesFound => 'No devices found';
 
   @override
-  String get retryLabel => 'Retry';
+  String get retryLabel => 'Try again';
 
   @override
   String get typingIndicator => 'is typing…';
@@ -283,7 +283,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get leaveConfirmTitle => 'Leave group?';
 
   @override
-  String get leaveConfirmBody => 'Old messages stay on this device.';
+  String get leaveConfirmBody =>
+      'You\'ll stop receiving messages from this group.';
 
   @override
   String get leaveLabel => 'Leave';
@@ -293,14 +294,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deviceIdHelp =>
-      'Share this ID to start a 1:1 conversation, or use it for technical support.';
+      'Used to identify this device on the local network.';
 
   @override
-  String get securityDesc =>
-      'X25519 + AES-GCM end-to-end — relays cannot read messages.';
+  String get securityDesc => 'Messages are encrypted in transit.';
 
   @override
-  String get messagePending => 'Waiting for device';
+  String get messagePending => 'Waiting for connection';
 
   @override
   String get messageFailed => 'Failed — tap to resend';
@@ -322,7 +322,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get devicesEmptyHint =>
-      'Make sure NearBuddy is open on your friend device.';
+      'Make sure NearBuddy is open on your friend\'s device.';
 
   @override
   String get searchAgain => 'Search again';
@@ -334,7 +334,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get communicationSection => 'Communication';
 
   @override
-  String get myGroupsSection => 'My Groups';
+  String get myGroupsSection => 'My groups';
 
   @override
   String get inviteDevices => 'Invite devices';
@@ -344,7 +344,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Selected devices will connect automatically when they join.';
 
   @override
-  String get startChat => 'Start Chat';
+  String get startChat => 'Start chat';
 
   @override
   String connectingTo(String name) {
@@ -355,11 +355,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get creatingGroup => 'Creating group…';
 
   @override
-  String get groupNotFound => 'Cannot find group';
+  String get groupNotFound => 'Can\'t find the group';
 
   @override
   String get groupNotFoundHint =>
-      'Make sure the group code is correct and the owner is active.';
+      'Make sure the code is correct and the group owner is active.';
 
   @override
   String connectionLost(String name) {
@@ -368,7 +368,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get messageWillWait =>
-      'Messages will be marked as waiting — tap the icon to resend.';
+      'Messages will be marked as waiting — tap the message to resend.';
 
   @override
   String get deviceIdCopied => 'Device ID copied.';
@@ -378,7 +378,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get securityBody =>
-      'Messages are encrypted and stored locally on this device.';
+      'Messages are encrypted when sent and stored only on this device.';
 
   @override
   String get learnSecurity => 'Learn how security works';
@@ -388,7 +388,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get securityDialogBody =>
-      'NearBuddy uses a per-device X25519 key with 6-digit verification, and messages are encrypted with AES-GCM. Relay devices only forward messages without being able to read them.';
+      'NearBuddy uses a per-device X25519 key, 6-digit verification, and AES-GCM encryption. Relay devices only forward messages — they can\'t read them.';
 
   @override
   String get pendingConnectionLabel => 'Waiting for connection';
@@ -405,7 +405,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsProfileHint => 'Name visible to other devices';
 
   @override
-  String get settingsChangeNickname => 'Change nickname';
+  String get settingsChangeNickname => 'Change name';
 
   @override
   String get aboutSection => 'About';
@@ -422,8 +422,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get encryptionRow => 'Encryption';
 
   @override
-  String get encryptionRowSubtitle =>
-      'Messages are encrypted and stored locally';
+  String get encryptionRowSubtitle => 'Messages are encrypted in transit';
 
   @override
   String get appearanceSection => 'Appearance';
@@ -466,4 +465,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get emojiCatSymbols => 'Symbols';
+
+  @override
+  String get languageDialogSubtitle => 'Choose the interface language';
+
+  @override
+  String get themeSheetSubtitle => 'Choose how the app looks';
+
+  @override
+  String get themeLightDesc => 'Bright and clean';
+
+  @override
+  String get themeDarkDesc => 'Easy on the eyes in low light';
+
+  @override
+  String get themeSystemDesc => 'Follows your device setting';
+
+  @override
+  String get applyLabel => 'Apply';
+
+  @override
+  String get messageHint => 'Type a message…';
+
+  @override
+  String get secureDirectTagline => 'Secure. Private. Direct.';
+
+  @override
+  String get aboutBody =>
+      'NearBuddy is a peer-to-peer messaging app that works without internet or cellular signal. Messages are encrypted and stored only on your device.';
 }
