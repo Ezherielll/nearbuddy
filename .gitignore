@@ -43,3 +43,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Local-only docs (AI agent workspace files — not published)
+/NearBuddy_PRD.md
+/AGENTS.md
+/docs/

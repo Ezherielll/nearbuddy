@@ -208,7 +208,3 @@ lib/
 ---
 
 ## Docs
-
-- `NearBuddy_PRD.md` — product spec (Indonesian). **Section 14 (Decisions Log) supersedes earlier sections** — D-11…D-16 define 1:1 chat, E2EE-at-v1, device-key identity, general-purpose positioning, PIN outside advertisement name
-- `docs/superpowers/plans/2026-08-07-nearbuddy-mvp-v2.md` — authoritative implementation plan (Tasks 6–15 done; Task 16 manual)
-- `AGENTS.md` — development conventions, hard constraints, and gotchas
