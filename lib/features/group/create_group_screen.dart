@@ -54,7 +54,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
       _showError(err);
       return;
     }
-    context.go('/chat/${ref.read(currentGroupProvider)!.id}');
+    context.go('/invite/${ref.read(currentGroupProvider)!.id}', extra: name);
   }
 
   void _showError(String code) {
