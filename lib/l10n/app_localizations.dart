@@ -655,6 +655,162 @@ abstract class AppLocalizations {
   /// In id, this message translates to:
   /// **'Gagal — tap untuk kirim ulang'**
   String get messageFailed;
+
+  /// No description provided for @connConnecting.
+  ///
+  /// In id, this message translates to:
+  /// **'Menghubungkan…'**
+  String get connConnecting;
+
+  /// No description provided for @connDisconnected.
+  ///
+  /// In id, this message translates to:
+  /// **'Tidak terhubung'**
+  String get connDisconnected;
+
+  /// No description provided for @devicesAvailable.
+  ///
+  /// In id, this message translates to:
+  /// **'Tersedia'**
+  String get devicesAvailable;
+
+  /// No description provided for @devicesConnected.
+  ///
+  /// In id, this message translates to:
+  /// **'Terhubung'**
+  String get devicesConnected;
+
+  /// No description provided for @devicesEmptyTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Belum ada perangkat di sekitar'**
+  String get devicesEmptyTitle;
+
+  /// No description provided for @devicesEmptyHint.
+  ///
+  /// In id, this message translates to:
+  /// **'Pastikan NearBuddy aktif di perangkat temanmu.'**
+  String get devicesEmptyHint;
+
+  /// No description provided for @searchAgain.
+  ///
+  /// In id, this message translates to:
+  /// **'Cari lagi'**
+  String get searchAgain;
+
+  /// No description provided for @seeAllDevices.
+  ///
+  /// In id, this message translates to:
+  /// **'Lihat semua perangkat'**
+  String get seeAllDevices;
+
+  /// No description provided for @communicationSection.
+  ///
+  /// In id, this message translates to:
+  /// **'Komunikasi'**
+  String get communicationSection;
+
+  /// No description provided for @myGroupsSection.
+  ///
+  /// In id, this message translates to:
+  /// **'Grup Saya'**
+  String get myGroupsSection;
+
+  /// No description provided for @inviteDevices.
+  ///
+  /// In id, this message translates to:
+  /// **'Undang perangkat'**
+  String get inviteDevices;
+
+  /// No description provided for @inviteDevicesHint.
+  ///
+  /// In id, this message translates to:
+  /// **'Perangkat terpilih akan terhubung otomatis saat bergabung.'**
+  String get inviteDevicesHint;
+
+  /// No description provided for @startChat.
+  ///
+  /// In id, this message translates to:
+  /// **'Mulai Chat'**
+  String get startChat;
+
+  /// No description provided for @connectingTo.
+  ///
+  /// In id, this message translates to:
+  /// **'Menghubungkan ke {name}…'**
+  String connectingTo(String name);
+
+  /// No description provided for @creatingGroup.
+  ///
+  /// In id, this message translates to:
+  /// **'Membuat grup…'**
+  String get creatingGroup;
+
+  /// No description provided for @groupNotFound.
+  ///
+  /// In id, this message translates to:
+  /// **'Tidak dapat menemukan grup'**
+  String get groupNotFound;
+
+  /// No description provided for @groupNotFoundHint.
+  ///
+  /// In id, this message translates to:
+  /// **'Pastikan kode grup benar dan pemilik grup sedang aktif.'**
+  String get groupNotFoundHint;
+
+  /// No description provided for @connectionLost.
+  ///
+  /// In id, this message translates to:
+  /// **'Koneksi dengan {name} terputus'**
+  String connectionLost(String name);
+
+  /// No description provided for @messageWillWait.
+  ///
+  /// In id, this message translates to:
+  /// **'Pesan akan ditandai menunggu — ketuk ikon untuk kirim ulang.'**
+  String get messageWillWait;
+
+  /// No description provided for @deviceIdCopied.
+  ///
+  /// In id, this message translates to:
+  /// **'ID perangkat disalin.'**
+  String get deviceIdCopied;
+
+  /// No description provided for @securityTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Keamanan pesan'**
+  String get securityTitle;
+
+  /// No description provided for @securityBody.
+  ///
+  /// In id, this message translates to:
+  /// **'Pesan dienkripsi dan disimpan secara lokal di perangkat ini.'**
+  String get securityBody;
+
+  /// No description provided for @learnSecurity.
+  ///
+  /// In id, this message translates to:
+  /// **'Pelajari cara kerja keamanan'**
+  String get learnSecurity;
+
+  /// No description provided for @securityDialogTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Cara kerja keamanan'**
+  String get securityDialogTitle;
+
+  /// No description provided for @securityDialogBody.
+  ///
+  /// In id, this message translates to:
+  /// **'NearBuddy menggunakan kunci X25519 per perangkat dengan verifikasi 6 angka, dan pesan dienkripsi AES-GCM. Perangkat perantara hanya meneruskan pesan tanpa bisa membacanya.'**
+  String get securityDialogBody;
+
+  /// No description provided for @pendingConnectionLabel.
+  ///
+  /// In id, this message translates to:
+  /// **'Menunggu koneksi'**
+  String get pendingConnectionLabel;
 }
 
 class _AppLocalizationsDelegate

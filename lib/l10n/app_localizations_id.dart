@@ -306,4 +306,92 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get messageFailed => 'Gagal — tap untuk kirim ulang';
+
+  @override
+  String get connConnecting => 'Menghubungkan…';
+
+  @override
+  String get connDisconnected => 'Tidak terhubung';
+
+  @override
+  String get devicesAvailable => 'Tersedia';
+
+  @override
+  String get devicesConnected => 'Terhubung';
+
+  @override
+  String get devicesEmptyTitle => 'Belum ada perangkat di sekitar';
+
+  @override
+  String get devicesEmptyHint =>
+      'Pastikan NearBuddy aktif di perangkat temanmu.';
+
+  @override
+  String get searchAgain => 'Cari lagi';
+
+  @override
+  String get seeAllDevices => 'Lihat semua perangkat';
+
+  @override
+  String get communicationSection => 'Komunikasi';
+
+  @override
+  String get myGroupsSection => 'Grup Saya';
+
+  @override
+  String get inviteDevices => 'Undang perangkat';
+
+  @override
+  String get inviteDevicesHint =>
+      'Perangkat terpilih akan terhubung otomatis saat bergabung.';
+
+  @override
+  String get startChat => 'Mulai Chat';
+
+  @override
+  String connectingTo(String name) {
+    return 'Menghubungkan ke $name…';
+  }
+
+  @override
+  String get creatingGroup => 'Membuat grup…';
+
+  @override
+  String get groupNotFound => 'Tidak dapat menemukan grup';
+
+  @override
+  String get groupNotFoundHint =>
+      'Pastikan kode grup benar dan pemilik grup sedang aktif.';
+
+  @override
+  String connectionLost(String name) {
+    return 'Koneksi dengan $name terputus';
+  }
+
+  @override
+  String get messageWillWait =>
+      'Pesan akan ditandai menunggu — ketuk ikon untuk kirim ulang.';
+
+  @override
+  String get deviceIdCopied => 'ID perangkat disalin.';
+
+  @override
+  String get securityTitle => 'Keamanan pesan';
+
+  @override
+  String get securityBody =>
+      'Pesan dienkripsi dan disimpan secara lokal di perangkat ini.';
+
+  @override
+  String get learnSecurity => 'Pelajari cara kerja keamanan';
+
+  @override
+  String get securityDialogTitle => 'Cara kerja keamanan';
+
+  @override
+  String get securityDialogBody =>
+      'NearBuddy menggunakan kunci X25519 per perangkat dengan verifikasi 6 angka, dan pesan dienkripsi AES-GCM. Perangkat perantara hanya meneruskan pesan tanpa bisa membacanya.';
+
+  @override
+  String get pendingConnectionLabel => 'Menunggu koneksi';
 }

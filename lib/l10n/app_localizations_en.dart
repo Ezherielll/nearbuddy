@@ -304,4 +304,92 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get messageFailed => 'Failed — tap to resend';
+
+  @override
+  String get connConnecting => 'Connecting…';
+
+  @override
+  String get connDisconnected => 'Not connected';
+
+  @override
+  String get devicesAvailable => 'Available';
+
+  @override
+  String get devicesConnected => 'Connected';
+
+  @override
+  String get devicesEmptyTitle => 'No devices nearby yet';
+
+  @override
+  String get devicesEmptyHint =>
+      'Make sure NearBuddy is open on your friend device.';
+
+  @override
+  String get searchAgain => 'Search again';
+
+  @override
+  String get seeAllDevices => 'See all devices';
+
+  @override
+  String get communicationSection => 'Communication';
+
+  @override
+  String get myGroupsSection => 'My Groups';
+
+  @override
+  String get inviteDevices => 'Invite devices';
+
+  @override
+  String get inviteDevicesHint =>
+      'Selected devices will connect automatically when they join.';
+
+  @override
+  String get startChat => 'Start Chat';
+
+  @override
+  String connectingTo(String name) {
+    return 'Connecting to $name…';
+  }
+
+  @override
+  String get creatingGroup => 'Creating group…';
+
+  @override
+  String get groupNotFound => 'Cannot find group';
+
+  @override
+  String get groupNotFoundHint =>
+      'Make sure the group code is correct and the owner is active.';
+
+  @override
+  String connectionLost(String name) {
+    return 'Connection with $name lost';
+  }
+
+  @override
+  String get messageWillWait =>
+      'Messages will be marked as waiting — tap the icon to resend.';
+
+  @override
+  String get deviceIdCopied => 'Device ID copied.';
+
+  @override
+  String get securityTitle => 'Message security';
+
+  @override
+  String get securityBody =>
+      'Messages are encrypted and stored locally on this device.';
+
+  @override
+  String get learnSecurity => 'Learn how security works';
+
+  @override
+  String get securityDialogTitle => 'How security works';
+
+  @override
+  String get securityDialogBody =>
+      'NearBuddy uses a per-device X25519 key with 6-digit verification, and messages are encrypted with AES-GCM. Relay devices only forward messages without being able to read them.';
+
+  @override
+  String get pendingConnectionLabel => 'Waiting for connection';
 }
