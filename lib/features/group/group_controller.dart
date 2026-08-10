@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/constants.dart';
+import '../../core/crypto/identity_providers.dart';
 import '../../core/crypto/key_manager.dart';
 import '../../core/utils/permission_handler_service.dart';
 import '../../core/utils/uuid_generator.dart';
@@ -142,12 +144,19 @@ class GroupController {
     });
 
     // SAS challenge → active screen shows the dialog → confirmSas
-    _kx.pinValidator = (pin) async {
+    // Join gate: PIN match (H6), nickname uniqueness (H7), group size (M3).
+    // Returns a rejection reason; the joiner's verify_fail carries it.
+    _kx.joinGate = (pin, nickname) async {
       final g = _ref.read(currentGroupProvider);
-      if (g == null) return true;
+      if (g == null) return null;
       final group = await _dao.groupById(g.id);
-      if (group?.pin == null) return true;
-      return pin == group!.pin;
+      if (group?.pin != null && pin != group!.pin) return 'pin';
+      final myId = await _ref.read(keyManagerProvider).deviceId();
+      if (await _dao.isNicknameTaken(nickname, g.id, myId)) return 'nick';
+      if (await _dao.countActiveMembers(g.id) >= AppConstants.maxGroupSize) {
+        return 'full';
+      }
+      return null;
     };
 
     _peerVerifiedSub?.cancel();

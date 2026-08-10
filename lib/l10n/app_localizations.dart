@@ -590,6 +590,24 @@ abstract class AppLocalizations {
   /// **'PIN salah — coba lagi'**
   String get pinWrong;
 
+  /// No description provided for @nicknameTaken.
+  ///
+  /// In id, this message translates to:
+  /// **'Nama sudah dipakai di grup ini'**
+  String get nicknameTaken;
+
+  /// No description provided for @groupFull.
+  ///
+  /// In id, this message translates to:
+  /// **'Grup sudah penuh'**
+  String get groupFull;
+
+  /// No description provided for @joinRejected.
+  ///
+  /// In id, this message translates to:
+  /// **'Join ditolak oleh member'**
+  String get joinRejected;
+
   /// No description provided for @noDevicesFound.
   ///
   /// In id, this message translates to:

@@ -20,7 +20,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -32,6 +32,10 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 3) {
         await m.addColumn(messages, messages.status);
+      }
+      if (from < 4) {
+        // H5: incoming rows that failed to decrypt get a visible placeholder
+        await m.addColumn(messages, messages.decryptFailed);
       }
     },
   );

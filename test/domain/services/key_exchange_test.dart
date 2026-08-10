@@ -231,13 +231,13 @@ void main() {
       pubKey: pub, nickname: 'Bad', pin: null,
     ).toJson()));
 
-    String? rejected;
+    JoinRejection? rejected;
     final sub = svc.onJoinRejected.listen((e) => rejected = e);
     addTearDown(sub.cancel);
 
     await svc.handleIncomingControl('ep-bad', jsonEncode(const {'t': 'verify_fail'}));
     await pumpEventQueue();
-    expect(rejected, 'ep-bad');
+    expect(rejected?.endpointId, 'ep-bad');
     // the member's own session must NOT be torn down...
     expect(peer.stopCalls, 0);
     // ...but the rejected peer IS disconnected (full H2)
@@ -250,6 +250,56 @@ void main() {
       key: base64Encode([...box.nonce, ...box.cipherText, ...box.mac.bytes]),
     ).toJson()));
     expect(svc.groupKeyFor('g1'), isNull);
+  });
+
+  test('H7/M3: join gate reason rides in verify_fail, rejects before SAS, and disconnects the peer', () async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    final member = await crypto.generateKeyPair();
+    final pub = base64Encode((await member.extractPublicKey()).bytes);
+    final owner = await crypto.generateKeyPair();
+    final ownerSeed = await owner.extractPrivateKeyBytes();
+
+    final peer = _FakePeer();
+    final svc = KeyExchangeService(
+      crypto,
+      KeyManager(_MemoryStore({'identity_priv_seed_b64': base64Encode(ownerSeed)})),
+      db.groupsDao,
+      peer,
+    );
+    svc.joinGate = (pin, nickname) async => 'nick';
+
+    var challenges = 0;
+    final sub = svc.onSasChallenge.listen((_) => challenges++);
+    addTearDown(sub.cancel);
+
+    // rejected BEFORE any SAS dialog is raised
+    await svc.handleIncomingControl('ep-x', jsonEncode(KeyHello(
+      pubKey: pub, nickname: 'Dup', pin: null,
+    ).toJson()));
+    await pumpEventQueue();
+    expect(challenges, 0);
+    expect(peer.sentTo('ep-x').single, contains('"r":"nick"'));
+    expect(peer.disconnected, contains('ep-x'));
+    // a later key from that peer stays rejected (no endpoint state)
+    expect(svc.groupKeyFor('g1'), isNull);
+
+    // an accepted join still reaches the SAS dialog
+    svc.joinGate = (pin, nickname) async => null;
+    await svc.handleIncomingControl('ep-y', jsonEncode(KeyHello(
+      pubKey: pub, nickname: 'Fresh', pin: null,
+    ).toJson()));
+    await pumpEventQueue();
+    expect(challenges, 1);
+
+    // and the joiner receives the reason as a JoinRejection
+    JoinRejection? got;
+    final sub2 = svc.onJoinRejected.listen((e) => got = e);
+    addTearDown(sub2.cancel);
+    await svc.handleIncomingControl('ep-z', jsonEncode({'t': 'verify_fail', 'r': 'full'}));
+    await pumpEventQueue();
+    expect(got?.reason, 'full');
+    expect(peer.disconnected, contains('ep-z'));
   });
 }
 

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
-import '../../infrastructure/nearby/nearby_connections_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/nearbuddy_color_scheme.dart';
 import '../shared/connection_status.dart';
@@ -49,7 +48,7 @@ class _DevicesScreenState extends ConsumerState<DevicesScreen> {
     final cs = ShadTheme.of(context).colorScheme;
     final devices = ref.watch(nearbyDevicesProvider);
     final connectedPeers =
-        ref.read(peerDiscoveryServiceProvider).connectedPeers;
+        ref.watch(connectedPeersProvider).valueOrNull ?? const {};
     final status =
         ref.watch(connectionStatusProvider).valueOrNull ??
             ConnectionStatus.searching;

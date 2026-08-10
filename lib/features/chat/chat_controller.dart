@@ -37,7 +37,6 @@ class ChatController {
 
   ChatController(this._ref) {
     _listenToIncoming();
-    Future.microtask(deleteOldMessages);
   }
 
   MessagesDao get _dao => _ref.read(messagesDaoProvider);
@@ -61,7 +60,7 @@ class ChatController {
           // control messages — ack is chat-scoped; the rest is group-scoped
           switch (j['t']) {
             case 'ack':
-              await _handleAck(j['id'] as String);
+              await _handleAck(j['id'] as String, j['mac'] as String? ?? '');
             case 'typing':
               final myId = await _ref.read(myDeviceIdProvider.future);
               if (j['to'] == myId) {
@@ -70,9 +69,15 @@ class ChatController {
                 if (on && gid != null) {
                   _ref.read(typingSessionProvider.notifier).state = gid;
                 } else if (!on) {
-                  _ref
-                      .read(typingSessionProvider.notifier)
-                      .state = null;
+                  // M9: clear only when the off-event matches the session
+                  // whose indicator is currently shown — a typing-off for
+                  // session X must not erase session Y's indicator.
+                  final notifier =
+                      _ref.read(typingSessionProvider.notifier);
+                  if (gid == null ||
+                      _ref.read(typingSessionProvider) == gid) {
+                    notifier.state = null;
+                  }
                 }
               }
           }
@@ -101,31 +106,72 @@ class ChatController {
         final String? dmSenderDeviceId;
         if (env.kind == 'g') {
           final opened = await _openGroup(env);
-          if (opened == null) return;   // group key missing — cannot decrypt
+          if (opened == null) {
+            // H5: addressed to us but undecryptable (group key lost after
+            // restart, tampered payload) — persist a visible placeholder
+            // instead of silently dropping.
+            await _persistFailedDecrypt(env);
+            return;
+          }
           plain = opened;
           dmSenderDeviceId = null;
         } else {
           final opened = await _openDm(env);
-          if (opened == null) return;   // no known peer can decrypt it
+          if (opened == null) {
+            await _persistFailedDecrypt(env);
+            return;
+          }
           plain = opened.plain;
           dmSenderDeviceId = opened.senderDeviceId;
         }
         final msg = Message.fromPayloadJson(jsonDecode(plain));
         await _persistIncoming(env, msg, dmSenderDeviceId: dmSenderDeviceId);
-        // delivery receipt (DM only): tell the sender we got it
+        // delivery receipt (DM only): authenticated with the pairwise key —
+        // only the real recipient can produce a valid mac (H1)
         if (env.kind == 'dm') {
-          await _peer.sendToAll(jsonEncode({'t': 'ack', 'id': env.id}));
+          final key = SecretKeyData(await _kx.pairwiseKeyFor(dmSenderDeviceId!));
+          final mac = await _ackMac(key, env.id);
+          await _peer.sendToAll(jsonEncode({
+            't': 'ack', 'id': env.id, 'mac': base64Encode(mac),
+          }));
         }
       } catch (_) {}
     });
   }
 
-  /// Marks one of OUR outgoing messages as delivered when the peer acks it.
-  Future<void> _handleAck(String id) async {
+  /// Marks one of OUR outgoing DMs as delivered when the peer acks it.
+  /// The ack is authenticated with the pairwise key shared with the DM
+  /// recipient (HMAC over the envelope id) — an observer who only saw the
+  /// cleartext envelope header cannot forge it (H1). Acks without a mac,
+  /// for group rows, or for rows whose `to` is not a DM peer are ignored.
+  Future<void> _handleAck(String id, String mac) async {
     final row = await _dao.messageById(id);
-    if (row == null) return;
-    if (row.senderId != (_prefs.nickname ?? '')) return;   // not ours
+    if (row == null || row.to == null || mac.isEmpty) return;
+    final Uint8List expected;
+    try {
+      final key = SecretKeyData(await _kx.pairwiseKeyFor(row.to!));
+      expected = await _ackMac(key, id);
+    } on StateError {
+      return;   // not one of our DM peers
+    }
+    if (!_macEquals(expected, base64Decode(mac))) return;
     await _dao.markDelivered(id);
+  }
+
+  /// HMAC-SHA256 over the envelope id under the pairwise key (H1).
+  Future<Uint8List> _ackMac(SecretKey key, String id) async {
+    final mac = await Hmac.sha256().calculateMac(utf8.encode(id), secretKey: key);
+    return Uint8List.fromList(mac.bytes);
+  }
+
+  /// Constant-time-ish comparison for MACs.
+  bool _macEquals(List<int> a, List<int> b) {
+    if (a.length != b.length) return false;
+    var diff = 0;
+    for (var i = 0; i < a.length; i++) {
+      diff |= a[i] ^ b[i];
+    }
+    return diff == 0;
   }
 
   /// Notifies the DM peer that we are (not) typing. Flooded with a `to`
@@ -231,8 +277,9 @@ class ChatController {
         dmSessionId: sessionId, dmPeerDeviceId: peerDeviceId);
   }
 
-  /// Re-sends a pending/failed outgoing message. Works for both DM and group
-  /// rows — the session row decides the kind.
+  /// Re-sends a pending/failed outgoing message in place: the SAME envelope
+  /// id is reused and the existing row's status flips sent/failed — a retry
+  /// must never create a duplicate row (H3). Works for DM and group rows.
   Future<void> retryMessage(String id) async {
     final row = await _dao.messageById(id);
     if (row == null) return;
@@ -248,16 +295,19 @@ class ChatController {
     final session = await _sessionsDao.sessionById(row.groupId);
     if (session != null) {
       await _sealAndSend(msg,
-          dmSessionId: session.id, dmPeerDeviceId: session.peerDeviceId);
+          dmSessionId: session.id, dmPeerDeviceId: session.peerDeviceId,
+          envelopeId: row.id);
     } else {
-      await _sealAndSend(msg);
+      await _sealAndSend(msg, envelopeId: row.id);
     }
   }
 
   /// Shared seal+send path: group ('g') by default, DM when peer is given.
   /// Returns the generated envelope id, or null when nothing was sent.
+  /// With [envelopeId] (retry) no new row is persisted — the existing row
+  /// is flipped to 'sent'/'failed' instead (H3).
   Future<String?> _sealAndSend(Message msg,
-      {String? dmSessionId, String? dmPeerDeviceId}) async {
+      {String? dmSessionId, String? dmPeerDeviceId, String? envelopeId}) async {
     final SecretKey key;
     final String gid;
     final String? to;
@@ -278,22 +328,25 @@ class ChatController {
     }
     final box = await _crypto.seal(jsonEncode(msg.toPayloadJson()), key);
     final env = MessageEnvelope(
-      id: UuidGenerator.generate(), gid: gid, to: to,
+      id: envelopeId ?? UuidGenerator.generate(), gid: gid, to: to,
       hop: 0, max: AppConstants.maxHops, ts: DateTime.now(), kind: kind,
       nonce: Uint8List.fromList(box.nonce),
       ciphertext: Uint8List.fromList([...box.cipherText, ...box.mac.bytes]),
     );
-    // Delivery state: DM without peers in range is 'pending' (honest
-    // "waiting" — the peer will ack when back); everything else is 'sent'.
-    final status = kind == 'dm' && _peer.connectedPeers.isEmpty
-        ? 'pending'
-        : 'sent';
-    await _persist(env, msg, status: status);
+    if (envelopeId == null) {
+      // Delivery state: DM without peers in range is 'pending' (honest
+      // "waiting" — the peer will ack when back); everything else is 'sent'.
+      final status = kind == 'dm' && _peer.connectedPeers.isEmpty
+          ? 'pending'
+          : 'sent';
+      await _persist(env, msg, status: status);
+    }
     _dedup(env.id);
     try {
       await _peer.sendToAll(jsonEncode(env.toWireJson()));
+      if (envelopeId != null) await _dao.markSent(envelopeId);
     } catch (_) {
-      await _dao.markFailed(env.id);
+      await _dao.markFailed(envelopeId ?? env.id);
     }
     return env.id;
   }
@@ -328,15 +381,28 @@ class ChatController {
   }
 
   Future<void> _persist(MessageEnvelope env, Message msg,
-      {String? status, String? localGid}) =>
+      {String? status, String? localGid, bool decryptFailed = false}) =>
       _dao.insertMessage(MessagesCompanion.insert(
         id: env.id, groupId: localGid ?? env.gid, senderId: msg.senderId,
         content: msg.content, type: msg.type.name, timestamp: msg.timestamp,
         hopCount: Value(env.hop), to: Value(env.to),
         status: Value(status),
+        decryptFailed: Value(decryptFailed),
         latitude: Value(msg.latitude), longitude: Value(msg.longitude),
         locationAccuracy: Value(msg.locationAccuracy),
       ));
+
+  /// H5: the envelope was addressed to us but cannot be decrypted (group
+  /// key gone after restart, or a tampered payload). The bubble renders the
+  /// localized `decryptFailed` text instead of the raw (empty) content.
+  Future<void> _persistFailedDecrypt(MessageEnvelope env) async {
+    await _dao.insertMessage(MessagesCompanion.insert(
+      id: env.id, groupId: env.gid, senderId: '',
+      content: '', type: 'text', timestamp: env.ts,
+      hopCount: Value(env.hop), to: Value(env.to),
+      decryptFailed: const Value(true),
+    ));
+  }
 
   bool _dedup(String id) {
     final now = DateTime.now();
@@ -346,9 +412,6 @@ class ChatController {
     _seen[id] = now;
     return true;
   }
-
-  Future<void> deleteOldMessages() => _dao.deleteOlderThan(
-      DateTime.now().subtract(const Duration(days: AppConstants.messageRetentionDays)));
 
   void dispose() => _sub?.cancel();
 }

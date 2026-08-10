@@ -271,6 +271,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pinWrong => 'Wrong PIN — try again';
 
   @override
+  String get nicknameTaken => 'Name already taken in this group';
+
+  @override
+  String get groupFull => 'Group is full';
+
+  @override
+  String get joinRejected => 'Join rejected by a member';
+
+  @override
   String get noDevicesFound => 'No devices found';
 
   @override

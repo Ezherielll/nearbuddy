@@ -28,6 +28,15 @@ class SasChallenge {
   const SasChallenge({required this.endpointId, required this.sas});
 }
 
+/// A join this device attempted was rejected by a member.
+/// [reason]: 'pin' | 'nick' | 'full', or null when the member's user
+/// rejected the SAS itself.
+class JoinRejection {
+  final String endpointId;
+  final String? reason;
+  const JoinRejection({required this.endpointId, this.reason});
+}
+
 /// Handshake state for ONE connected endpoint (C2): a joiner in a cluster
 /// connects to several members at once, and each hello must not clobber
 /// another's pubkey / SAS verdict. A peer is only trusted (gets / delivers
@@ -49,14 +58,16 @@ class KeyExchangeService {
   final _groupKeys = <String, Uint8List>{};
   final _sasChallengeCtrl = StreamController<SasChallenge>.broadcast();
   final _peerVerifiedCtrl = StreamController<String>.broadcast();
-  final _joinRejectedCtrl = StreamController<String>.broadcast();
+  final _joinRejectedCtrl = StreamController<JoinRejection>.broadcast();
 
   final _endpoints = <String, _EndpointState>{};
 
-  /// Optional PIN gate, registered by GroupController (Task 11). Called with
-  /// the peer's hello PIN before the SAS challenge is raised; `false` rejects
-  /// the join (verify_fail) without showing the dialog.
-  Future<bool> Function(String? pin)? pinValidator;
+  /// Join gate registered by GroupController (H7/M3/Task 11): returns a
+  /// rejection reason ('pin' | 'nick' | 'full') or null to accept. Called
+  /// with the peer's hello PIN + nickname BEFORE any SAS challenge is
+  /// raised; a reason rejects the join (verify_fail carries it) without
+  /// showing the dialog.
+  Future<String?> Function(String? pin, String nickname)? joinGate;
 
   KeyExchangeService(this._crypto, this._keys, this._groupsDao, this._peer);
 
@@ -68,9 +79,9 @@ class KeyExchangeService {
     /// This is the trigger for delivering the group key (Task 11 wiring).
     Stream<String> get onPeerVerified => _peerVerifiedCtrl.stream;
 
-    /// Fires when the peer rejected the join (wrong PIN / SAS mismatch).
-    /// UI shows a "wrong PIN" style error and lets the user retry.
-    Stream<String> get onJoinRejected => _joinRejectedCtrl.stream;
+    /// Fires when a member rejected this device's join (wrong PIN / taken
+    /// nickname / full group / SAS mismatch). UI shows the reason and aborts.
+    Stream<JoinRejection> get onJoinRejected => _joinRejectedCtrl.stream;
 
   /// Sends our identity to a freshly-connected peer (Task 11 calls this on
   /// onPeerConnected). PIN rides in the hello only if the group uses one.
@@ -141,10 +152,14 @@ class KeyExchangeService {
     switch (j['t']) {
       case 'hello':
         final hello = KeyHello.fromJson(j);
-        // PIN gate before any SAS challenge is raised
-        final pinOk = await pinValidator?.call(hello.pin) ?? true;
-        if (!pinOk) {
-          await _peer.sendTo(fromEndpointId, jsonEncode({'t': 'verify_fail'}));
+        // join gate (PIN, nickname uniqueness, group size) before any SAS
+        // challenge is raised — a rejected join never reaches the dialog
+        final reason = await joinGate?.call(hello.pin, hello.nickname);
+        if (reason != null) {
+          await _peer.sendTo(fromEndpointId, jsonEncode({
+            't': 'verify_fail', if (reason.isNotEmpty) 'r': reason,
+          }));
+          await _peer.disconnectPeer(fromEndpointId);
           return;
         }
         _endpoints[fromEndpointId] = _EndpointState(
@@ -157,7 +172,9 @@ class KeyExchangeService {
         // peer confirmed the SAS — fire the trigger for group key delivery
         _peerVerifiedCtrl.add(fromEndpointId);
       case 'verify_fail':
-        _joinRejectedCtrl.add(fromEndpointId);
+        // 'r' is optional: the member's SAS mismatch carries no reason.
+        _joinRejectedCtrl.add(JoinRejection(
+            endpointId: fromEndpointId, reason: j['r'] as String?));
         // H2: reject ONLY this peer — never stopSession() here, the group
         // session belongs to every member.
         _endpoints.remove(fromEndpointId);

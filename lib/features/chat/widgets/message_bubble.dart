@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/database/app_database.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../shared/widgets/avatar_initial.dart';
 import 'nearbuddy_message_bubble.dart';
 
@@ -26,11 +27,18 @@ class MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isLocation =
-        row.type == 'location' && row.latitude != null && row.longitude != null;
+    // H5: rows that failed to decrypt render the localized notice instead
+    // of raw content — never a retry affordance (it's not an outgoing row).
+    final decryptFailed = row.decryptFailed;
+    final isLocation = !decryptFailed &&
+        row.type == 'location' &&
+        row.latitude != null &&
+        row.longitude != null;
 
     final bubble = NearBuddyMessageBubble(
-      text: row.content,
+      text: decryptFailed
+          ? AppLocalizations.of(context)!.decryptFailed
+          : row.content,
       timestamp: row.timestamp,
       isMe: isMe,
       status: _status,
@@ -39,7 +47,9 @@ class MessageBubble extends StatelessWidget {
       latitude: row.latitude,
       longitude: row.longitude,
       tail: !grouped,
-      onRetry: onRetry == null ? null : () => onRetry!(row.id),
+      onRetry: decryptFailed || onRetry == null
+          ? null
+          : () => onRetry!(row.id),
     );
 
     if (isMe) {

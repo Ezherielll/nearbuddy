@@ -33,6 +33,16 @@ class GroupsDao extends DatabaseAccessor<AppDatabase> with _$GroupsDaoMixin {
                 m.deviceId.equals(deviceId) & m.groupId.equals(groupId)))
           .write(const MembersCompanion(isActive: Value(false)));
 
+  /// Active member count — the join gate (M3) rejects joins past
+  /// [AppConstants.maxGroupSize].
+  Future<int> countActiveMembers(String groupId) async {
+    final query = selectOnly(members)
+      ..addColumns([members.deviceId.count()])
+      ..where(members.groupId.equals(groupId) & members.isActive.equals(true));
+    final row = await query.getSingle();
+    return row.read(members.deviceId.count()) ?? 0;
+  }
+
   Future<bool> isNicknameTaken(
       String nickname, String groupId, String ownDeviceId) async {
     final rows = await (select(members)

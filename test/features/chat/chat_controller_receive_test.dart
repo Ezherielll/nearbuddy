@@ -83,7 +83,7 @@ void main() {
     await env.dispose();
   });
 
-  test('C1: DM from an unknown device (no pubkey on file) is dropped without crash', () async {
+  test('H5: DM from an unknown device persists a decryptFailed placeholder, no session/ack', () async {
     final env = await _harness((h) async {
       // h.sender was never registered as a member — no pubkey to try
       final envelope = await _sealDm(h, senderId: 'Ghost', to: h.myDeviceId,
@@ -91,11 +91,15 @@ void main() {
       h.peer.emit(jsonEncode(envelope.toWireJson()));
       await _settle();
 
-      expect(await h.container.read(messagesDaoProvider).watchMessages('sess-ghost').first, isEmpty);
+      // H5: addressed to us but undecryptable → visible placeholder row
+      final rows = await h.container.read(messagesDaoProvider).watchMessages('sess-ghost').first;
+      expect(rows, hasLength(1));
+      expect(rows.single.decryptFailed, isTrue);
       // no session row was created for the actual sender identity
       final ghostId = await KeyManager.deviceIdFromPubKey(
           (await h.sender.extractPublicKey()).bytes);
       expect(await h.db.sessionsDao.sessionForPeer(ghostId), isNull);
+      // and no ack (the content was never readable)
       expect(h.peer.allSent.where((s) => s.contains('"t":"ack"')), isEmpty);
     });
     await env.dispose();
@@ -149,6 +153,135 @@ void main() {
       h.peer.emit(jsonEncode(exhausted.toWireJson()));
       await _settle();
       expect(h.peer.allSent.where((s) => s.contains('"v":2')), isEmpty);
+    });
+    await env.dispose();
+  });
+
+  test('H3: retry reuses the same envelope id and flips the existing row status', () async {
+    final env = await _harness((h) async {
+      await _registerMember(h, 'sender-dev', 'Nadia');
+      await h.db.sessionsDao.upsertSession(SessionsCompanion.insert(
+        id: 'sess-1', peerDeviceId: 'sender-dev', peerNickname: 'Nadia',
+        createdAt: DateTime.now(),
+      ));
+      final controller = h.container.read(chatControllerProvider);
+      await controller.sendDm('sess-1', 'sender-dev', 'coba lagi');
+      final rows = await h.container.read(messagesDaoProvider).watchMessages('sess-1').first;
+      expect(rows, hasLength(1));
+      final id = rows.single.id;
+      await h.db.messagesDao.markFailed(id);
+
+      final sentBefore = h.peer.allSent.length;
+      await controller.retryMessage(id);
+      await _settle();
+
+      // no duplicate row, same envelope id, status flipped back to sent
+      final after = await h.container.read(messagesDaoProvider).watchMessages('sess-1').first;
+      expect(after, hasLength(1));
+      expect(after.single.id, id);
+      expect(after.single.status, 'sent');
+      // the retry re-sent the envelope with the SAME id
+      final sentEnvs = h.peer.allSent
+          .skip(sentBefore)
+          .where((s) => s.contains('"v":2'))
+          .map((s) =>
+              MessageEnvelope.fromWireJson(jsonDecode(s) as Map<String, dynamic>))
+          .toList();
+      expect(sentEnvs, hasLength(1));
+      expect(sentEnvs.single.id, id);
+    });
+    await env.dispose();
+  });
+
+  test('H1: ack without the correct pairwise mac is ignored; only the real recipient mac delivers', () async {
+    final env = await _harness((h) async {
+      await _registerMember(h, 'sender-dev', 'Nadia');
+      await h.db.sessionsDao.upsertSession(SessionsCompanion.insert(
+        id: 'sess-1', peerDeviceId: 'sender-dev', peerNickname: 'Nadia',
+        createdAt: DateTime.now(),
+      ));
+      final controller = h.container.read(chatControllerProvider);
+      await controller.sendDm('sess-1', 'sender-dev', 'udah sampai?');
+      final rows = await h.container.read(messagesDaoProvider).watchMessages('sess-1').first;
+      final id = rows.single.id;
+      expect(rows.single.status, 'pending');
+
+      // forged: ack without a mac (old/observer format) → ignored
+      h.peer.emit(jsonEncode({'t': 'ack', 'id': id}));
+      await _settle();
+      expect((await h.container.read(messagesDaoProvider).watchMessages('sess-1').first)
+          .single.status, 'pending');
+
+      // forged: ack with a wrong mac → ignored
+      h.peer.emit(jsonEncode(
+          {'t': 'ack', 'id': id, 'mac': base64Encode(List.filled(32, 7))}));
+      await _settle();
+      expect((await h.container.read(messagesDaoProvider).watchMessages('sess-1').first)
+          .single.status, 'pending');
+
+      // genuine: mac = HMAC(pairwise key, id) — only the DM recipient can produce it
+      final myPub = await (await h.keyManager.ensureIdentityKey()).extractPublicKey();
+      final pairwise = await crypto.pairwiseKeyBytes(h.sender, myPub);
+      final mac = await Hmac.sha256().calculateMac(
+          utf8.encode(id), secretKey: SecretKeyData(pairwise));
+      h.peer.emit(jsonEncode(
+          {'t': 'ack', 'id': id, 'mac': base64Encode(mac.bytes)}));
+      await _settle();
+      expect((await h.container.read(messagesDaoProvider).watchMessages('sess-1').first)
+          .single.status, 'delivered');
+    });
+    await env.dispose();
+  });
+
+  test('H5: undecryptable group message persists a visible placeholder, never acked', () async {
+    final env = await _harness((h) async {
+      // no group key for g1 (simulates the restart → key-lost scenario)
+      final wrongKey = SecretKeyData(List.generate(32, (i) => i));
+      final box = await crypto.seal(jsonEncode(Message(
+        senderId: 'Bimo', content: 'tidak terbaca',
+        type: MessageType.text, timestamp: DateTime.now(),
+      ).toPayloadJson()), wrongKey);
+      final envelope = MessageEnvelope(
+        id: 'm-h5', gid: 'g1', hop: 0, max: 3, ts: DateTime.now(), kind: 'g',
+        nonce: Uint8List.fromList(box.nonce),
+        ciphertext: Uint8List.fromList([...box.cipherText, ...box.mac.bytes]),
+      );
+      h.peer.emit(jsonEncode(envelope.toWireJson()));
+      await _settle();
+
+      final rows = await h.container.read(messagesDaoProvider).watchMessages('g1').first;
+      expect(rows, hasLength(1));
+      expect(rows.single.decryptFailed, isTrue);
+      expect(rows.single.content, isEmpty);
+      // relayed, but NOT acked (the content was never readable)
+      expect(h.peer.allSent.where((s) => s.contains('"v":2')), hasLength(1));
+      expect(h.peer.allSent.where((s) => s.contains('"t":"ack"')), isEmpty);
+    });
+    await env.dispose();
+  });
+
+  test('M9: typing-off clears only the matching session indicator', () async {
+    final env = await _harness((h) async {
+      h.peer.emit(jsonEncode(
+          {'t': 'typing', 'on': true, 'to': h.myDeviceId, 'gid': 'sess-a'}));
+      await _settle();
+      expect(h.container.read(typingSessionProvider), 'sess-a');
+
+      h.peer.emit(jsonEncode(
+          {'t': 'typing', 'on': true, 'to': h.myDeviceId, 'gid': 'sess-b'}));
+      await _settle();
+      expect(h.container.read(typingSessionProvider), 'sess-b');
+
+      // typing-off for session A must NOT erase B's indicator (M9)
+      h.peer.emit(jsonEncode(
+          {'t': 'typing', 'on': false, 'to': h.myDeviceId, 'gid': 'sess-a'}));
+      await _settle();
+      expect(h.container.read(typingSessionProvider), 'sess-b');
+
+      h.peer.emit(jsonEncode(
+          {'t': 'typing', 'on': false, 'to': h.myDeviceId, 'gid': 'sess-b'}));
+      await _settle();
+      expect(h.container.read(typingSessionProvider), isNull);
     });
     await env.dispose();
   });

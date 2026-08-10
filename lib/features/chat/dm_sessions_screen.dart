@@ -124,9 +124,15 @@ class _DmSessionsScreenState extends ConsumerState<DmSessionsScreen> {
         ],
       ),
     );
-    if (created != true) return;
+    if (created != true) {
+      deviceIdCtrl.dispose();
+      nickCtrl.dispose();
+      return;
+    }
     final deviceId = deviceIdCtrl.text.trim();
     final nickname = nickCtrl.text.trim();
+    deviceIdCtrl.dispose();
+    nickCtrl.dispose();
     if (deviceId.isEmpty) return;
     final sessionId =
         await ref.read(dmControllerProvider).startDm(deviceId, nickname);

@@ -13,7 +13,9 @@ class Messages extends Table {
   RealColumn get longitude => real().nullable()();
   RealColumn get locationAccuracy => real().nullable()();
   TextColumn get to => text().nullable()();       // DM recipient deviceId; null = group
-  TextColumn get status => text().nullable()();   // 'pending'|'sent'|'delivered' (outgoing only)
+  TextColumn get status => text().nullable()();   // 'pending'|'sent'|'delivered'|'failed' (outgoing only)
+  BoolColumn get decryptFailed =>
+      boolean().withDefault(const Constant(false))();   // H5: could not decrypt on receive
   @override
   Set<Column> get primaryKey => {id};
 }

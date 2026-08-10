@@ -38,7 +38,7 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
     _rejectedSub = ref
         .read(keyExchangeServiceProvider)
         .onJoinRejected
-        .listen((_) => _onJoinRejected());
+        .listen(_onJoinRejected);
   }
 
   @override
@@ -64,20 +64,26 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
     if (mounted) context.push('/chat/$_lastCode');
   }
 
-  void _onJoinRejected() {
+  void _onJoinRejected(JoinRejection rejection) {
     _connectTimer?.cancel();
     if (!mounted) return;
     setState(() {
       _loading = false;
       _connecting = false;
     });
-    // The member rejected this join (wrong PIN / SAS mismatch on their side):
-    // abort instead of lingering connected to a group we were not accepted
-    // into (H2 — the member's own session is unaffected).
+    // The member rejected this join (wrong PIN / taken nickname / full
+    // group / SAS mismatch on their side): abort instead of lingering
+    // connected to a group we were not accepted into (H2).
     ref.read(groupControllerProvider).leaveGroup();
     final l10n = AppLocalizations.of(context)!;
+    final message = switch (rejection.reason) {
+      'pin' => l10n.pinWrong,
+      'nick' => l10n.nicknameTaken,
+      'full' => l10n.groupFull,
+      _ => l10n.joinRejected,
+    };
     ShadToaster.of(context)
-        .show(ShadToast.destructive(title: Text(l10n.pinWrong)));
+        .show(ShadToast.destructive(title: Text(message)));
   }
 
   Future<void> _retryScan() async {
@@ -140,7 +146,11 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
             child: Text(l10n.cancelLabel),
           ),
           ShadButton(
-            onPressed: () => Navigator.of(ctx).pop(),
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              // M8: actually retry the join with the same form values.
+              _join();
+            },
             child: Text(l10n.retryLabel),
           ),
         ],

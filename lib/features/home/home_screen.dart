@@ -8,7 +8,6 @@ import '../../core/app_config.dart';
 import '../../core/utils/battery_monitor.dart';
 import '../../core/utils/permission_handler_service.dart';
 import '../../data/database/app_database.dart';
-import '../../infrastructure/nearby/nearby_connections_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/nearbuddy_color_scheme.dart';
 import '../../theme/nearbuddy_logo.dart';
@@ -240,7 +239,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             const SizedBox(height: 10),
             _NearbySection(
               devices: devices,
-              connectedPeers: ref.read(peerDiscoveryServiceProvider).connectedPeers,
+              connectedPeers:
+                  ref.watch(connectedPeersProvider).valueOrNull ?? const {},
               connectedLabel: l10n.devicesConnected,
               availableLabel: l10n.devicesAvailable,
               emptyTitle: l10n.devicesEmptyTitle,

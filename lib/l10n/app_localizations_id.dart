@@ -272,6 +272,15 @@ class AppLocalizationsId extends AppLocalizations {
   String get pinWrong => 'PIN salah — coba lagi';
 
   @override
+  String get nicknameTaken => 'Nama sudah dipakai di grup ini';
+
+  @override
+  String get groupFull => 'Grup sudah penuh';
+
+  @override
+  String get joinRejected => 'Join ditolak oleh member';
+
+  @override
   String get noDevicesFound => 'Tidak ada perangkat ditemukan';
 
   @override

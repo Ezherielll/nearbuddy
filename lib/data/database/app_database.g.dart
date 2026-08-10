@@ -87,6 +87,16 @@ class $MessagesTable extends Messages
   late final GeneratedColumn<String> status = GeneratedColumn<String>(
       'status', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _decryptFailedMeta =
+      const VerificationMeta('decryptFailed');
+  @override
+  late final GeneratedColumn<bool> decryptFailed = GeneratedColumn<bool>(
+      'decrypt_failed', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("decrypt_failed" IN (0, 1))'),
+      defaultValue: const Constant(false));
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -101,7 +111,8 @@ class $MessagesTable extends Messages
         longitude,
         locationAccuracy,
         to,
-        status
+        status,
+        decryptFailed
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -179,6 +190,12 @@ class $MessagesTable extends Messages
       context.handle(_statusMeta,
           status.isAcceptableOrUnknown(data['status']!, _statusMeta));
     }
+    if (data.containsKey('decrypt_failed')) {
+      context.handle(
+          _decryptFailedMeta,
+          decryptFailed.isAcceptableOrUnknown(
+              data['decrypt_failed']!, _decryptFailedMeta));
+    }
     return context;
   }
 
@@ -214,6 +231,8 @@ class $MessagesTable extends Messages
           .read(DriftSqlType.string, data['${effectivePrefix}to']),
       status: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}status']),
+      decryptFailed: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}decrypt_failed'])!,
     );
   }
 
@@ -237,6 +256,7 @@ class MessageRow extends DataClass implements Insertable<MessageRow> {
   final double? locationAccuracy;
   final String? to;
   final String? status;
+  final bool decryptFailed;
   const MessageRow(
       {required this.id,
       required this.groupId,
@@ -250,7 +270,8 @@ class MessageRow extends DataClass implements Insertable<MessageRow> {
       this.longitude,
       this.locationAccuracy,
       this.to,
-      this.status});
+      this.status,
+      required this.decryptFailed});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -277,6 +298,7 @@ class MessageRow extends DataClass implements Insertable<MessageRow> {
     if (!nullToAbsent || status != null) {
       map['status'] = Variable<String>(status);
     }
+    map['decrypt_failed'] = Variable<bool>(decryptFailed);
     return map;
   }
 
@@ -302,6 +324,7 @@ class MessageRow extends DataClass implements Insertable<MessageRow> {
       to: to == null && nullToAbsent ? const Value.absent() : Value(to),
       status:
           status == null && nullToAbsent ? const Value.absent() : Value(status),
+      decryptFailed: Value(decryptFailed),
     );
   }
 
@@ -322,6 +345,7 @@ class MessageRow extends DataClass implements Insertable<MessageRow> {
       locationAccuracy: serializer.fromJson<double?>(json['locationAccuracy']),
       to: serializer.fromJson<String?>(json['to']),
       status: serializer.fromJson<String?>(json['status']),
+      decryptFailed: serializer.fromJson<bool>(json['decryptFailed']),
     );
   }
   @override
@@ -341,6 +365,7 @@ class MessageRow extends DataClass implements Insertable<MessageRow> {
       'locationAccuracy': serializer.toJson<double?>(locationAccuracy),
       'to': serializer.toJson<String?>(to),
       'status': serializer.toJson<String?>(status),
+      'decryptFailed': serializer.toJson<bool>(decryptFailed),
     };
   }
 
@@ -357,7 +382,8 @@ class MessageRow extends DataClass implements Insertable<MessageRow> {
           Value<double?> longitude = const Value.absent(),
           Value<double?> locationAccuracy = const Value.absent(),
           Value<String?> to = const Value.absent(),
-          Value<String?> status = const Value.absent()}) =>
+          Value<String?> status = const Value.absent(),
+          bool? decryptFailed}) =>
       MessageRow(
         id: id ?? this.id,
         groupId: groupId ?? this.groupId,
@@ -374,6 +400,7 @@ class MessageRow extends DataClass implements Insertable<MessageRow> {
             : this.locationAccuracy,
         to: to.present ? to.value : this.to,
         status: status.present ? status.value : this.status,
+        decryptFailed: decryptFailed ?? this.decryptFailed,
       );
   MessageRow copyWithCompanion(MessagesCompanion data) {
     return MessageRow(
@@ -393,6 +420,9 @@ class MessageRow extends DataClass implements Insertable<MessageRow> {
           : this.locationAccuracy,
       to: data.to.present ? data.to.value : this.to,
       status: data.status.present ? data.status.value : this.status,
+      decryptFailed: data.decryptFailed.present
+          ? data.decryptFailed.value
+          : this.decryptFailed,
     );
   }
 
@@ -411,7 +441,8 @@ class MessageRow extends DataClass implements Insertable<MessageRow> {
           ..write('longitude: $longitude, ')
           ..write('locationAccuracy: $locationAccuracy, ')
           ..write('to: $to, ')
-          ..write('status: $status')
+          ..write('status: $status, ')
+          ..write('decryptFailed: $decryptFailed')
           ..write(')'))
         .toString();
   }
@@ -430,7 +461,8 @@ class MessageRow extends DataClass implements Insertable<MessageRow> {
       longitude,
       locationAccuracy,
       to,
-      status);
+      status,
+      decryptFailed);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -447,7 +479,8 @@ class MessageRow extends DataClass implements Insertable<MessageRow> {
           other.longitude == this.longitude &&
           other.locationAccuracy == this.locationAccuracy &&
           other.to == this.to &&
-          other.status == this.status);
+          other.status == this.status &&
+          other.decryptFailed == this.decryptFailed);
 }
 
 class MessagesCompanion extends UpdateCompanion<MessageRow> {
@@ -464,6 +497,7 @@ class MessagesCompanion extends UpdateCompanion<MessageRow> {
   final Value<double?> locationAccuracy;
   final Value<String?> to;
   final Value<String?> status;
+  final Value<bool> decryptFailed;
   final Value<int> rowid;
   const MessagesCompanion({
     this.id = const Value.absent(),
@@ -479,6 +513,7 @@ class MessagesCompanion extends UpdateCompanion<MessageRow> {
     this.locationAccuracy = const Value.absent(),
     this.to = const Value.absent(),
     this.status = const Value.absent(),
+    this.decryptFailed = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   MessagesCompanion.insert({
@@ -495,6 +530,7 @@ class MessagesCompanion extends UpdateCompanion<MessageRow> {
     this.locationAccuracy = const Value.absent(),
     this.to = const Value.absent(),
     this.status = const Value.absent(),
+    this.decryptFailed = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
         groupId = Value(groupId),
@@ -516,6 +552,7 @@ class MessagesCompanion extends UpdateCompanion<MessageRow> {
     Expression<double>? locationAccuracy,
     Expression<String>? to,
     Expression<String>? status,
+    Expression<bool>? decryptFailed,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -532,6 +569,7 @@ class MessagesCompanion extends UpdateCompanion<MessageRow> {
       if (locationAccuracy != null) 'location_accuracy': locationAccuracy,
       if (to != null) 'to': to,
       if (status != null) 'status': status,
+      if (decryptFailed != null) 'decrypt_failed': decryptFailed,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -550,6 +588,7 @@ class MessagesCompanion extends UpdateCompanion<MessageRow> {
       Value<double?>? locationAccuracy,
       Value<String?>? to,
       Value<String?>? status,
+      Value<bool>? decryptFailed,
       Value<int>? rowid}) {
     return MessagesCompanion(
       id: id ?? this.id,
@@ -565,6 +604,7 @@ class MessagesCompanion extends UpdateCompanion<MessageRow> {
       locationAccuracy: locationAccuracy ?? this.locationAccuracy,
       to: to ?? this.to,
       status: status ?? this.status,
+      decryptFailed: decryptFailed ?? this.decryptFailed,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -611,6 +651,9 @@ class MessagesCompanion extends UpdateCompanion<MessageRow> {
     if (status.present) {
       map['status'] = Variable<String>(status.value);
     }
+    if (decryptFailed.present) {
+      map['decrypt_failed'] = Variable<bool>(decryptFailed.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -633,6 +676,7 @@ class MessagesCompanion extends UpdateCompanion<MessageRow> {
           ..write('locationAccuracy: $locationAccuracy, ')
           ..write('to: $to, ')
           ..write('status: $status, ')
+          ..write('decryptFailed: $decryptFailed, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1606,6 +1650,7 @@ typedef $$MessagesTableCreateCompanionBuilder = MessagesCompanion Function({
   Value<double?> locationAccuracy,
   Value<String?> to,
   Value<String?> status,
+  Value<bool> decryptFailed,
   Value<int> rowid,
 });
 typedef $$MessagesTableUpdateCompanionBuilder = MessagesCompanion Function({
@@ -1622,6 +1667,7 @@ typedef $$MessagesTableUpdateCompanionBuilder = MessagesCompanion Function({
   Value<double?> locationAccuracy,
   Value<String?> to,
   Value<String?> status,
+  Value<bool> decryptFailed,
   Value<int> rowid,
 });
 
@@ -1673,6 +1719,9 @@ class $$MessagesTableFilterComposer
 
   ColumnFilters<String> get status => $composableBuilder(
       column: $table.status, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get decryptFailed => $composableBuilder(
+      column: $table.decryptFailed, builder: (column) => ColumnFilters(column));
 }
 
 class $$MessagesTableOrderingComposer
@@ -1723,6 +1772,10 @@ class $$MessagesTableOrderingComposer
 
   ColumnOrderings<String> get status => $composableBuilder(
       column: $table.status, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get decryptFailed => $composableBuilder(
+      column: $table.decryptFailed,
+      builder: (column) => ColumnOrderings(column));
 }
 
 class $$MessagesTableAnnotationComposer
@@ -1772,6 +1825,9 @@ class $$MessagesTableAnnotationComposer
 
   GeneratedColumn<String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<bool> get decryptFailed => $composableBuilder(
+      column: $table.decryptFailed, builder: (column) => column);
 }
 
 class $$MessagesTableTableManager extends RootTableManager<
@@ -1810,6 +1866,7 @@ class $$MessagesTableTableManager extends RootTableManager<
             Value<double?> locationAccuracy = const Value.absent(),
             Value<String?> to = const Value.absent(),
             Value<String?> status = const Value.absent(),
+            Value<bool> decryptFailed = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               MessagesCompanion(
@@ -1826,6 +1883,7 @@ class $$MessagesTableTableManager extends RootTableManager<
             locationAccuracy: locationAccuracy,
             to: to,
             status: status,
+            decryptFailed: decryptFailed,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -1842,6 +1900,7 @@ class $$MessagesTableTableManager extends RootTableManager<
             Value<double?> locationAccuracy = const Value.absent(),
             Value<String?> to = const Value.absent(),
             Value<String?> status = const Value.absent(),
+            Value<bool> decryptFailed = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               MessagesCompanion.insert(
@@ -1858,6 +1917,7 @@ class $$MessagesTableTableManager extends RootTableManager<
             locationAccuracy: locationAccuracy,
             to: to,
             status: status,
+            decryptFailed: decryptFailed,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0

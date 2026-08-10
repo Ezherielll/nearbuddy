@@ -28,6 +28,10 @@ class MessagesDao extends DatabaseAccessor<AppDatabase> with _$MessagesDaoMixin 
         ..where((m) => m.id.equals(id)))
       .write(const MessagesCompanion(status: Value('delivered')));
 
+  Future<void> markSent(String id) => (update(messages)
+        ..where((m) => m.id.equals(id)))
+      .write(const MessagesCompanion(status: Value('sent')));
+
   Future<void> markFailed(String id) => (update(messages)
         ..where((m) => m.id.equals(id)))
       .write(const MessagesCompanion(status: Value('failed')));
