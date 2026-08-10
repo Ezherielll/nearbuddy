@@ -75,10 +75,14 @@ class KeyExchangeService {
 
   /// Join gate registered by GroupController (H7/M3/Task 11): returns a
   /// rejection reason ('nick' | 'full') or null to accept. Called with the
-  /// peer's hello nickname BEFORE any pin/SAS challenge is raised; a reason
-  /// rejects the join (verify_fail carries it) without showing a dialog.
+  /// peer's hello nickname AND its deviceId (derived from the hello pubkey)
+  /// BEFORE any pin/SAS challenge is raised; a reason rejects the join
+  /// (verify_fail carries it) without showing a dialog. The joiner's own
+  /// deviceId lets the gate allow re-joins of the same device (its member
+  /// row is still active) while still rejecting OTHER devices that reuse
+  /// the same nickname.
   /// (PIN is NOT checked here — it travels via pin_challenge/pin_proof, H6.)
-  Future<String?> Function(String nickname)? joinGate;
+  Future<String?> Function(String nickname, String joinerDeviceId)? joinGate;
 
   /// H6: supplies the group PIN for this device — the stored/entered pin on
   /// both sides (member verifies proofs, joiner answers challenges). A null
@@ -126,7 +130,14 @@ class KeyExchangeService {
     state.sasConfirmed = match;
     await _peer.sendTo(
         endpointId, jsonEncode({'t': match ? 'verify_ok' : 'verify_fail'}));
-    if (!match) {
+    if (match) {
+      // The peer's verify_ok may have reached us BEFORE our own confirm
+      // (automatic confirms in tests; unusual human timing in the app) —
+      // re-raise so key delivery is retried now that our side is confirmed.
+      // sendGroupKeyTo guards on sasConfirmed, so a duplicate trigger is a
+      // harmless no-op / duplicate delivery.
+      _peerVerifiedCtrl.add(endpointId);
+    } else {
       _endpoints.remove(endpointId);
       await _peer.disconnectPeer(endpointId);
     }
@@ -195,8 +206,12 @@ class KeyExchangeService {
       case 'hello':
         final hello = KeyHello.fromJson(j);
         // join gate (nickname uniqueness, group size) before any challenge
-        // is raised — a rejected join never reaches the dialogs (H7/M3)
-        final reason = await joinGate?.call(hello.nickname);
+        // is raised — a rejected join never reaches the dialogs (H7/M3).
+        // The joiner's own deviceId makes re-joins of the same device pass
+        // the nickname gate (its stale member row is still active).
+        final joinerDeviceId =
+            await KeyManager.deviceIdFromPubKey(base64Decode(hello.pubKey));
+        final reason = await joinGate?.call(hello.nickname, joinerDeviceId);
         if (reason != null) {
           await _peer.sendTo(fromEndpointId, jsonEncode({
             't': 'verify_fail', if (reason.isNotEmpty) 'r': reason,
@@ -218,6 +233,7 @@ class KeyExchangeService {
         } else {
           await _raiseSas(fromEndpointId);
         }
+        break;
       case 'pin_challenge':
         // joiner side: prove knowledge of the pin without sending it; an
         // empty proof (we don't have the pin) makes the member reject us
@@ -231,6 +247,7 @@ class KeyExchangeService {
               ? ''
               : await _pinProof(pin, base64Decode(nonceB64)),
         }));
+        break;
       case 'pin_proof':
         // member side: verify the proof, then raise the SAS challenge
         final state = _endpoints[fromEndpointId];
@@ -248,9 +265,11 @@ class KeyExchangeService {
           return;
         }
         await _raiseSas(fromEndpointId);
+        break;
       case 'verify_ok':
         // peer confirmed the SAS — fire the trigger for group key delivery
         _peerVerifiedCtrl.add(fromEndpointId);
+        break;
       case 'verify_fail':
         // 'r' is optional: the member's SAS mismatch carries no reason.
         _joinRejectedCtrl.add(JoinRejection(
@@ -259,6 +278,7 @@ class KeyExchangeService {
         // session belongs to every member.
         _endpoints.remove(fromEndpointId);
         await _peer.disconnectPeer(fromEndpointId);
+        break;
       case 'key':
         // never accept keys from an endpoint whose SAS was not confirmed
         final state = _endpoints[fromEndpointId];
@@ -270,7 +290,20 @@ class KeyExchangeService {
             SecretBox.fromConcatenation(base64Decode(delivery.key),
                 nonceLength: 12, macLength: 16),
             SecretKeyData(pairwise));
+        final hadKey = _groupKeys.containsKey(delivery.gid);
         _groupKeys[delivery.gid] = Uint8List.fromList(base64Decode(plain));
+        // A member can verify a peer BEFORE this device received the group
+        // key (compressed timing in the sim; slow key delivery in the app) —
+        // delivery was skipped because the key was missing. Now that the key
+        // is here, deliver it to every already-confirmed endpoint. The sweep
+        // runs only on FIRST receipt, or members would ping-pong keys.
+        if (!hadKey) {
+          for (final e in _endpoints.entries) {
+            if (e.value.sasConfirmed) {
+              await sendGroupKeyTo(e.key, delivery.gid);
+            }
+          }
+        }
     }
   }
 }

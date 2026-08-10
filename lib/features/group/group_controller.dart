@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants.dart';
-import '../../core/crypto/identity_providers.dart';
 import '../../core/crypto/key_manager.dart';
 import '../../core/utils/permission_handler_service.dart';
 import '../../core/utils/uuid_generator.dart';
@@ -149,13 +148,17 @@ class GroupController {
     _kx.pinProvider = () => _ref.read(currentGroupProvider)?.pin;
 
     // Join gate: nickname uniqueness (H7) + group size (M3). PIN is handled
-    // by the challenge flow, not here. Returns a rejection reason; the
-    // joiner's verify_fail carries it.
-    _kx.joinGate = (nickname) async {
+    // by the challenge flow, not here. The joiner's OWN deviceId is excluded
+    // so a rejoin of the same device (restart → stale active member row)
+    // passes the nickname check; another device reusing the nickname is
+    // still rejected. Returns a rejection reason; the joiner's verify_fail
+    // carries it.
+    _kx.joinGate = (nickname, joinerDeviceId) async {
       final g = _ref.read(currentGroupProvider);
       if (g == null) return null;
-      final myId = await _ref.read(keyManagerProvider).deviceId();
-      if (await _dao.isNicknameTaken(nickname, g.id, myId)) return 'nick';
+      if (await _dao.isNicknameTaken(nickname, g.id, joinerDeviceId)) {
+        return 'nick';
+      }
       if (await _dao.countActiveMembers(g.id) >= AppConstants.maxGroupSize) {
         return 'full';
       }

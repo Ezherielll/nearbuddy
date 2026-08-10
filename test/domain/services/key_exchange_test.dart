@@ -267,7 +267,7 @@ void main() {
       db.groupsDao,
       peer,
     );
-    svc.joinGate = (nickname) async => 'nick';
+    svc.joinGate = (nickname, joinerDeviceId) async => 'nick';
 
     var challenges = 0;
     final sub = svc.onSasChallenge.listen((_) => challenges++);
@@ -285,7 +285,7 @@ void main() {
     expect(svc.groupKeyFor('g1'), isNull);
 
     // an accepted join still reaches the SAS dialog
-    svc.joinGate = (nickname) async => null;
+    svc.joinGate = (nickname, joinerDeviceId) async => null;
     await svc.handleIncomingControl('ep-y', jsonEncode(KeyHello(
       pubKey: pub, nickname: 'Fresh',
     ).toJson()));
