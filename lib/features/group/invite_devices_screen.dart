@@ -10,6 +10,7 @@ import '../home/scan_controller.dart';
 import '../shared/widgets/avatar_initial.dart';
 import '../shared/widgets/empty_state.dart';
 import '../shared/widgets/nearbuddy_button.dart';
+import 'group_controller.dart';
 
 /// Post-create step: pick devices nearby to invite. Selected devices connect
 /// automatically once they join — invitation is a local, honest step, not a
@@ -33,7 +34,10 @@ class _InviteDevicesScreenState extends ConsumerState<InviteDevicesScreen> {
   void initState() {
     super.initState();
     _scan = ref.read(scanControllerProvider);
-    _scan.start();
+    // H8: the ambient scan advertises on the same ConnectionsClient as the
+    // group session — never start it while a session is active (the owner
+    // is on this screen right after createGroup).
+    if (ref.read(currentGroupProvider) == null) _scan.start();
     // M7: joiners can connect while the owner is still on this screen — the
     // SAS challenge must be answered here or the joiner times out.
     _sasSub = ref

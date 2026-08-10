@@ -31,6 +31,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _msgCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
   bool _locLoading = false;
+  bool _adoptedFromDb = false;
   StreamSubscription<SasChallenge>? _sasSub;
 
   @override
@@ -56,6 +57,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (!mounted || row == null) return;
     final existing = ref.read(currentGroupProvider);
     if (existing != null && existing.id == widget.groupId) return;
+    // H4: adopted from DB (re-entry after restart) — the in-memory group
+    // key is gone, so this chat needs a re-join before it can work.
+    _adoptedFromDb = true;
     ref.read(currentGroupProvider.notifier).state = GroupSession(
       id: row.id,
       name: row.name,
@@ -63,6 +67,30 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       createdAt: row.createdAt,
       isOwner: row.isOwner,
     );
+  }
+
+  /// H4: a group adopted from the DB after restart has no session radio and
+  /// no in-memory group key — the chat is a dead end until a re-join.
+  bool get _sessionDead =>
+      _adoptedFromDb &&
+      ref.read(keyExchangeServiceProvider).groupKeyFor(widget.groupId) == null;
+
+  /// H4: re-runs the join handshake with the stored pin; the SAS dialog then
+  /// appears via the existing onSasChallenge subscription, and a key-holding
+  /// member delivers the group key.
+  Future<void> _rejoin() async {
+    final row = await ref.read(groupsDaoProvider).groupById(widget.groupId);
+    if (!mounted || row == null) return;
+    final err = await ref.read(groupControllerProvider).joinGroup(
+        groupId: row.id, groupName: row.name, pin: row.pin);
+    if (!mounted) return;
+    if (err != null) {
+      final l10n = AppLocalizations.of(context)!;
+      ShadToaster.of(context).show(ShadToast.destructive(
+        title: Text(
+            err == 'permission' ? l10n.permissionDenied : l10n.sessionStartFailed),
+      ));
+    }
   }
 
   @override
@@ -302,6 +330,45 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         ),
       ),
       body: Column(children: [
+        if (_sessionDead)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+            color: cs.destructive.withValues(alpha: 0.08),
+            child: Row(
+              children: [
+                Icon(LucideIcons.alertTriangle,
+                    size: 16, color: cs.destructive),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.sessionEndedTitle,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: cs.destructive,
+                        ),
+                      ),
+                      Text(
+                        l10n.sessionEndedHint,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: cs.mutedForeground,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                ShadButton(
+                  onPressed: _rejoin,
+                  child: Text(l10n.rejoinLabel),
+                ),
+              ],
+            ),
+          ),
         Expanded(
           child: StreamBuilder<List<MessageRow>>(
             stream: controller.watchMessages(widget.groupId),

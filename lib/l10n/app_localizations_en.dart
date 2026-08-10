@@ -280,6 +280,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get joinRejected => 'Join rejected by a member';
 
   @override
+  String get sessionEndedTitle => 'Group session ended';
+
+  @override
+  String get sessionEndedHint =>
+      'The group key is gone after a restart — rejoin to keep chatting.';
+
+  @override
+  String get rejoinLabel => 'Rejoin';
+
+  @override
+  String get retryHint => 'Tap to resend';
+
+  @override
   String get noDevicesFound => 'No devices found';
 
   @override

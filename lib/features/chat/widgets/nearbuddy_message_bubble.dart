@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../theme/nearbuddy_typography.dart';
 import 'location_ping_card.dart';
 
@@ -196,9 +197,36 @@ class NearBuddyMessageBubble extends StatelessWidget {
       ),
       child: Align(
         alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-        child: GestureDetector(
-          onTap: retryable ? onRetry : null,
-          child: bubble,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment:
+              isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          children: [
+            GestureDetector(
+              onTap: retryable ? onRetry : null,
+              child: bubble,
+            ),
+            // L6: make the tap-to-retry affordance discoverable.
+            if (retryable)
+              Padding(
+                padding: const EdgeInsets.only(top: 2, right: 6),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(LucideIcons.rotateCw,
+                        size: 11, color: cs.mutedForeground),
+                    const SizedBox(width: 4),
+                    Text(
+                      AppLocalizations.of(context)!.retryHint,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: cs.mutedForeground,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
         ),
       ),
     );

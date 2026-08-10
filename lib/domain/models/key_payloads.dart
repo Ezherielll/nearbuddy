@@ -3,16 +3,16 @@
 class KeyHello {
   final String pubKey;   // base64 X25519 public key
   final String nickname;
-  final String? pin;     // group PIN, if the group uses one
-  const KeyHello({required this.pubKey, required this.nickname, this.pin});
+  // NOTE: no PIN here (H6) — the PIN never rides in cleartext; the member
+  // challenges the joiner with pin_challenge and verifies H(pin‖nonce).
+  const KeyHello({required this.pubKey, required this.nickname});
 
   Map<String, dynamic> toJson() => {
-    't': 'hello', 'pub': pubKey, 'nick': nickname, if (pin != null) 'pin': pin,
+    't': 'hello', 'pub': pubKey, 'nick': nickname,
   };
   factory KeyHello.fromJson(Map<String, dynamic> j) => KeyHello(
     pubKey: j['pub'] as String,
     nickname: j['nick'] as String,
-    pin: j['pin'] as String?,
   );
 }
 

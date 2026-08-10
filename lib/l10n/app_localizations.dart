@@ -608,6 +608,30 @@ abstract class AppLocalizations {
   /// **'Join ditolak oleh member'**
   String get joinRejected;
 
+  /// No description provided for @sessionEndedTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Sesi grup berakhir'**
+  String get sessionEndedTitle;
+
+  /// No description provided for @sessionEndedHint.
+  ///
+  /// In id, this message translates to:
+  /// **'Kunci grup tidak tersedia lagi setelah restart — bergabung ulang untuk melanjutkan percakapan.'**
+  String get sessionEndedHint;
+
+  /// No description provided for @rejoinLabel.
+  ///
+  /// In id, this message translates to:
+  /// **'Bergabung ulang'**
+  String get rejoinLabel;
+
+  /// No description provided for @retryHint.
+  ///
+  /// In id, this message translates to:
+  /// **'Ketuk untuk kirim ulang'**
+  String get retryHint;
+
   /// No description provided for @noDevicesFound.
   ///
   /// In id, this message translates to:

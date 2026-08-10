@@ -85,6 +85,13 @@ class ChatController {
         }
         if (!j.containsKey('v')) return;   // unknown control — GroupController handles
         final env = MessageEnvelope.fromWireJson(j);
+        // M1: reject malformed routing — out-of-range hop/max must never be
+        // relayed or processed.
+        if (env.hop < 0 ||
+            env.max < 1 ||
+            env.max > AppConstants.maxHops) {
+          return;
+        }
         if (!_dedup(env.id)) return;
 
         // Relay decision — BEFORE decryption (relays never need the key).
@@ -334,11 +341,11 @@ class ChatController {
       ciphertext: Uint8List.fromList([...box.cipherText, ...box.mac.bytes]),
     );
     if (envelopeId == null) {
-      // Delivery state: DM without peers in range is 'pending' (honest
-      // "waiting" — the peer will ack when back); everything else is 'sent'.
-      final status = kind == 'dm' && _peer.connectedPeers.isEmpty
-          ? 'pending'
-          : 'sent';
+      // L4: honest delivery state for BOTH kinds — no peers in range is
+      // 'pending' (waiting; manual retry when connected). Group messages
+      // with zero connected peers must not claim 'sent'.
+      final status =
+          _peer.connectedPeers.isEmpty ? 'pending' : 'sent';
       await _persist(env, msg, status: status);
     }
     _dedup(env.id);

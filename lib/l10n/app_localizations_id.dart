@@ -281,6 +281,19 @@ class AppLocalizationsId extends AppLocalizations {
   String get joinRejected => 'Join ditolak oleh member';
 
   @override
+  String get sessionEndedTitle => 'Sesi grup berakhir';
+
+  @override
+  String get sessionEndedHint =>
+      'Kunci grup tidak tersedia lagi setelah restart — bergabung ulang untuk melanjutkan percakapan.';
+
+  @override
+  String get rejoinLabel => 'Bergabung ulang';
+
+  @override
+  String get retryHint => 'Ketuk untuk kirim ulang';
+
+  @override
   String get noDevicesFound => 'Tidak ada perangkat ditemukan';
 
   @override

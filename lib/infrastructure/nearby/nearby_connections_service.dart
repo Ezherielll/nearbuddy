@@ -24,6 +24,10 @@ class NearbyConnectionsService implements PeerDiscoveryService {
   final _deviceLostCtrl = StreamController<String>.broadcast();
   bool _scanning = false;
 
+  /// H8: bumped by every stopScan — an in-flight startScan that finishes
+  /// after a stop() must tear its radio down instead of leaving it on.
+  int _scanGen = 0;
+
   @override Stream<({String endpointId, String nickname})> get onPeerConnected => _connCtrl.stream;
   @override Stream<String> get onPeerDisconnected => _discCtrl.stream;
   @override Stream<({String fromEndpointId, String payload})> get onPayloadReceived => _plCtrl.stream;
@@ -105,6 +109,7 @@ class NearbyConnectionsService implements PeerDiscoveryService {
   Future<void> startScan() async {
     if (_scanning) return;
     _scanning = true;
+    final gen = _scanGen;
     final svcId = AppConfig.scanServiceId;
     try {
       await _stopAllRadio();
@@ -130,11 +135,17 @@ class NearbyConnectionsService implements PeerDiscoveryService {
       await _stopAllRadio();
       rethrow;
     }
+    if (gen != _scanGen) {
+      // H8: a stopScan() raced in while we were starting — undo.
+      _scanning = false;
+      await _stopAllRadio();
+    }
   }
 
   @override
   Future<void> stopScan() async {
     _scanning = false;
+    _scanGen++;
     await _stopAllRadio();
   }
 
@@ -174,8 +185,14 @@ class NearbyConnectionsService implements PeerDiscoveryService {
   @override
   Future<Set<String>> sendToAll(String payload) async {
     final b = utf8.encode(payload);
+    // M2: one dead endpoint must not abort the loop — collect failures per
+    // endpoint and keep sending to the rest.
     for (final eid in Set.from(_peers)) {
-      await _nearby.sendBytesPayload(eid, b);
+      try {
+        await _nearby.sendBytesPayload(eid, b);
+      } catch (_) {
+        // endpoint dropped mid-send — the others still get the message
+      }
     }
     return Set.from(_peers);
   }

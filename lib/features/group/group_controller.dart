@@ -138,19 +138,22 @@ class GroupController {
     _peerConnectedSub = _peer.onPeerConnected.listen((p) {
       final g = _ref.read(currentGroupProvider);
       if (g != null) {
-        _kx.sendHello(p.endpointId,
-            nickname: _prefs.nickname ?? 'Unknown', pin: g.pin);
+        // H6: the PIN never rides in the hello — a member challenges the
+        // joiner with pin_challenge and verifies H(pin‖nonce).
+        _kx.sendHello(p.endpointId, nickname: _prefs.nickname ?? 'Unknown');
       }
     });
 
     // SAS challenge → active screen shows the dialog → confirmSas
-    // Join gate: PIN match (H6), nickname uniqueness (H7), group size (M3).
-    // Returns a rejection reason; the joiner's verify_fail carries it.
-    _kx.joinGate = (pin, nickname) async {
+    // H6: the group PIN stays local; proofs are verified via pinProvider.
+    _kx.pinProvider = () => _ref.read(currentGroupProvider)?.pin;
+
+    // Join gate: nickname uniqueness (H7) + group size (M3). PIN is handled
+    // by the challenge flow, not here. Returns a rejection reason; the
+    // joiner's verify_fail carries it.
+    _kx.joinGate = (nickname) async {
       final g = _ref.read(currentGroupProvider);
       if (g == null) return null;
-      final group = await _dao.groupById(g.id);
-      if (group?.pin != null && pin != group!.pin) return 'pin';
       final myId = await _ref.read(keyManagerProvider).deviceId();
       if (await _dao.isNicknameTaken(nickname, g.id, myId)) return 'nick';
       if (await _dao.countActiveMembers(g.id) >= AppConstants.maxGroupSize) {

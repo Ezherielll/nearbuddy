@@ -13,7 +13,7 @@ void main() {
   final crypto = CryptoService();
 
   test('key payload codecs roundtrip', () {
-    final hello = KeyHello(pubKey: base64Encode([1, 2, 3]), nickname: 'Bimo', pin: null);
+    final hello = KeyHello(pubKey: base64Encode([1, 2, 3]), nickname: 'Bimo');
     expect(KeyHello.fromJson(hello.toJson()).nickname, 'Bimo');
     final key = KeyDelivery(gid: 'g1', key: base64Encode(List.generate(32, (i) => i)));
     expect(base64Decode(KeyDelivery.fromJson(key.toJson()).key).length, 32);
@@ -75,7 +75,7 @@ void main() {
 
     // the joining peer introduces itself first (populates the endpoint pubkey)
     await svc.handleIncomingControl('ep-1', jsonEncode(KeyHello(
-      pubKey: memberPubB64, nickname: 'Nadia', pin: null,
+      pubKey: memberPubB64, nickname: 'Nadia',
     ).toJson()));
     await svc.confirmSas(true, endpointId: 'ep-1');   // local user confirms the SAS digits
 
@@ -119,7 +119,7 @@ void main() {
 
     // owner introduces itself
     await svc.handleIncomingControl('ep-owner', jsonEncode(KeyHello(
-      pubKey: ownerPubB64, nickname: 'Bimo', pin: null,
+      pubKey: ownerPubB64, nickname: 'Bimo',
     ).toJson()));
     await pumpEventQueue();
     expect(sasChallenge, matches(RegExp(r'^\d{6}$')));
@@ -172,10 +172,10 @@ void main() {
 
     // two joiners connect and say hello
     await svc.handleIncomingControl('ep-a', jsonEncode(KeyHello(
-      pubKey: pubA, nickname: 'A', pin: null,
+      pubKey: pubA, nickname: 'A',
     ).toJson()));
     await svc.handleIncomingControl('ep-b', jsonEncode(KeyHello(
-      pubKey: pubB, nickname: 'B', pin: null,
+      pubKey: pubB, nickname: 'B',
     ).toJson()));
     await pumpEventQueue();
     expect(challenges.map((c) => c.$1), containsAll(['ep-a', 'ep-b']));
@@ -228,7 +228,7 @@ void main() {
     );
 
     await svc.handleIncomingControl('ep-bad', jsonEncode(KeyHello(
-      pubKey: pub, nickname: 'Bad', pin: null,
+      pubKey: pub, nickname: 'Bad',
     ).toJson()));
 
     JoinRejection? rejected;
@@ -267,7 +267,7 @@ void main() {
       db.groupsDao,
       peer,
     );
-    svc.joinGate = (pin, nickname) async => 'nick';
+    svc.joinGate = (nickname) async => 'nick';
 
     var challenges = 0;
     final sub = svc.onSasChallenge.listen((_) => challenges++);
@@ -275,7 +275,7 @@ void main() {
 
     // rejected BEFORE any SAS dialog is raised
     await svc.handleIncomingControl('ep-x', jsonEncode(KeyHello(
-      pubKey: pub, nickname: 'Dup', pin: null,
+      pubKey: pub, nickname: 'Dup',
     ).toJson()));
     await pumpEventQueue();
     expect(challenges, 0);
@@ -285,9 +285,9 @@ void main() {
     expect(svc.groupKeyFor('g1'), isNull);
 
     // an accepted join still reaches the SAS dialog
-    svc.joinGate = (pin, nickname) async => null;
+    svc.joinGate = (nickname) async => null;
     await svc.handleIncomingControl('ep-y', jsonEncode(KeyHello(
-      pubKey: pub, nickname: 'Fresh', pin: null,
+      pubKey: pub, nickname: 'Fresh',
     ).toJson()));
     await pumpEventQueue();
     expect(challenges, 1);
@@ -300,6 +300,75 @@ void main() {
     await pumpEventQueue();
     expect(got?.reason, 'full');
     expect(peer.disconnected, contains('ep-z'));
+  });
+
+  test('H6: PIN never rides in cleartext — challenge/proof gates the SAS challenge', () async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    final member = await crypto.generateKeyPair();
+    final pub = base64Encode((await member.extractPublicKey()).bytes);
+
+    final peer = _FakePeer();
+    final svc = KeyExchangeService(
+      crypto,
+      KeyManager(_MemoryStore({})),
+      db.groupsDao,
+      peer,
+    );
+    // member side: group has PIN 1234
+    svc.pinProvider = () => '1234';
+
+    var sasRaised = 0;
+    final sub = svc.onSasChallenge.listen((_) => sasRaised++);
+    addTearDown(sub.cancel);
+
+    // hello → pin_challenge is issued, SAS is NOT raised yet
+    await svc.handleIncomingControl('ep-1', jsonEncode(KeyHello(
+      pubKey: pub, nickname: 'Bimo',
+    ).toJson()));
+    await pumpEventQueue();
+    expect(sasRaised, 0);
+    peer.sentTo('ep-1').singleWhere((s) => s.contains('pin_challenge'));
+
+    // wrong proof → verify_fail(r:pin) + disconnect, no SAS
+    await svc.handleIncomingControl('ep-1', jsonEncode(
+        {'t': 'pin_proof', 'h': List.filled(64, '0').join()}));
+    await pumpEventQueue();
+    expect(sasRaised, 0);
+    expect(peer.sentTo('ep-1').where((s) => s.contains('verify_fail')), isNotEmpty);
+    expect(peer.disconnected, contains('ep-1'));
+
+    // fresh join, correct proof → SAS challenge raised
+    await svc.handleIncomingControl('ep-2', jsonEncode(KeyHello(
+      pubKey: pub, nickname: 'Bimo',
+    ).toJson()));
+    await pumpEventQueue();
+    final challenge2 = peer.sentTo('ep-2').singleWhere((s) => s.contains('pin_challenge'));
+    final nonce2 = base64Decode((jsonDecode(challenge2) as Map)['n'] as String);
+    final digest = await Sha256().hash([...utf8.encode('1234'), ...nonce2]);
+    final proof = digest.bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+    await svc.handleIncomingControl('ep-2', jsonEncode({'t': 'pin_proof', 'h': proof}));
+    await pumpEventQueue();
+    expect(sasRaised, 1);
+    expect(peer.sentTo('ep-2').where((s) => s.contains('verify_fail')), isEmpty);
+
+    // no-pin group: hello raises SAS directly, no challenge
+    final svc2 = KeyExchangeService(
+      crypto,
+      KeyManager(_MemoryStore({})),
+      db.groupsDao,
+      peer,
+    );
+    svc2.pinProvider = () => null;
+    var sasRaised2 = 0;
+    final sub2 = svc2.onSasChallenge.listen((_) => sasRaised2++);
+    addTearDown(sub2.cancel);
+    await svc2.handleIncomingControl('ep-3', jsonEncode(KeyHello(
+      pubKey: pub, nickname: 'Bimo',
+    ).toJson()));
+    await pumpEventQueue();
+    expect(sasRaised2, 1);
+    expect(peer.sentTo('ep-3').where((s) => s.contains('pin_challenge')), isEmpty);
   });
 }
 
