@@ -10,7 +10,6 @@ import '../home/scan_controller.dart';
 import '../shared/widgets/avatar_initial.dart';
 import '../shared/widgets/empty_state.dart';
 import '../shared/widgets/nearbuddy_button.dart';
-import 'group_controller.dart';
 
 /// Post-create step: pick devices nearby to invite. Selected devices connect
 /// automatically once they join — invitation is a local, honest step, not a
@@ -51,14 +50,9 @@ class _InviteDevicesScreenState extends ConsumerState<InviteDevicesScreen> {
   }
 
   Future<void> _onSas(SasChallenge challenge) async {
-    if (!mounted) return;
-    final ok = await showVerificationDialog(context, challenge.sas);
-    if (!mounted) return;
-    // Verdict is bound to the endpoint whose digits the user compared (C2).
-    await ref
-        .read(keyExchangeServiceProvider)
-        .confirmSas(ok, endpointId: challenge.endpointId);
-    if (!ok && mounted) await ref.read(groupControllerProvider).leaveGroup();
+    // Member side (owner): a mismatch rejects only that joiner (H2) — the
+    // owner's group session stays up.
+    await answerSasChallenge(context, ref, challenge);
   }
 
   @override

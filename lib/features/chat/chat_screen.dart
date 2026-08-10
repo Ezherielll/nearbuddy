@@ -74,16 +74,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Future<void> _onSas(SasChallenge challenge) async {
-    if (!mounted) return;
-    final ok = await showVerificationDialog(context, challenge.sas);
-    if (!mounted) return;   // screen may be gone while the dialog was open
-    // Verdict is bound to the endpoint whose digits the user compared (C2).
-    await ref
-        .read(keyExchangeServiceProvider)
-        .confirmSas(ok, endpointId: challenge.endpointId);
-    if (!ok && mounted) {
-      await ref.read(groupControllerProvider).leaveGroup();
-    }
+    // Member side: rejecting one joiner must NOT tear down the member's own
+    // session (H2) — the service rejects only that endpoint and disconnects
+    // it; the group (and the other members) stay up.
+    await answerSasChallenge(context, ref, challenge);
   }
 
   Future<void> _confirmLeave() async {

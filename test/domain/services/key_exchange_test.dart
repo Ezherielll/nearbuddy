@@ -238,8 +238,10 @@ void main() {
     await svc.handleIncomingControl('ep-bad', jsonEncode(const {'t': 'verify_fail'}));
     await pumpEventQueue();
     expect(rejected, 'ep-bad');
-    // the member's own session must NOT be torn down
+    // the member's own session must NOT be torn down...
     expect(peer.stopCalls, 0);
+    // ...but the rejected peer IS disconnected (full H2)
+    expect(peer.disconnected, contains('ep-bad'));
     // a key from that peer is now rejected (endpoint state was removed)
     final pairwise = await crypto.pairwiseKeyBytes(member, await owner.extractPublicKey());
     final box = await crypto.seal(base64Encode(List.generate(32, (i) => i)), SecretKeyData(pairwise));
@@ -263,12 +265,18 @@ class _MemoryStore implements KeyValueStore {
 
 class _FakePeer implements PeerDiscoveryService {
   final _sent = <String, List<String>>{};
+  final disconnected = <String>[];
   int stopCalls = 0;
   List<String> sentTo(String endpointId) => _sent[endpointId] ?? const [];
 
   @override
   Future<void> sendTo(String endpointId, String jsonPayload) async {
     (_sent[endpointId] ??= []).add(jsonPayload);
+  }
+
+  @override
+  Future<void> disconnectPeer(String endpointId) async {
+    disconnected.add(endpointId);
   }
 
   @override

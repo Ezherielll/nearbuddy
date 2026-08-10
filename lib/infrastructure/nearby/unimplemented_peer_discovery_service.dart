@@ -26,6 +26,10 @@ class UnimplementedPeerDiscoveryService implements PeerDiscoveryService {
       Future<void>.error(_unsupported);
 
   @override
+  Future<void> disconnectPeer(String endpointId) =>
+      Future<void>.error(_unsupported);
+
+  @override
   Future<void> startScan() => Future<void>.error(_unsupported);
 
   @override

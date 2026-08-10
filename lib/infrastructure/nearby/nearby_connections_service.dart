@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:nearby_connections/nearby_connections.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_config.dart';
@@ -55,7 +57,14 @@ class NearbyConnectionsService implements PeerDiscoveryService {
     // in the E2EE hello handshake (KeyExchangeService, Task 11).
     final adName = nickname;
 
-    await _nearby.startAdvertising(adName, Strategy.P2P_CLUSTER,
+    // The plugin's stopAdvertising/stopDiscovery are fire-and-forget on the
+    // native side. Starting again immediately (e.g. right after the ambient
+    // scan was stopped) fails on real devices with
+    // ERROR_ALREADY_ADVERTISING / ERROR_ALREADY_DISCOVERING — stop first and
+    // give GMS time to tear the radio down.
+    await _stopAllRadio();
+
+    await _retryStart(() => _nearby.startAdvertising(adName, Strategy.P2P_CLUSTER,
       onConnectionInitiated: (eid, info) async {
         _names[eid] = info.endpointName;
         await _nearby.acceptConnection(eid,
@@ -64,9 +73,9 @@ class NearbyConnectionsService implements PeerDiscoveryService {
       onConnectionResult: (eid, status) { if (status == Status.CONNECTED) _add(eid, _names[eid] ?? eid); },
       onDisconnected: _remove,
       serviceId: svcId,
-    );
+    ));
 
-    await _nearby.startDiscovery(adName, Strategy.P2P_CLUSTER,
+    await _retryStart(() => _nearby.startDiscovery(adName, Strategy.P2P_CLUSTER,
       onEndpointFound: (eid, endpointName, _) {
         _names[eid] = endpointName;
         _nearby.requestConnection(adName, eid,
@@ -79,14 +88,13 @@ class NearbyConnectionsService implements PeerDiscoveryService {
       },
       onEndpointLost: (_) {},
       serviceId: svcId,
-    );
+    ));
   }
 
   @override
   Future<void> stopSession() async {
-    await _nearby.stopAdvertising();
-    await _nearby.stopDiscovery();
     await _nearby.stopAllEndpoints();
+    await _stopAllRadio();
     _peers.clear(); _names.clear();
   }
 
@@ -98,29 +106,69 @@ class NearbyConnectionsService implements PeerDiscoveryService {
     if (_scanning) return;
     _scanning = true;
     final svcId = AppConfig.scanServiceId;
-    await _nearby.startAdvertising('', Strategy.P2P_CLUSTER,
-      onConnectionInitiated: (_, __) async {},   // scan is passive — no accepts
-      onConnectionResult: (_, __) {},
-      onDisconnected: (_) {},
-      serviceId: svcId,
-    );
-    await _nearby.startDiscovery('', Strategy.P2P_CLUSTER,
-      onEndpointFound: (eid, endpointName, _) {
-        _devicesCtrl.add((endpointId: eid, nickname: endpointName));
-      },
-      onEndpointLost: (eid) {
-        if (eid != null) _deviceLostCtrl.add(eid);
-      },
-      serviceId: svcId,
-    );
+    try {
+      await _stopAllRadio();
+      await _retryStart(() => _nearby.startAdvertising('', Strategy.P2P_CLUSTER,
+        onConnectionInitiated: (_, __) async {},   // scan is passive — no accepts
+        onConnectionResult: (_, __) {},
+        onDisconnected: (_) {},
+        serviceId: svcId,
+      ));
+      await _retryStart(() => _nearby.startDiscovery('', Strategy.P2P_CLUSTER,
+        onEndpointFound: (eid, endpointName, _) {
+          _devicesCtrl.add((endpointId: eid, nickname: endpointName));
+        },
+        onEndpointLost: (eid) {
+          if (eid != null) _deviceLostCtrl.add(eid);
+        },
+        serviceId: svcId,
+      ));
+    } catch (_) {
+      // Don't leave the flag stuck: a later stopScan must still tear the
+      // radio down (and startSession relies on it before advertising).
+      _scanning = false;
+      await _stopAllRadio();
+      rethrow;
+    }
   }
 
   @override
   Future<void> stopScan() async {
-    if (!_scanning) return;
     _scanning = false;
-    await _nearby.stopAdvertising();
-    await _nearby.stopDiscovery();
+    await _stopAllRadio();
+  }
+
+  /// This plugin's stop calls are fire-and-forget — give GMS time to tear the
+  /// radio down before any subsequent start (see [startSession]).
+  static const _radioSettle = Duration(milliseconds: 600);
+
+  Future<void> _stopAllRadio() async {
+    try {
+      await _nearby.stopAdvertising();
+    } catch (_) {}
+    try {
+      await _nearby.stopDiscovery();
+    } catch (_) {}
+    await Future<void>.delayed(_radioSettle);
+  }
+
+  /// Starts a radio operation, retrying (with growing backoff) when the
+  /// native client reports the previous state is still tearing down
+  /// (ERROR_ALREADY_ADVERTISING=8001 / ERROR_ALREADY_DISCOVERING=8002).
+  Future<void> _retryStart(Future<bool> Function() start) async {
+    for (var attempt = 0; ; attempt++) {
+      try {
+        await start();
+        return;
+      } on PlatformException catch (e) {
+        final msg = (e.message ?? '').toLowerCase();
+        final teardown = msg.contains('already') ||
+            RegExp(r'8001|8002').hasMatch(e.message ?? '');
+        if (!teardown || attempt >= 2) rethrow;
+        debugPrint('nearby: retrying start (${e.message})');
+        await Future<void>.delayed(_radioSettle * (attempt + 1));
+      }
+    }
   }
 
   @override
@@ -135,6 +183,12 @@ class NearbyConnectionsService implements PeerDiscoveryService {
   @override
   Future<void> sendTo(String eid, String payload) =>
       _nearby.sendBytesPayload(eid, utf8.encode(payload));
+
+  @override
+  Future<void> disconnectPeer(String endpointId) async {
+    // The plugin fires onDisconnected → _remove() on both sides.
+    await _nearby.disconnectFromEndpoint(endpointId);
+  }
 
   void dispose() {
     _connCtrl.close(); _discCtrl.close(); _plCtrl.close(); _peersCtrl.close();

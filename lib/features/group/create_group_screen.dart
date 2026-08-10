@@ -39,14 +39,9 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
   }
 
   Future<void> _onSas(SasChallenge challenge) async {
-    if (!mounted) return;
-    final ok = await showVerificationDialog(context, challenge.sas);
-    if (!mounted) return;
-    // Verdict is bound to the endpoint whose digits the user compared (C2).
-    await ref
-        .read(keyExchangeServiceProvider)
-        .confirmSas(ok, endpointId: challenge.endpointId);
-    if (!ok && mounted) await ref.read(groupControllerProvider).leaveGroup();
+    // Member side (owner): a mismatch rejects only that joiner (H2) — the
+    // owner's group session stays up.
+    await answerSasChallenge(context, ref, challenge);
   }
 
   Future<void> _create() async {
@@ -70,10 +65,18 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
         '/invite/${ref.read(currentGroupProvider)!.id}', extra: name);
   }
 
-  void _showError(String code) {
+  void _showError(String err) {
     final l10n = AppLocalizations.of(context)!;
+    final isPermission = err == 'permission';
+    final code = err.startsWith('session:') ? err.substring(8) : '';
     ShadToaster.of(context).show(ShadToast.destructive(
-      title: Text(code == 'permission' ? l10n.permissionDenied : l10n.sessionStartFailed),
+      title: Text(
+        isPermission
+            ? l10n.permissionDenied
+            : code.isEmpty
+                ? l10n.sessionStartFailed
+                : '${l10n.sessionStartFailed} ($code)',
+      ),
     ));
   }
 

@@ -1,8 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
+import '../../../domain/services/key_exchange_service.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../theme/nearbuddy_typography.dart';
+
+/// Drives one SAS challenge end-to-end: shows the digits and routes the
+/// user's verdict to the EXACT endpoint they compared (C2). Returns the
+/// verdict, or null when the screen was disposed while the dialog was open.
+Future<bool?> answerSasChallenge(
+    BuildContext context, WidgetRef ref, SasChallenge challenge) async {
+  if (!context.mounted) return null;
+  final ok = await showVerificationDialog(context, challenge.sas);
+  if (!context.mounted) return null;
+  await ref
+      .read(keyExchangeServiceProvider)
+      .confirmSas(ok, endpointId: challenge.endpointId);
+  return ok;
+}
 
 /// The key E2EE moment: shows the 6-digit SAS (grouped XXX XXX) in a
 /// premium monospace presentation and asks the user to compare devices.

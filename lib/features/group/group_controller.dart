@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/crypto/key_manager.dart';
@@ -57,9 +59,10 @@ class GroupController {
           GroupSession(id: id, name: name, pin: pin, createdAt: DateTime.now(), isOwner: true);
       _listen();
       return null;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('createGroup: startSession failed — $e');
       await _peer.stopSession();
-      return 'session';
+      return _errorCode(e);
     }
   }
 
@@ -83,10 +86,28 @@ class GroupController {
           GroupSession(id: groupId, name: groupName, pin: pin, createdAt: DateTime.now());
       _listen();
       return null;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('joinGroup: startSession failed — $e');
       await _peer.stopSession();
-      return 'session';
+      return _errorCode(e);
     }
+  }
+
+  /// Maps a session-start exception to a user-facing error token. Permission
+  /// denial gets its own token; anything else carries the platform status
+  /// code (e.g. 'session:8038') so the screen can show it and we can
+  /// diagnose real-device failures without logcat.
+  static String _errorCode(Object e) {
+    if (e is PlatformException) {
+      final msg = (e.message ?? '').toLowerCase();
+      if (msg.contains('missing_permission') || msg.contains('denied')) {
+        return 'permission';
+      }
+      final code = e.code.contains('Failure') ? '' : e.code;
+      final status = RegExp(r'\b(\d{4})\b').firstMatch(msg)?.group(1);
+      return 'session:${status ?? code}';
+    }
+    return 'session';
   }
 
   Future<void> leaveGroup() async {

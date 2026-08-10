@@ -32,10 +32,12 @@ class ScanController {
     });
     try {
       await _peer.startScan();
-    } catch (_) {
-      // Permission denied / radio off: the scan cannot run, but this must
-      // never surface as an unhandled exception (the Home UI shows the
-      // permission banner instead).
+    } catch (e) {
+      // Permission denied / radio off / device-specific Nearby failure: the
+      // scan cannot run, but this must never surface as an unhandled
+      // exception (the Home UI shows the permission banner instead).
+      // ignore: avoid_print
+      print('scan_controller: startScan failed — $e');
     }
   }
 

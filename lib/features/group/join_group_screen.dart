@@ -51,14 +51,10 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
 
   Future<void> _onSas(SasChallenge challenge) async {
     _connectTimer?.cancel();
-    if (!mounted) return;
-    final ok = await showVerificationDialog(context, challenge.sas);
-    if (!mounted) return;
-    // Verdict is bound to the endpoint whose digits the user compared (C2).
-    await ref
-        .read(keyExchangeServiceProvider)
-        .confirmSas(ok, endpointId: challenge.endpointId);
+    final ok = await answerSasChallenge(context, ref, challenge);
+    if (ok == null) return;
     if (!ok) {
+      // Joiner side: digits don't match — abort the join entirely.
       if (mounted) await ref.read(groupControllerProvider).leaveGroup();
       return;
     }
@@ -75,6 +71,10 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
       _loading = false;
       _connecting = false;
     });
+    // The member rejected this join (wrong PIN / SAS mismatch on their side):
+    // abort instead of lingering connected to a group we were not accepted
+    // into (H2 — the member's own session is unaffected).
+    ref.read(groupControllerProvider).leaveGroup();
     final l10n = AppLocalizations.of(context)!;
     ShadToaster.of(context)
         .show(ShadToast.destructive(title: Text(l10n.pinWrong)));
@@ -101,8 +101,16 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
     if (err != null) {
       setState(() => _loading = false);
       final l10n = AppLocalizations.of(context)!;
+      final isPermission = err == 'permission';
+      final code = err.startsWith('session:') ? err.substring(8) : '';
       ShadToaster.of(context).show(ShadToast.destructive(
-        title: Text(err == 'permission' ? l10n.permissionDenied : l10n.sessionStartFailed),
+        title: Text(
+          isPermission
+              ? l10n.permissionDenied
+              : code.isEmpty
+                  ? l10n.sessionStartFailed
+                  : '${l10n.sessionStartFailed} ($code)',
+        ),
       ));
       return;
     }

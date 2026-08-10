@@ -155,19 +155,24 @@ class ChatController {
 
   /// Opens a DM. The receiver has no session row for the sender's sessionId
   /// (sessions only exist on the initiator), so when the session is unknown
-  /// the sender is discovered by trying every known member public key — the
-  /// AES-GCM MAC rejects wrong keys (C1). Returns the plaintext and the
-  /// matched sender deviceId, or null when no known peer can decrypt.
+  /// — or stale — the sender is discovered by trying every known member
+  /// public key: the AES-GCM MAC rejects wrong keys (C1). Returns the
+  /// plaintext and the matched sender deviceId, or null when no known peer
+  /// can decrypt.
   Future<({String plain, String senderDeviceId})?> _openDm(
       MessageEnvelope env) async {
     final session = await _sessionsDao.sessionById(env.gid);
     if (session != null) {
       try {
-        final key = SecretKeyData(await _kx.pairwiseKeyFor(session.peerDeviceId));
+        final key =
+            SecretKeyData(await _kx.pairwiseKeyFor(session.peerDeviceId));
         return (plain: await _crypto.open(_box(env), key),
             senderDeviceId: session.peerDeviceId);
       } on StateError {
-        return null;
+        // the peer's public key is gone — fall through to discovery
+      } on SecretBoxAuthenticationError {
+        // stale session row for this gid — the real sender may still be
+        // discoverable among known members; fall through
       }
     }
     final mine = await _keys.ensureIdentityKey();
@@ -176,12 +181,13 @@ class ChatController {
       try {
         final pub = SimplePublicKey(base64Decode(c.pubKeyB64),
             type: KeyPairType.x25519);
-        final key =
-            SecretKeyData(await _crypto.pairwiseKeyBytes(mine, pub));
+        final key = SecretKeyData(await _crypto.pairwiseKeyBytes(mine, pub));
         final plain = await _crypto.open(_box(env), key);
         return (plain: plain, senderDeviceId: c.deviceId);
+      } on SecretBoxAuthenticationError {
+        continue;   // wrong key — try the next known device
       } catch (_) {
-        // wrong key — try the next known device
+        continue;   // corrupt stored key — never block other candidates
       }
     }
     return null;

@@ -9,6 +9,11 @@ abstract class PeerDiscoveryService {
   Future<void> stopSession();
   Future<Set<String>> sendToAll(String jsonPayload);
   Future<void> sendTo(String endpointId, String jsonPayload);
+
+  /// Ends ONE connection without touching the session's other peers
+  /// (e.g. a joiner whose SAS/PIN was rejected — H2).
+  Future<void> disconnectPeer(String endpointId);
+
   Stream<({String endpointId, String nickname})> get onPeerConnected;
   Stream<String> get onPeerDisconnected;
   Stream<({String fromEndpointId, String payload})> get onPayloadReceived;

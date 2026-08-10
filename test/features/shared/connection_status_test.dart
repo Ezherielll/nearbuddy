@@ -34,6 +34,8 @@ class _FakePeer implements PeerDiscoveryService {
   @override
   Future<void> sendTo(String endpointId, String jsonPayload) async {}
   @override
+  Future<void> disconnectPeer(String endpointId) async {}
+  @override
   Stream<({String endpointId, String nickname})> get onPeerConnected =>
       const Stream.empty();
   @override

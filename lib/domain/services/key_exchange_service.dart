@@ -87,8 +87,8 @@ class KeyExchangeService {
 
   /// Local user's verdict on the SAS for a SPECIFIC endpoint (C2): the
   /// verdict goes to the peer whose digits the user actually compared.
-  /// Mismatch removes that endpoint from the handshake — the peer's own
-  /// join timeout aborts its session; the local group session stays up.
+  /// Mismatch rejects THAT endpoint only — verify_fail + disconnect — while
+  /// the local group session (and every other member) stays up (H2).
   Future<void> confirmSas(bool match, {required String endpointId}) async {
     final state = _endpoints[endpointId];
     if (state == null) return;
@@ -97,6 +97,7 @@ class KeyExchangeService {
         endpointId, jsonEncode({'t': match ? 'verify_ok' : 'verify_fail'}));
     if (!match) {
       _endpoints.remove(endpointId);
+      await _peer.disconnectPeer(endpointId);
     }
   }
 
@@ -157,9 +158,10 @@ class KeyExchangeService {
         _peerVerifiedCtrl.add(fromEndpointId);
       case 'verify_fail':
         _joinRejectedCtrl.add(fromEndpointId);
-        // H2: never stopSession() here — the group session belongs to every
-        // member; only this peer's join is rejected.
+        // H2: reject ONLY this peer — never stopSession() here, the group
+        // session belongs to every member.
         _endpoints.remove(fromEndpointId);
+        await _peer.disconnectPeer(fromEndpointId);
       case 'key':
         // never accept keys from an endpoint whose SAS was not confirmed
         final state = _endpoints[fromEndpointId];

@@ -21,90 +21,56 @@ import 'package:nearbuddy/infrastructure/nearby/nearby_connections_service.dart'
 import 'package:nearbuddy/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+final crypto = CryptoService();
+
 void main() {
-  final crypto = CryptoService();
 
   test('C1: DM from a known member is received, session auto-created, ack + relay sent', () async {
-    final env = await _harness(
-      (h) async {
-        // sender is a known device: its pubkey sits in the members table
-        final senderPub = await h.sender.extractPublicKey();
-        await h.db.groupsDao.upsertMember(MembersCompanion.insert(
-          deviceId: 'sender-dev', groupId: 'g1', nickname: 'Nadia',
-          lastSeen: DateTime.now(),
-        ));
-        await h.db.groupsDao.setMemberPublicKey('sender-dev', 'g1',
-            base64Encode(senderPub.bytes));
+    final env = await _harness((h) async {
+      // sender is a known device: its pubkey sits in the members table
+      await _registerMember(h, 'sender-dev', 'Nadia');
 
-        // sender seals a DM addressed to ME under the pairwise key
-        final myPub = await (await h.keyManager.ensureIdentityKey()).extractPublicKey();
-        final pairwise = await crypto.pairwiseKeyBytes(h.sender, myPub);
-        final msg = Message(senderId: 'Nadia', content: 'halo rahasia',
-            type: MessageType.text, timestamp: DateTime.now());
-        final box = await crypto.seal(jsonEncode(msg.toPayloadJson()),
-            SecretKeyData(pairwise));
-        final envelope = MessageEnvelope(
-          id: 'dm-1', gid: 'sess-sender', to: h.myDeviceId,
-          hop: 0, max: 3, ts: DateTime.now(), kind: 'dm',
-          nonce: Uint8List.fromList(box.nonce),
-          ciphertext: Uint8List.fromList([...box.cipherText, ...box.mac.bytes]),
-        );
-        h.peer.emit(jsonEncode(envelope.toWireJson()));
-        await _settle();
+      // sender seals a DM addressed to ME under the pairwise key
+      final envelope = await _sealDm(h, senderId: 'Nadia', to: h.myDeviceId,
+          gid: 'sess-sender', content: 'halo rahasia', id: 'dm-1');
+      h.peer.emit(jsonEncode(envelope.toWireJson()));
+      await _settle();
 
-        // 1) the message is persisted under the sender's session id
-        final rows = await h.container.read(messagesDaoProvider).watchMessages('sess-sender').first;
-        expect(rows, hasLength(1));
-        expect(rows.single.content, 'halo rahasia');
-        expect(rows.single.senderId, 'Nadia');
-        // 2) a session for the sender was auto-created (C1)
-        final session = await h.db.sessionsDao.sessionForPeer('sender-dev');
-        expect(session, isNotNull);
-        expect(session!.id, 'sess-sender');
-        expect(session.peerNickname, 'Nadia');
-        // 3) the DM was relayed (hop 0 -> hop 1)
-        final relayed = h.peer.allSent
-            .where((s) => s.contains('"v":2'))
-            .toList();
-        expect(relayed, hasLength(1));
-        expect(jsonDecode(relayed.single), isA<Map>());
-        final relayedEnv = MessageEnvelope.fromWireJson(
-            jsonDecode(relayed.single) as Map<String, dynamic>);
-        expect(relayedEnv.hop, 1);
-        expect(relayedEnv.id, 'dm-1');
-        // 4) a delivery receipt (ack) was flooded to the sender
-        final ack = h.peer.allSent
-            .where((s) => s.contains('"t":"ack"'))
-            .toList();
-        expect(ack, hasLength(1));
-        expect(ack.single, contains('"id":"dm-1"'));
-      },
-    );
+      // 1) the message is persisted under the sender's session id
+      final rows = await h.container.read(messagesDaoProvider).watchMessages('sess-sender').first;
+      expect(rows, hasLength(1));
+      expect(rows.single.content, 'halo rahasia');
+      expect(rows.single.senderId, 'Nadia');
+      // 2) a session for the sender was auto-created (C1)
+      final session = await h.db.sessionsDao.sessionForPeer('sender-dev');
+      expect(session, isNotNull);
+      expect(session!.id, 'sess-sender');
+      expect(session.peerNickname, 'Nadia');
+      // 3) the DM was relayed (hop 0 -> hop 1)
+      final relayed = h.peer.allSent
+          .where((s) => s.contains('"v":2'))
+          .toList();
+      expect(relayed, hasLength(1));
+      expect(jsonDecode(relayed.single), isA<Map>());
+      final relayedEnv = MessageEnvelope.fromWireJson(
+          jsonDecode(relayed.single) as Map<String, dynamic>);
+      expect(relayedEnv.hop, 1);
+      expect(relayedEnv.id, 'dm-1');
+      // 4) a delivery receipt (ack) was flooded to the sender
+      final ack = h.peer.allSent
+          .where((s) => s.contains('"t":"ack"'))
+          .toList();
+      expect(ack, hasLength(1));
+      expect(ack.single, contains('"id":"dm-1"'));
+    });
     await env.dispose();
   });
 
   test('C1: DM addressed to another device is relayed but never persisted/acked', () async {
     final env = await _harness((h) async {
-      final senderPub = await h.sender.extractPublicKey();
-      await h.db.groupsDao.upsertMember(MembersCompanion.insert(
-        deviceId: 'sender-dev', groupId: 'g1', nickname: 'Nadia',
-        lastSeen: DateTime.now(),
-      ));
-      await h.db.groupsDao.setMemberPublicKey('sender-dev', 'g1',
-          base64Encode(senderPub.bytes));
-
-      final myPub = await (await h.keyManager.ensureIdentityKey()).extractPublicKey();
-      final pairwise = await crypto.pairwiseKeyBytes(h.sender, myPub);
-      final box = await crypto.seal(jsonEncode(Message(
-        senderId: 'Nadia', content: 'untuk orang lain',
-        type: MessageType.text, timestamp: DateTime.now(),
-      ).toPayloadJson()), SecretKeyData(pairwise));
-      final envelope = MessageEnvelope(
-        id: 'dm-2', gid: 'sess-sender', to: 'someone-else',
-        hop: 0, max: 3, ts: DateTime.now(), kind: 'dm',
-        nonce: Uint8List.fromList(box.nonce),
-        ciphertext: Uint8List.fromList([...box.cipherText, ...box.mac.bytes]),
-      );
+      await _registerMember(h, 'sender-dev', 'Nadia');
+      final envelope = await _sealDm(h, senderId: 'Nadia', to: 'someone-else',
+          gid: 'sess-sender', content: 'untuk orang lain', id: 'dm-2');
       h.peer.emit(jsonEncode(envelope.toWireJson()));
       await _settle();
 
@@ -119,23 +85,17 @@ void main() {
 
   test('C1: DM from an unknown device (no pubkey on file) is dropped without crash', () async {
     final env = await _harness((h) async {
-      final myPub = await (await h.keyManager.ensureIdentityKey()).extractPublicKey();
-      final pairwise = await crypto.pairwiseKeyBytes(h.sender, myPub);
-      final box = await crypto.seal(jsonEncode(Message(
-        senderId: 'Ghost', content: 'siapakah kamu?',
-        type: MessageType.text, timestamp: DateTime.now(),
-      ).toPayloadJson()), SecretKeyData(pairwise));
-      final envelope = MessageEnvelope(
-        id: 'dm-3', gid: 'sess-ghost', to: h.myDeviceId,
-        hop: 0, max: 3, ts: DateTime.now(), kind: 'dm',
-        nonce: Uint8List.fromList(box.nonce),
-        ciphertext: Uint8List.fromList([...box.cipherText, ...box.mac.bytes]),
-      );
+      // h.sender was never registered as a member — no pubkey to try
+      final envelope = await _sealDm(h, senderId: 'Ghost', to: h.myDeviceId,
+          gid: 'sess-ghost', content: 'siapakah kamu?', id: 'dm-3');
       h.peer.emit(jsonEncode(envelope.toWireJson()));
       await _settle();
 
       expect(await h.container.read(messagesDaoProvider).watchMessages('sess-ghost').first, isEmpty);
-      expect(await h.db.sessionsDao.sessionForPeer('sender-dev'), isNull);
+      // no session row was created for the actual sender identity
+      final ghostId = await KeyManager.deviceIdFromPubKey(
+          (await h.sender.extractPublicKey()).bytes);
+      expect(await h.db.sessionsDao.sessionForPeer(ghostId), isNull);
       expect(h.peer.allSent.where((s) => s.contains('"t":"ack"')), isEmpty);
     });
     await env.dispose();
@@ -199,9 +159,36 @@ Future<void> _settle() async {
   await pumpEventQueue();
 }
 
+/// Registers [h]'s sender keypair as a known member (pubkey on file).
+Future<void> _registerMember(_Harness h, String deviceId, String nickname) async {
+  final pub = await h.sender.extractPublicKey();
+  await h.db.groupsDao.upsertMember(MembersCompanion.insert(
+    deviceId: deviceId, groupId: 'g1', nickname: nickname,
+    lastSeen: DateTime.now(),
+  ));
+  await h.db.groupsDao.setMemberPublicKey(deviceId, 'g1', base64Encode(pub.bytes));
+}
+
+/// Seals a DM as [h]'s sender under the pairwise key shared with ME.
+Future<MessageEnvelope> _sealDm(_Harness h,
+    {required String senderId, required String to, required String gid,
+    required String content, required String id}) async {
+  final myPub = await (await h.keyManager.ensureIdentityKey()).extractPublicKey();
+  final pairwise = await crypto.pairwiseKeyBytes(h.sender, myPub);
+  final box = await crypto.seal(jsonEncode(Message(
+    senderId: senderId, content: content,
+    type: MessageType.text, timestamp: DateTime.now(),
+  ).toPayloadJson()), SecretKeyData(pairwise));
+  return MessageEnvelope(
+    id: id, gid: gid, to: to, hop: 0, max: 3, ts: DateTime.now(), kind: 'dm',
+    nonce: Uint8List.fromList(box.nonce),
+    ciphertext: Uint8List.fromList([...box.cipherText, ...box.mac.bytes]),
+  );
+}
+
 class _Harness {
   final AppDatabase db;
-  final _PayloadPeer peer;
+  final _FakePeer peer;
   final KeyManager keyManager;
   final KeyExchangeService kx;
   final ProviderContainer container;
@@ -222,7 +209,7 @@ Future<_Harness> _harness(
   SharedPreferences.setMockInitialValues({'nickname': 'Me'});
   final db = AppDatabase.forTesting(NativeDatabase.memory());
   final crypto = CryptoService();
-  final peer = _PayloadPeer();
+  final peer = _FakePeer();
 
   // my identity: fixed seed so pubkey/deviceId are deterministic in-test
   final myPair = await crypto.generateKeyPair();
@@ -267,7 +254,7 @@ class _MemoryStore implements KeyValueStore {
       _m[key] = value;
 }
 
-class _PayloadPeer implements PeerDiscoveryService {
+class _FakePeer implements PeerDiscoveryService {
   final _payloadCtrl = StreamController<({String fromEndpointId, String payload})>.broadcast();
   final allSent = <String>[];
 
@@ -286,6 +273,9 @@ class _PayloadPeer implements PeerDiscoveryService {
 
   @override
   Future<void> sendTo(String endpointId, String jsonPayload) async {}
+
+  @override
+  Future<void> disconnectPeer(String endpointId) async {}
 
   @override
   Future<void> startScan() async {}
