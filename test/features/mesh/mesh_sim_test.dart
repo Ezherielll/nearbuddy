@@ -223,6 +223,9 @@ void main() {
     _autoConfirmSas(a);
     _autoConfirmSas(b2);
     _meshConnect(a, b2);
+    // T16-6 pin: B2 genuinely has NO key yet at this point — the placeholder
+    // row is produced by the keyless state, not by any other mechanism.
+    expect(b2.kx.groupKeyFor(gid), isNull);
     await a.chat.sendTextMessage('sebelum rejoin');
     await _settle();
 
@@ -366,7 +369,7 @@ Future<_MeshNode> _node(String label, {String? seedB64, String? nickname}) async
   SharedPreferences.setMockInitialValues({'nickname': nick});
   final db = AppDatabase.forTesting(NativeDatabase.memory());
   final crypto = CryptoService();
-  final peer = _MeshPeer(label);
+  final peer = _MeshPeer();
   final seed = seedB64 ??
       base64Encode(await (await crypto.generateKeyPair()).extractPrivateKeyBytes());
   final keyManager = KeyManager(_MemoryStore({'identity_priv_seed_b64': seed}));
@@ -436,8 +439,6 @@ class _MemoryStore implements KeyValueStore {
 /// to. sendTo/sendToAll deliver into the target's onPayloadReceived — the
 /// rest of the stack is real production code.
 class _MeshPeer implements PeerDiscoveryService {
-  final String label;
-  
   final _routes = <String, _MeshNode>{};
   final _peers = <String>{};
   final allSent = <String>[];
@@ -449,7 +450,7 @@ class _MeshPeer implements PeerDiscoveryService {
   final _discCtrl = StreamController<String>.broadcast();
   final _peersCtrl = StreamController<Set<String>>.broadcast();
 
-  _MeshPeer(this.label);
+  _MeshPeer();
 
   void _deliver(String fromEndpointId, String payload) =>
       _payloadCtrl.add((fromEndpointId: fromEndpointId, payload: payload));

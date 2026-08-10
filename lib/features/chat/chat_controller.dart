@@ -61,6 +61,7 @@ class ChatController {
           switch (j['t']) {
             case 'ack':
               await _handleAck(j['id'] as String, j['mac'] as String? ?? '');
+              break;
             case 'typing':
               final myId = await _ref.read(myDeviceIdProvider.future);
               if (j['to'] == myId) {
@@ -80,6 +81,7 @@ class ChatController {
                   }
                 }
               }
+              break;
           }
           return;
         }
@@ -351,7 +353,16 @@ class ChatController {
     _dedup(env.id);
     try {
       await _peer.sendToAll(jsonEncode(env.toWireJson()));
-      if (envelopeId != null) await _dao.markSent(envelopeId);
+      if (envelopeId != null) {
+        // I-2: with zero connected peers nothing was delivered and nothing
+        // auto-resends — a retried row must not claim 'sent'; it is re-queued
+        // as 'pending' (mirrors the initial-send path, L4).
+        if (_peer.connectedPeers.isNotEmpty) {
+          await _dao.markSent(envelopeId);
+        } else {
+          await _dao.markPending(envelopeId);
+        }
+      }
     } catch (_) {
       await _dao.markFailed(envelopeId ?? env.id);
     }

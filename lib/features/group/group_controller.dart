@@ -28,6 +28,14 @@ class GroupController {
   StreamSubscription? _payloadSub;
   StreamSubscription? _peerConnectedSub;
   StreamSubscription? _peerVerifiedSub;
+  StreamSubscription? _pendingHelloSub;
+
+  /// Hellos awaiting their peer's `verify_ok` — a member row is persisted
+  /// ONLY after mutual verification succeeds (I-1), never on the raw hello:
+  /// rejected joins (wrong PIN, taken nickname, full group, SAS mismatch)
+  /// must not leave ghost `isActive` rows behind that count toward the
+  /// 30-member cap.
+  final _pendingHellos = <String, KeyHello>{};
 
   GroupsDao get _dao => _ref.read(groupsDaoProvider);
   PeerDiscoveryService get _peer => _ref.read(peerDiscoveryServiceProvider);
@@ -115,6 +123,8 @@ class GroupController {
     _payloadSub?.cancel();
     _peerConnectedSub?.cancel();
     _peerVerifiedSub?.cancel();
+    _pendingHelloSub?.cancel();
+    _pendingHellos.clear();
     await _peer.stopSession();
     _ref.read(currentGroupProvider.notifier).state = null;
   }
@@ -127,11 +137,21 @@ class GroupController {
         if (!j.containsKey('t')) return;      // envelope — ChatController (T12)
         await _kx.handleIncomingControl(e.fromEndpointId, e.payload);
         if (j['t'] == 'hello') {
-          // persist the peer's identity: deviceId is derived from the pubkey
-          await _persistMember(KeyHello.fromJson(j));
+          // hold the identity until mutual verification (verify_ok) —
+          // a rejected join must never leave a ghost member row (I-1)
+          _pendingHellos[e.fromEndpointId] = KeyHello.fromJson(j);
+        } else if (j['t'] == 'verify_ok') {
+          final hello = _pendingHellos.remove(e.fromEndpointId);
+          if (hello != null) await _persistMember(hello);
         }
       } catch (_) {}
     });
+
+    // a disconnect aborts the pending handshake — drop the held hello so a
+    // later rejoin starts fresh (and never leaks a stale entry)
+    _pendingHelloSub?.cancel();
+    _pendingHelloSub =
+        _peer.onPeerDisconnected.listen((ep) => _pendingHellos.remove(ep));
 
     _peerConnectedSub?.cancel();
     _peerConnectedSub = _peer.onPeerConnected.listen((p) {
@@ -159,7 +179,8 @@ class GroupController {
       if (await _dao.isNicknameTaken(nickname, g.id, joinerDeviceId)) {
         return 'nick';
       }
-      if (await _dao.countActiveMembers(g.id) >= AppConstants.maxGroupSize) {
+      if (await _dao.countActiveMembers(g.id, excludeDeviceId: joinerDeviceId) >=
+          AppConstants.maxGroupSize) {
         return 'full';
       }
       return null;

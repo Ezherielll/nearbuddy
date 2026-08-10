@@ -253,7 +253,16 @@ class KeyExchangeService {
         final state = _endpoints[fromEndpointId];
         final nonce = state?.pinNonce;
         final pin = pinProvider?.call();
-        if (state == null || nonce == null || pin == null) return;
+        if (state == null || nonce == null || pin == null) {
+          // A proof without a pending challenge (e.g. from a device that
+          // assumed a PIN group) fails explicitly instead of stalling.
+          await _peer.sendTo(fromEndpointId, jsonEncode({
+            't': 'verify_fail', 'r': 'pin',
+          }));
+          _endpoints.remove(fromEndpointId);
+          await _peer.disconnectPeer(fromEndpointId);
+          return;
+        }
         final expected = await _pinProof(pin, nonce);
         state.pinNonce = null;
         if (j['h'] != expected) {
@@ -298,12 +307,19 @@ class KeyExchangeService {
         // is here, deliver it to every already-confirmed endpoint. The sweep
         // runs only on FIRST receipt, or members would ping-pong keys.
         if (!hadKey) {
-          for (final e in _endpoints.entries) {
-            if (e.value.sasConfirmed) {
+          // iterate a COPY: a dead endpoint's sendTo may mutate/remove the
+          // map while we're walking it — and its failure must not abort
+          // deliveries to the rest of the confirmed endpoints (I-3/M2).
+          for (final e in List.of(_endpoints.entries)) {
+            if (!e.value.sasConfirmed) continue;
+            try {
               await sendGroupKeyTo(e.key, delivery.gid);
+            } catch (_) {
+              // M2: one dead endpoint must not abort deliveries to the rest.
             }
           }
         }
+        break;
     }
   }
 }

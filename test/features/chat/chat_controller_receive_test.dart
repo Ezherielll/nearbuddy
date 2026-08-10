@@ -175,11 +175,12 @@ void main() {
       await controller.retryMessage(id);
       await _settle();
 
-      // no duplicate row, same envelope id, status flipped back to sent
+      // no duplicate row, same envelope id; with zero connected peers the
+      // retry re-sent nothing deliverable — status stays 'pending' (I-2)
       final after = await h.container.read(messagesDaoProvider).watchMessages('sess-1').first;
       expect(after, hasLength(1));
       expect(after.single.id, id);
-      expect(after.single.status, 'sent');
+      expect(after.single.status, 'pending');
       // the retry re-sent the envelope with the SAME id
       final sentEnvs = h.peer.allSent
           .skip(sentBefore)

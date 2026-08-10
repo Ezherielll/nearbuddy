@@ -35,4 +35,10 @@ class MessagesDao extends DatabaseAccessor<AppDatabase> with _$MessagesDaoMixin 
   Future<void> markFailed(String id) => (update(messages)
         ..where((m) => m.id.equals(id)))
       .write(const MessagesCompanion(status: Value('failed')));
+
+  /// Re-queues an outgoing row as waiting: a retry that found no connected
+  /// peers must not claim 'sent' — it is pending again (I-2/L4).
+  Future<void> markPending(String id) => (update(messages)
+        ..where((m) => m.id.equals(id)))
+      .write(const MessagesCompanion(status: Value('pending')));
 }

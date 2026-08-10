@@ -34,11 +34,18 @@ class GroupsDao extends DatabaseAccessor<AppDatabase> with _$GroupsDaoMixin {
           .write(const MembersCompanion(isActive: Value(false)));
 
   /// Active member count — the join gate (M3) rejects joins past
-  /// [AppConstants.maxGroupSize].
-  Future<int> countActiveMembers(String groupId) async {
+  /// [AppConstants.maxGroupSize]. [excludeDeviceId] skips one device's own
+  /// (possibly stale, still-active) row so a rejoin of the same device does
+  /// not count against the cap (M-2).
+  Future<int> countActiveMembers(String groupId,
+      {String? excludeDeviceId}) async {
     final query = selectOnly(members)
       ..addColumns([members.deviceId.count()])
-      ..where(members.groupId.equals(groupId) & members.isActive.equals(true));
+      ..where(members.groupId.equals(groupId) &
+          members.isActive.equals(true) &
+          (excludeDeviceId == null
+              ? const Constant(true)
+              : members.deviceId.equals(excludeDeviceId).not()));
     final row = await query.getSingle();
     return row.read(members.deviceId.count()) ?? 0;
   }
